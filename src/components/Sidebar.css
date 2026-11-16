@@ -253,7 +253,6 @@
   display: inline-block;
 }
 
-
 /* Sidebar Logout Button */
 .sidebar-logout-btn {
   width: 100%;
@@ -277,4 +276,147 @@
   background-color: #2D1B18;
   border-color: #4A2622;
   color: #F87171;
+}
+
+/* ===================================================
+   Sidebar Collapse & Mobile Menu (Requirement 1)
+   =================================================== */
+.sidebar-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sidebar-collapse-btn {
+  background: transparent;
+  border: 1px solid #282421;
+  color: #A69C95;
+  cursor: pointer;
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.18s ease;
+}
+
+.sidebar-collapse-btn:hover {
+  color: #FFFFFF;
+  background-color: #26211E;
+  border-color: #C88D58;
+}
+
+.sidebar-mobile-close-btn {
+  display: none;
+  background: transparent;
+  border: 1px solid #282421;
+  color: #A69C95;
+  cursor: pointer;
+  padding: 5px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.18s ease;
+}
+
+.sidebar-mobile-close-btn:hover {
+  color: #FFFFFF;
+  background-color: #26211E;
+}
+
+.sidebar-brand-mini {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background-color: #26211E;
+  border: 1px solid #C88D58;
+  margin: 0 auto;
+}
+
+.mini-emblem-text {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: #C88D58;
+  letter-spacing: 0.1em;
+}
+
+/* Collapsed State on Desktop */
+.sidebar-container.collapsed {
+  width: 76px;
+  min-width: 76px;
+  max-width: 76px;
+  transition: width 0.22s ease, min-width 0.22s ease;
+}
+
+.sidebar-container.collapsed .sidebar-header {
+  padding: 20px 10px;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.sidebar-container.collapsed .sidebar-nav-section {
+  padding: 16px 8px;
+}
+
+.sidebar-container.collapsed .sidebar-menu-btn {
+  padding: 12px 0;
+  justify-content: center;
+  width: 100%;
+}
+
+.sidebar-container.collapsed .sidebar-footer {
+  padding: 16px 8px;
+}
+
+.sidebar-container.collapsed .sidebar-user-card.compact {
+  padding: 10px 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.sidebar-container.collapsed .sidebar-user-top {
+  justify-content: center;
+  margin: 0;
+}
+
+.sidebar-container.collapsed .sidebar-logout-btn.compact {
+  padding: 10px 0;
+  justify-content: center;
+}
+
+/* Mobile Drawer (max-width: 900px) */
+@media (max-width: 900px) {
+  .sidebar-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    height: 100vh;
+    z-index: 1000;
+    width: 290px;
+    min-width: 290px;
+    max-width: 85vw;
+    transform: translateX(-100%);
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: none;
+  }
+
+  .sidebar-container.mobile-open {
+    transform: translateX(0);
+    box-shadow: 12px 0 45px rgba(0, 0, 0, 0.65);
+  }
+
+  .sidebar-mobile-close-btn {
+    display: flex;
+  }
+
+  .sidebar-collapse-btn {
+    display: none;
+  }
 }

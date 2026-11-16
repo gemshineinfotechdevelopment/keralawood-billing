@@ -13,6 +13,8 @@ import './App.css'
 function App() {
   const [view, setView] = useState('billing') // 'billing' or 'login'
   const [activeNav, setActiveNav] = useState('Products')
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [email, setEmail] = useState('rajesh.s@sivakasiwood.com')
   const [password, setPassword] = useState('password123')
   const [showPassword, setShowPassword] = useState(false)
@@ -27,22 +29,62 @@ function App() {
   // Dashboard / Billing Workspace View
   if (view === 'billing') {
     return (
-      <div className="billing-layout">
+      <div className={`billing-layout ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+        {/* Mobile Backdrop Overlay */}
+        {mobileSidebarOpen && (
+          <div
+            className="mobile-sidebar-backdrop"
+            onClick={() => setMobileSidebarOpen(false)}
+          />
+        )}
+
         <Sidebar
           activeItem={activeNav}
-          onItemSelect={(name) => setActiveNav(name)}
+          onItemSelect={(name) => {
+            setActiveNav(name)
+            setMobileSidebarOpen(false)
+          }}
+          isCollapsed={isSidebarCollapsed}
+          onToggleCollapse={() => setIsSidebarCollapsed((prev) => !prev)}
+          isMobileOpen={mobileSidebarOpen}
+          onCloseMobile={() => setMobileSidebarOpen(false)}
           onClose={() => setView('login')}
           onLogout={() => setView('login')}
         />
+
         <main className="billing-main-area">
+          {/* Mobile Navigation Header Bar with Hamburger Menu (Requirement 1) */}
+          <div className="mobile-app-header">
+            <button
+              type="button"
+              className="btn-mobile-hamburger"
+              onClick={() => setMobileSidebarOpen(true)}
+              aria-label="Open Navigation Menu"
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </svg>
+            </button>
+            <div className="mobile-header-brand">
+              <span className="mobile-header-title">Kerala Wood Furniture</span>
+              <span className="mobile-header-sub">• {activeNav}</span>
+            </div>
+            <div className="mobile-header-tag">
+              <span>Sivakasi</span>
+            </div>
+          </div>
+
           {activeNav === 'Products' ? (
             <AddProduct onProductSaved={() => setActiveNav('Stock Management')} />
           ) : activeNav === 'Stock Management' ? (
             <StockManagement onAddNewProduct={() => setActiveNav('Products')} />
           ) : activeNav === 'Dashboard' ? (
             <Dashboard
-              onNavigateToNewBill={() => setActiveNav('Products')}
-              onNavigateToNewInvoice={() => setActiveNav('Stock Management')}
+              onNavigateToNewBill={() => setActiveNav('Billing & POS')}
+              onNavigateToNewInvoice={() => setActiveNav('Billing & POS')}
+              onNavigate={(nav) => setActiveNav(nav)}
             />
           ) : activeNav === 'Settings' ? (
             <Settings />
@@ -56,7 +98,7 @@ function App() {
             <div className="module-placeholder">
               <div className="placeholder-card">
                 <h2>{activeNav}</h2>
-                <p>This module is connected to the Sivakasi Wood ERP system.</p>
+                <p>This module is connected to the Kerala Wood Furniture ERP system.</p>
                 <button
                   type="button"
                   className="btn-back-dash"
@@ -78,17 +120,17 @@ function App() {
       {/* Top Header */}
       <header className="login-header">
         <div className="brand-section">
-          <img src={treeLogo} alt="Sivakasi Wood" className="header-logo" />
+          <img src={treeLogo} alt="Kerala Wood Furniture" className="header-logo" />
           <div className="brand-text">
-            <span className="brand-title">Sivakasi Wood</span>
-            <span className="brand-subtitle">HERITAGE ARTISAN TIMBER</span>
+            <span className="brand-title">Kerala Wood Furniture</span>
+            <span className="brand-subtitle">HERITAGE ARTISAN TIMBER • SIVAKASI</span>
           </div>
         </div>
 
         <div className="header-meta">
           <div className="node-pill">
             <span className="status-dot-green"></span>
-            <span>NODE 01 • CALICUT GUILD</span>
+            <span>NODE 01 • SIVAKASI GUILD</span>
           </div>
           <div className="erp-secure">
             <svg
@@ -112,13 +154,13 @@ function App() {
       {/* Main Login Card */}
       <main className="login-main">
         <div className="login-card">
-          <img src={treeLogo} alt="Sivakasi Wood Emblem" className="card-logo" />
-          <h2 className="card-brand-title">Sivakasi Wood</h2>
-          <div className="card-brand-subtitle">HERITAGE ARTISAN TIMBER</div>
+          <img src={treeLogo} alt="Kerala Wood Furniture Emblem" className="card-logo" />
+          <h2 className="card-brand-title">Kerala Wood Furniture</h2>
+          <div className="card-brand-subtitle">HERITAGE ARTISAN TIMBER • SIVAKASI</div>
 
           <h1 className="card-welcome-title">Welcome back</h1>
           <p className="card-description">
-            Enter your credentials to access the Sivakasi Wood ERP
+            Enter your credentials to access the Kerala Wood Furniture ERP
           </p>
 
           <form className="login-form" onSubmit={handleSubmit}>
@@ -307,7 +349,7 @@ function App() {
       {/* Footer */}
       <footer className="login-footer">
         <span className="footer-copyright">
-          © 2024 Sivakasi Wood Timber Guild. All rights reserved.
+          © 2024 Kerala Wood Furniture. All rights reserved.
         </span>
         <div className="footer-links">
           <a href="#privacy" className="footer-link" onClick={(e) => e.preventDefault()}>

@@ -11,18 +11,18 @@ const DEFAULT_CATEGORIES = [
 ]
 
 export default function AddProduct({ onProductSaved }) {
+  // Settings sync (for dynamic GST and Depot defaults)
+  const [settings, setSettings] = useState(() => DataStore.getSettings())
+
   // General Info states
   const [productName, setProductName] = useState('Nilambur Teak Dining Table')
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES)
   const [category, setCategory] = useState('Dining Sets & Tables')
   const [skuCode, setSkuCode] = useState('KWF-NT-101')
-  const [woodSpecies, setWoodSpecies] = useState('Teak')
+  const [woodSpecies, setWoodSpecies] = useState('Nilambur Teak')
   const [description, setDescription] = useState(
     'Seasoned solid Nilambur teak dining table crafted with traditional mortise and tenon joinery. Finished in natural protective organic beeswax with antique brass corner brackets.'
   )
-  const [collection, setCollection] = useState('Malabar Heritage Collection')
-  const [originZone, setOriginZone] = useState('Nilambur Govt Timber Depot')
-  const [searchTags, setSearchTags] = useState('6-Seater, Handcrafted, Brass Inlay, Solid Teak')
 
   // Category Modal states
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false)
@@ -39,27 +39,39 @@ export default function AddProduct({ onProductSaved }) {
   const [woodGrade, setWoodGrade] = useState('Grade A - Nilambur Heartwood')
   const [surfacePolish, setSurfacePolish] = useState('Natural Protective Organic-Beeswax')
   const [joineryTechnique, setJoineryTechnique] = useState('Mortise & Tenon with Rosewood Dowels')
-  const [warranty, setWarranty] = useState('5-Yr Termite & Wood')
+  const [warranty, setWarranty] = useState('5-Yr Termite & Woodcraft Guarantee')
 
   // Inventory & Logistics states
   const [stockQuantity, setStockQuantity] = useState('4')
   const [lowStockThreshold, setLowStockThreshold] = useState('2')
-  const [depotLocation, setDepotLocation] = useState('Kochi Central Depot')
-  const [warehouseBay, setWarehouseBay] = useState('Bay C-04 / Shed 2')
-  const [leadTime, setLeadTime] = useState('In Stock (Ready to Ship)')
+  const [depotLocation, setDepotLocation] = useState('Sivakasi Central Depot')
   const [packagingType, setPackagingType] = useState('Corrugated Multi-layer Wood Wrap')
   const [shippingClass, setShippingClass] = useState(
     'Class 3 - Heavy Solid Furniture (Direct Depot Truck)'
   )
 
-  // Pricing & GST states
-  const [costPrice, setCostPrice] = useState('₹ 48500')
-  const [sellingPrice, setSellingPrice] = useState('₹ 78500')
-  const [gstSlab, setGstSlab] = useState('18% GST (HSN 9403 - Wooden Furniture)')
+  // Pricing & Statutory GST (Single Price & Settings-derived GST)
+  const [unitPrice, setUnitPrice] = useState('₹ 78,500')
   const [tradeDiscount, setTradeDiscount] = useState('Architect / Builder Tier 1 (12% Off)')
   const [transitPassEnabled, setTransitPassEnabled] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [savedSuccess, setSavedSuccess] = useState(false)
+
+  // Sync settings when modified
+  useEffect(() => {
+    const handleUpdate = () => {
+      setSettings(DataStore.getSettings())
+    }
+    window.addEventListener('timber_store_updated', handleUpdate)
+    return () => window.removeEventListener('timber_store_updated', handleUpdate)
+  }, [])
+
+  // Derived GST Slab from Settings
+  const cgstRate = settings.cgstRate || 9
+  const sgstRate = settings.sgstRate || 9
+  const totalTax = cgstRate + sgstRate
+  const hsn = settings.hsnCode || '9403'
+  const dynamicGstLabel = `${totalTax}% GST (CGST ${cgstRate}% + SGST ${sgstRate}%) • HSN ${hsn}`
 
   useEffect(() => {
     const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
@@ -115,15 +127,13 @@ export default function AddProduct({ onProductSaved }) {
 
   const handleSaveProduct = async () => {
     setIsSaving(true)
+    const numericPrice = Number(unitPrice.replace(/[^0-9.]/g, '')) || 0
     const productPayload = {
       name: productName,
       category,
       sku: skuCode,
       woodSpecies,
       description,
-      collectionSeries: collection,
-      originZone,
-      searchTags,
       dimensions: {
         length: Number(length) || 0,
         width: Number(width) || 0,
@@ -137,13 +147,12 @@ export default function AddProduct({ onProductSaved }) {
       stockQuantity: Number(stockQuantity) || 0,
       lowStockThreshold: Number(lowStockThreshold) || 2,
       depotLocation,
-      warehouseBay,
-      leadTime,
       packagingType,
       shippingClass,
-      costPrice: costPrice.replace(/[^0-9.]/g, ''),
-      sellingPrice: sellingPrice.replace(/[^0-9.]/g, ''),
-      gstSlab,
+      unitPrice: numericPrice,
+      sellingPrice: String(numericPrice),
+      costPrice: '',
+      gstSlab: dynamicGstLabel,
       tradeDiscount,
       transitPass: transitPassEnabled,
     }
@@ -319,19 +328,14 @@ export default function AddProduct({ onProductSaved }) {
           </div>
 
           <div className="form-field-group">
-            <label className="field-label">Wood Species</label>
-            <div className="pill-options-wrap">
-              {['Teak', 'Rosewood', 'Mahogany', 'Jackfruit'].map((sp) => (
-                <button
-                  key={sp}
-                  type="button"
-                  className={`pill-option-btn ${woodSpecies === sp ? 'active' : ''}`}
-                  onClick={() => setWoodSpecies(sp)}
-                >
-                  {sp}
-                </button>
-              ))}
-            </div>
+            <label className="field-label">Wood Species *</label>
+            <input
+              type="text"
+              className="input-styled"
+              placeholder="e.g. Nilambur Teak, Rosewood, Mahogany..."
+              value={woodSpecies}
+              onChange={(e) => setWoodSpecies(e.target.value)}
+            />
           </div>
 
           <div className="form-field-group">
@@ -341,38 +345,6 @@ export default function AddProduct({ onProductSaved }) {
               rows="3"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-            />
-          </div>
-
-          <div className="form-row-2col">
-            <div className="form-field-group">
-              <label className="field-label">Collection / Series</label>
-              <input
-                type="text"
-                className="input-styled"
-                value={collection}
-                onChange={(e) => setCollection(e.target.value)}
-              />
-            </div>
-
-            <div className="form-field-group">
-              <label className="field-label">Wood Origin & Harvest Zone</label>
-              <input
-                type="text"
-                className="input-styled"
-                value={originZone}
-                onChange={(e) => setOriginZone(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="form-field-group">
-            <label className="field-label">Search Tags & Labels</label>
-            <input
-              type="text"
-              className="input-styled"
-              value={searchTags}
-              onChange={(e) => setSearchTags(e.target.value)}
             />
           </div>
         </section>
@@ -472,22 +444,13 @@ export default function AddProduct({ onProductSaved }) {
 
           <div className="form-field-group">
             <label className="field-label">Warranty & Craft Guarantee</label>
-            <div className="pill-options-wrap">
-              {[
-                '5-Yr Termite & Wood',
-                '10-Yr Royal Warranty',
-                'Lifetime Heritage Care',
-              ].map((war) => (
-                <button
-                  key={war}
-                  type="button"
-                  className={`pill-option-btn ${warranty === war ? 'active' : ''}`}
-                  onClick={() => setWarranty(war)}
-                >
-                  {war}
-                </button>
-              ))}
-            </div>
+            <input
+              type="text"
+              className="input-styled"
+              placeholder="e.g. 5-Yr Termite & Woodcraft Guarantee"
+              value={warranty}
+              onChange={(e) => setWarranty(e.target.value)}
+            />
           </div>
         </section>
 
@@ -539,45 +502,20 @@ export default function AddProduct({ onProductSaved }) {
           <div className="form-row-2col">
             <div className="form-field-group">
               <label className="field-label">Depot Location</label>
-              <select
-                className="select-styled"
-                value={depotLocation}
-                onChange={(e) => setDepotLocation(e.target.value)}
-              >
-                <option value="Kochi Central Depot">Kochi Central Depot</option>
-                <option value="Sivakasi Depot">Sivakasi Depot</option>
-                <option value="Nilambur Mill Yard">Nilambur Mill Yard</option>
-              </select>
-            </div>
-            <div className="form-field-group">
-              <label className="field-label">Warehouse Bay / Rack</label>
               <input
                 type="text"
                 className="input-styled"
-                value={warehouseBay}
-                onChange={(e) => setWarehouseBay(e.target.value)}
+                placeholder="e.g. Sivakasi Central Depot"
+                value={depotLocation}
+                onChange={(e) => setDepotLocation(e.target.value)}
               />
-            </div>
-          </div>
-
-          <div className="form-row-2col">
-            <div className="form-field-group">
-              <label className="field-label">Lead / Craft Time</label>
-              <select
-                className="select-styled"
-                value={leadTime}
-                onChange={(e) => setLeadTime(e.target.value)}
-              >
-                <option value="In Stock (Ready to Ship)">In Stock (Ready to Ship)</option>
-                <option value="2-3 Weeks (Made to Order)">2-3 Weeks (Made to Order)</option>
-                <option value="4-6 Weeks (Custom Commission)">4-6 Weeks (Custom Commission)</option>
-              </select>
             </div>
             <div className="form-field-group">
               <label className="field-label">Packaging Type</label>
               <input
                 type="text"
                 className="input-styled"
+                placeholder="e.g. Corrugated Multi-layer Wood Wrap"
                 value={packagingType}
                 onChange={(e) => setPackagingType(e.target.value)}
               />
@@ -627,39 +565,26 @@ export default function AddProduct({ onProductSaved }) {
             <span className="section-badge-green">Tax Compliant</span>
           </div>
 
-          <div className="form-row-2col">
-            <div className="form-field-group">
-              <label className="field-label">Cost Price (₹)</label>
-              <input
-                type="text"
-                className="input-styled"
-                value={costPrice}
-                onChange={(e) => setCostPrice(e.target.value)}
-              />
-            </div>
-
-            <div className="form-field-group">
-              <div className="field-label-row">
-                <label className="field-label">Selling Price (₹)</label>
-                <span className="price-margin-badge">+38.2% Margin</span>
-              </div>
-              <input
-                type="text"
-                className="input-styled"
-                value={sellingPrice}
-                onChange={(e) => setSellingPrice(e.target.value)}
-              />
-            </div>
+          <div className="form-field-group">
+            <label className="field-label">Unit Price (₹) *</label>
+            <input
+              type="text"
+              className="input-styled"
+              placeholder="e.g. ₹ 78,500"
+              value={unitPrice}
+              onChange={(e) => setUnitPrice(e.target.value)}
+            />
           </div>
 
           <div className="form-row-2col">
             <div className="form-field-group">
-              <label className="field-label">Statutory GST Slab & HSN</label>
+              <label className="field-label">Statutory GST Slab (from System Settings)</label>
               <input
                 type="text"
                 className="input-styled"
-                value={gstSlab}
-                onChange={(e) => setGstSlab(e.target.value)}
+                value={dynamicGstLabel}
+                readOnly
+                style={{ backgroundColor: '#FDFBF7', color: '#5C4537', cursor: 'default' }}
               />
             </div>
 
@@ -668,6 +593,7 @@ export default function AddProduct({ onProductSaved }) {
               <input
                 type="text"
                 className="input-styled"
+                placeholder="e.g. Architect / Builder Tier 1 (12% Off)"
                 value={tradeDiscount}
                 onChange={(e) => setTradeDiscount(e.target.value)}
               />

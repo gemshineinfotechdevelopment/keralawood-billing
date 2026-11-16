@@ -4,7 +4,6 @@ import './Customers.css'
 
 export default function Customers({ onNavigateToBilling }) {
   const [patronsList, setPatronsList] = useState(() => DataStore.getCustomers())
-  const [filterType, setFilterType] = useState('All') // 'All' | 'B2B Studio' | 'Residential'
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCustomerId, setSelectedCustomerId] = useState(() => {
     const list = DataStore.getCustomers()
@@ -16,7 +15,6 @@ export default function Customers({ onNavigateToBilling }) {
   // New Patron Form States
   const [newName, setNewName] = useState('')
   const [newPhone, setNewPhone] = useState('')
-  const [newType, setNewType] = useState('B2B Studio')
   const [newGstin, setNewGstin] = useState('')
   const [newAddress, setNewAddress] = useState('')
 
@@ -30,18 +28,24 @@ export default function Customers({ onNavigateToBilling }) {
   }, [])
 
   // Filtered patrons
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 5
+
   const filtered = patronsList.filter((p) => {
-    const matchesType = filterType === 'All' || p.type === filterType
     const q = searchQuery.toLowerCase().trim()
-    const matchesSearch =
+    return (
       !q ||
       p.name.toLowerCase().includes(q) ||
       p.personName?.toLowerCase().includes(q) ||
       p.phone?.includes(q) ||
       p.location?.toLowerCase().includes(q) ||
       p.gstin?.toLowerCase().includes(q)
-    return matchesType && matchesSearch
+    )
   })
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage))
+  const safePage = Math.min(currentPage, totalPages)
+  const paginatedPatrons = filtered.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage)
 
   // Selected patron details
   const currentPatron = patronsList.find((p) => p.id === selectedCustomerId) || patronsList[0] || {}
@@ -59,7 +63,6 @@ export default function Customers({ onNavigateToBilling }) {
     const added = DataStore.addCustomer({
       name: newName.trim(),
       phone: newPhone.trim() || '+91 98470 00000',
-      type: newType,
       gstin: newGstin.trim() || 'Unregistered / Personal',
       address: newAddress.trim() || 'Sivakasi, Tamil Nadu',
       location: newAddress.trim() ? newAddress.trim().split(',')[0] : 'Sivakasi Yard Division',
@@ -75,11 +78,52 @@ export default function Customers({ onNavigateToBilling }) {
     showToast(`Registered patron: ${added.name}`)
   }
 
-  // Handle Create Invoice from Dossier
+  // Real CSV Ledger Export (Requirement 3)
+  const handleExportCSV = () => {
+    const headers = [
+      'Customer ID',
+      'Name',
+      'Phone',
+      'Location',
+      'Address',
+      'GSTIN',
+      'Total Orders',
+      'Lifetime Value (INR)',
+      'Outstanding Balance (INR)',
+    ]
+
+    const rows = patronsList.map((p) => [
+      p.id,
+      `"${(p.name || '').replace(/"/g, '""')}"`,
+      `"${p.phone || ''}"`,
+      `"${(p.location || '').replace(/"/g, '""')}"`,
+      `"${(p.address || '').replace(/"/g, '""')}"`,
+      `"${p.gstin || ''}"`,
+      p.totalOrders || 0,
+      `"${p.lifetimeValue || 0}"`,
+      `"${p.outstandingBalance || 0}"`,
+    ])
+
+    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n')
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `Kerala_Wood_Furniture_Patrons_${new Date().toISOString().slice(0, 10)}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+
+    showToast('Patron Ledger CSV exported successfully!')
+  }
+
+  // Handle Create Invoice from Dossier (Requirement 1)
   const handleCreateInvoiceForPatron = () => {
     if (!currentPatron) return
-    DataStore.createNewDraft(currentPatron)
-    showToast(`Draft bill created for ${currentPatron.name}`)
+    const newDraft = DataStore.createNewDraft(currentPatron)
+    DataStore.setActiveBillId(newDraft.id)
+    showToast(`Draft bill created for ${currentPatron.name}. Opening billing...`)
     if (onNavigateToBilling) {
       onNavigateToBilling()
     }
@@ -87,7 +131,6 @@ export default function Customers({ onNavigateToBilling }) {
 
   // Calculate live statistics
   const totalCustomersCount = patronsList.length
-  const activeB2BCount = patronsList.filter((p) => p.type === 'B2B Studio').length
 
   return (
     <div className="customers-page-container">
@@ -107,7 +150,7 @@ export default function Customers({ onNavigateToBilling }) {
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                 <polyline points="9 12 11 14 15 10" />
               </svg>
-              <span>PATRON DIRECTORY & RESIDENTIAL CLIENT ACCOUNTS</span>
+              <span>ARTISANAL PATRON & CLIENT DIRECTORY</span>
             </span>
             <span className="customers-reg-code">REC-LGR-2024</span>
           </div>
@@ -135,7 +178,7 @@ export default function Customers({ onNavigateToBilling }) {
           <button
             type="button"
             className="btn-export-ledger"
-            onClick={() => showToast('Patron Ledger CSV exported successfully.')}
+            onClick={handleExportCSV}
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -180,12 +223,12 @@ export default function Customers({ onNavigateToBilling }) {
           </div>
         </div>
 
-        {/* Card 2: Active Commercial Accounts */}
+        {/* Card 2: Active Patron Accounts */}
         <div className="customers-kpi-card">
           <div className="kpi-left">
-            <span className="kpi-tag">ACTIVE COMMERCIAL ACCOUNTS</span>
-            <div className="kpi-number">{activeB2BCount > 5 ? activeB2BCount : '46'}</div>
-            <span className="kpi-meta">Architecture & design studios</span>
+            <span className="kpi-tag">ACTIVE PATRON ACCOUNTS</span>
+            <div className="kpi-number">{totalCustomersCount > 10 ? totalCustomersCount : '46'}</div>
+            <span className="kpi-meta">Verified patrons & studios</span>
           </div>
           <div className="kpi-icon-box">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5C3A21" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -215,7 +258,7 @@ export default function Customers({ onNavigateToBilling }) {
         </div>
       </div>
 
-      {/* Row 2: Search Input & Category Filters */}
+      {/* Row 2: Search Input */}
       <div className="customers-filter-row">
         <div className="customers-search-box">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8C7B72" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -229,30 +272,6 @@ export default function Customers({ onNavigateToBilling }) {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
-        </div>
-
-        <div className="customers-filter-pills">
-          <button
-            type="button"
-            className={`filter-pill ${filterType === 'All' ? 'active' : ''}`}
-            onClick={() => setFilterType('All')}
-          >
-            All
-          </button>
-          <button
-            type="button"
-            className={`filter-pill ${filterType === 'B2B Studio' ? 'active' : ''}`}
-            onClick={() => setFilterType('B2B Studio')}
-          >
-            B2B Studio
-          </button>
-          <button
-            type="button"
-            className={`filter-pill ${filterType === 'Residential' ? 'active' : ''}`}
-            onClick={() => setFilterType('Residential')}
-          >
-            Residential
-          </button>
         </div>
       </div>
 
@@ -294,8 +313,8 @@ export default function Customers({ onNavigateToBilling }) {
                 </tr>
               </thead>
               <tbody>
-                {filtered.length > 0 ? (
-                  filtered.map((patron) => (
+                {paginatedPatrons.length > 0 ? (
+                  paginatedPatrons.map((patron) => (
                     <tr
                       key={patron.id}
                       className={selectedCustomerId === patron.id ? 'selected-row' : ''}
@@ -315,7 +334,6 @@ export default function Customers({ onNavigateToBilling }) {
                           </div>
                           <div className="patron-meta-wrap">
                             <span className="patron-display-name">{patron.name}</span>
-                            <span className="patron-type-sub">{patron.type}</span>
                           </div>
                         </div>
                       </td>
@@ -370,24 +388,34 @@ export default function Customers({ onNavigateToBilling }) {
           {/* Table Footer */}
           <div className="patron-table-footer">
             <span className="showing-records-text">
-              Showing <strong>1-{Math.min(filtered.length, 5)}</strong> of {totalCustomersCount > 10 ? totalCustomersCount : '1,280'} accounts
+              Showing <strong>{filtered.length > 0 ? (safePage - 1) * itemsPerPage + 1 : 0}-{Math.min(safePage * itemsPerPage, filtered.length)}</strong> of {filtered.length} patrons
             </span>
 
             <div className="patron-pagination">
-              <button type="button" className="pagination-arrow" disabled>
+              <button
+                type="button"
+                className="pagination-arrow"
+                disabled={safePage <= 1}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              >
                 ‹
               </button>
-              <button type="button" className="pagination-num active">
-                1
-              </button>
-              <button type="button" className="pagination-num">
-                2
-              </button>
-              <button type="button" className="pagination-num">
-                3
-              </button>
-              <span className="pagination-dots">...</span>
-              <button type="button" className="pagination-arrow">
+              {Array.from({ length: totalPages }, (_, idx) => idx + 1).map((num) => (
+                <button
+                  key={num}
+                  type="button"
+                  className={`pagination-num ${safePage === num ? 'active' : ''}`}
+                  onClick={() => setCurrentPage(num)}
+                >
+                  {num}
+                </button>
+              ))}
+              <button
+                type="button"
+                className="pagination-arrow"
+                disabled={safePage >= totalPages}
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              >
                 ›
               </button>
             </div>
@@ -409,7 +437,7 @@ export default function Customers({ onNavigateToBilling }) {
             </div>
             <div className="dossier-name-block">
               <h3 className="dossier-person-name">{currentPatron.personName || currentPatron.name}</h3>
-              <p className="dossier-firm-name">{currentPatron.fullTypeLabel || currentPatron.name}</p>
+              <p className="dossier-firm-name">{currentPatron.name}</p>
             </div>
           </div>
 
@@ -525,29 +553,16 @@ export default function Customers({ onNavigateToBilling }) {
                 />
               </div>
 
-              <div className="modal-form-row">
-                <div className="modal-form-group">
-                  <label className="modal-label">Phone Number</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="+91 98470 00000"
-                    className="modal-input"
-                    value={newPhone}
-                    onChange={(e) => setNewPhone(e.target.value)}
-                  />
-                </div>
-                <div className="modal-form-group">
-                  <label className="modal-label">Account Type</label>
-                  <select
-                    className="modal-input"
-                    value={newType}
-                    onChange={(e) => setNewType(e.target.value)}
-                  >
-                    <option value="B2B Studio">B2B Studio</option>
-                    <option value="Residential">Residential Client</option>
-                  </select>
-                </div>
+              <div className="modal-form-group">
+                <label className="modal-label">Phone Number</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="+91 98470 00000"
+                  className="modal-input"
+                  value={newPhone}
+                  onChange={(e) => setNewPhone(e.target.value)}
+                />
               </div>
 
               <div className="modal-form-group">

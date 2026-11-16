@@ -1,5 +1,5 @@
 // Centralized Dynamic Data Store with LocalStorage Persistence
-// Supports multiple concurrent bills, dynamic products, customers, and reports
+// Supports multiple concurrent bills, dynamic products, customers, settings, and reports
 
 const STORAGE_KEYS = {
   PRODUCTS: 'sivakasi_wood_products',
@@ -7,9 +7,38 @@ const STORAGE_KEYS = {
   BILLS: 'sivakasi_wood_bills',
   ACTIVE_BILL_ID: 'sivakasi_wood_active_bill_id',
   TRANSACTIONS: 'sivakasi_wood_transactions',
+  SETTINGS: 'sivakasi_wood_settings',
 }
 
-// Initial Seed Data (Sivakasi Branded)
+// System Settings (Company: Kerala Wood Furniture, Location: Sivakasi)
+const INITIAL_SETTINGS = {
+  depotName: 'Kerala Wood Furniture - Sivakasi Depot',
+  contactPhone: '+91 484 289 1204',
+  contactEmail: 'depot@keralawood.in',
+  address: 'Sivakasi Central Depot & Mill Yard, Sivakasi',
+  dealerLicense: 'SFD/SVK/TMR/2023-884',
+  operatingHours: 'Mon - Sat: 08:30 AM - 06:30 PM (Sun: Closed)',
+  gstin: '32AABCP9821K1ZK',
+  hsnCode: '9403',
+  taxRate: '18% (Standard GST)',
+  cgstRate: 9,
+  sgstRate: 9,
+  bankName: 'State Bank of India - Sivakasi Branch',
+  accountNumber: '4092817290192',
+  ifscCode: 'SBIN0008839',
+  upiId: 'keralawood.depot@sbi',
+  minStockThreshold: '5',
+  moistureTarget: '10% - 12%',
+  emailAlerts: true,
+  smsNotifications: true,
+  printFormat: 'A4 Ledger', // 'A4 Ledger' | 'Thermal Slip'
+  paymentTerms: 'Immediate / POS',
+  signatoryName: 'Rajesh Sivan',
+  signatoryDesignation: 'Depot Lead & Store Manager',
+  disclaimer: 'Natural variations in teak & rosewood grain are organic characteristics. Claims accepted within 7 days of yard delivery.',
+}
+
+// Products Catalog
 const INITIAL_PRODUCTS = [
   {
     id: 'prod-1',
@@ -89,8 +118,9 @@ const INITIAL_CUSTOMERS = [
     type: 'Residential',
     fullTypeLabel: 'Mathew Philip • Residential Client',
     phone: '+91 98470 12345',
-    location: 'Panampilly Nagar, Kochi',
-    address: 'Panampilly Nagar, Kochi',
+    location: 'Sivakasi Town Center',
+    address: 'Bazaar Street, Sivakasi',
+    deliveryAddress: 'Bazaar Street, Sivakasi',
     gstin: '32AABCP9821K1ZK',
     totalOrders: 3,
     lifetimeValue: '1,38,060',
@@ -112,8 +142,8 @@ const INITIAL_CUSTOMERS = [
     type: 'B2B Studio',
     fullTypeLabel: 'Deepak Kurian & Architects • B2B',
     phone: '+91 97455 11029',
-    location: 'Fort Kochi, Sivakasi Hub',
-    address: 'Bazaar Rd, Fort Kochi',
+    location: 'Sivakasi Architecture Guild',
+    address: 'Bazaar Rd, Sivakasi',
     gstin: '32AABCK9902Q1Z',
     totalOrders: 18,
     lifetimeValue: '18,40,000',
@@ -137,8 +167,8 @@ const INITIAL_CUSTOMERS = [
     type: 'Residential',
     fullTypeLabel: 'Anoop Menon • Residential Client',
     phone: '+91 98471 20984',
-    location: 'Panampilly Nagar, Kochi',
-    address: 'Plot 42, Panampilly Nagar, Kochi',
+    location: 'Sivakasi Colony',
+    address: 'Plot 42, Sivakasi Colony',
     gstin: 'Unregistered / Personal',
     totalOrders: 4,
     lifetimeValue: '3,42,000',
@@ -161,8 +191,8 @@ const INITIAL_CUSTOMERS = [
     type: 'Residential',
     fullTypeLabel: 'Dr. Thomas Varghese • Private Villa',
     phone: '+91 97455 11029',
-    location: 'Kottayam, Sivakasi Division',
-    address: 'Riverside Bungalow, Kumaranalloor, Kottayam',
+    location: 'Sivakasi Division',
+    address: 'Riverside Bungalow, Sivakasi',
     gstin: 'Unregistered / Personal',
     totalOrders: 6,
     lifetimeValue: '5,80,000',
@@ -185,8 +215,8 @@ const INITIAL_CUSTOMERS = [
     type: 'Residential',
     fullTypeLabel: 'Lakshmi Nair • Residential Client',
     phone: '+91 91944 60882',
-    location: 'Aluva, Sivakasi Depot',
-    address: 'Riverbank Enclave, Aluva, Ernakulam',
+    location: 'Sivakasi Depot Enclave',
+    address: 'Riverbank Enclave, Sivakasi',
     gstin: 'Unregistered / Personal',
     totalOrders: 2,
     lifetimeValue: '1,12,000',
@@ -197,31 +227,6 @@ const INITIAL_CUSTOMERS = [
     recentTx: [
       { id: '#KWF-2024-0812', dateItem: '05 Oct • Solid Teak Study Desk', amount: '64,000' },
       { id: '#KWF-2024-0690', dateItem: '15 Aug • Anjili Coffee Table', amount: '48,000' },
-    ],
-  },
-  {
-    id: 6,
-    initials: 'KR',
-    avatarBg: '#0B3B24',
-    avatarColor: '#FFFFFF',
-    name: 'Kumarakom Lake Resort',
-    personName: 'Kumarakom Lake Resort',
-    type: 'B2B Studio',
-    fullTypeLabel: 'Kumarakom Lake Resort • Hospitality B2B',
-    phone: '+91 94471 88390',
-    location: 'Kottayam Waters, Sivakasi Node',
-    address: 'Kumarakom North P.O, Kottayam, Sivakasi',
-    gstin: '32AAACK4918N1Z1',
-    totalOrders: 12,
-    lifetimeValue: '24,80,000',
-    outstandingBalance: '85,000',
-    creditUsed: '2,85,000',
-    creditTotal: '10,00,000',
-    creditProgress: 28,
-    recentTx: [
-      { id: '#KWF-2024-0892', dateItem: '28 Oct • 12 Teak Sun Loungers', amount: '4,85,000' },
-      { id: '#KWF-2024-0750', dateItem: '19 Sep • Veranda Pillars & Railing', amount: '3,20,000' },
-      { id: '#KWF-2024-0688', dateItem: '20 Jul • Heritage Suite Wardrobes', amount: '5,40,000' },
     ],
   },
 ]
@@ -244,7 +249,7 @@ const INITIAL_TRANSACTIONS = [
     date: 'Oct 26, 2024',
     customer: 'Dr. Ananya Verma',
     project: 'Private Residence, Sivakasi',
-    wood: 'Sivakasi Rosewood',
+    wood: 'Rosewood Timber',
     item: 'Bed Suite',
     volume: 32,
     amount: '2,45,000',
@@ -289,43 +294,15 @@ const INITIAL_TRANSACTIONS = [
   },
 ]
 
-// Initial Two Concurrent Draft Bills
+// Initial Two Concurrent Draft Bills - Content cleared (Requirement 5)
 const INITIAL_BILLS = [
   {
     id: 'bill-1',
     invoiceNumber: 'TAX-INV #2024-SK-982',
     name: 'Bill #1 • Mathew Philip',
-    status: 'active', // 'active' | 'draft' | 'completed'
+    status: 'active',
     customer: INITIAL_CUSTOMERS[0],
-    items: [
-      {
-        id: 1,
-        sku: 'KWF-TB-NT-06',
-        name: 'Nilambur Teak 6-Seater Dining Table',
-        finish: 'Grade-A Matte Walnut Finish',
-        unitPrice: 54000,
-        quantity: 1,
-        category: 'Dining Sets',
-      },
-      {
-        id: 2,
-        sku: 'KWF-DC-TK-02',
-        name: 'Teakwood Dining Chairs with Cane Weave',
-        finish: 'Handcrafted Rattan Back',
-        unitPrice: 6500,
-        quantity: 6,
-        category: 'Chairs',
-      },
-      {
-        id: 3,
-        sku: 'KWF-CR-TK-01',
-        name: 'Solid Teak Side Server Credenza',
-        finish: 'Brass Pull Inlays',
-        unitPrice: 24000,
-        quantity: 1,
-        category: 'Storage',
-      },
-    ],
+    items: [], // Clean empty cart
     paymentMode: 'UPI',
     packagingNote: '',
     deliveryApplied: true,
@@ -336,28 +313,9 @@ const INITIAL_BILLS = [
     name: 'Bill #2 • Deepak Kurian',
     status: 'draft',
     customer: INITIAL_CUSTOMERS[1],
-    items: [
-      {
-        id: 4,
-        sku: 'KWF-BD-RW-K01',
-        name: 'Solid Rosewood Royal King Bed',
-        finish: 'Hand-Carved Headboard & Natural Beeswax',
-        unitPrice: 78000,
-        quantity: 1,
-        category: 'Beds',
-      },
-      {
-        id: 6,
-        sku: 'KWF-SH-CN-03',
-        name: 'Handcrafted Cane Bookcase',
-        finish: 'Bamboo & Mahogany 5-Tier',
-        unitPrice: 18500,
-        quantity: 2,
-        category: 'Storage',
-      },
-    ],
-    paymentMode: 'Bank',
-    packagingNote: 'Architect site delivery with foam padding',
+    items: [], // Clean empty cart
+    paymentMode: 'Cash',
+    packagingNote: '',
     deliveryApplied: true,
   },
 ]
@@ -389,6 +347,15 @@ function saveToStorage(key, value) {
 }
 
 export const DataStore = {
+  // SETTINGS (Derived for Invoice Bills - Requirement 2)
+  getSettings() {
+    return loadFromStorage(STORAGE_KEYS.SETTINGS, INITIAL_SETTINGS)
+  },
+  saveSettings(settings) {
+    saveToStorage(STORAGE_KEYS.SETTINGS, settings)
+    notifyStoreUpdate()
+  },
+
   // PRODUCTS
   getProducts() {
     return loadFromStorage(STORAGE_KEYS.PRODUCTS, INITIAL_PRODUCTS)
@@ -444,6 +411,7 @@ export const DataStore = {
       phone: c.phone || '+91 98470 00000',
       location: c.location || 'Sivakasi Yard Division',
       address: c.address || 'Sivakasi, Tamil Nadu',
+      deliveryAddress: c.deliveryAddress || c.address || 'Sivakasi, Tamil Nadu',
       gstin: c.gstin || 'Unregistered / Personal',
       totalOrders: 0,
       lifetimeValue: '0',
@@ -491,7 +459,7 @@ export const DataStore = {
       name: `Bill #${seq} • ${defaultCust.name}`,
       status: 'active',
       customer: defaultCust,
-      items: [],
+      items: [], // Clean empty cart (Requirement 5)
       paymentMode: 'UPI',
       packagingNote: '',
       deliveryApplied: true,
@@ -510,11 +478,13 @@ export const DataStore = {
   holdCurrentBill(billId) {
     this.updateBill(billId, { status: 'draft' })
   },
+  clearBillCart(billId) {
+    this.updateBill(billId, { items: [] })
+  },
   removeBill(billId) {
     const bills = this.getBills()
     const remaining = bills.filter((b) => b.id !== billId)
     if (remaining.length === 0) {
-      // Keep at least one fresh bill
       const fresh = this.createNewDraft()
       return fresh
     }
@@ -535,16 +505,19 @@ export const DataStore = {
   },
   recordSaleFromBill(bill) {
     const txs = this.getTransactions()
-    const subtotal = bill.items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0)
-    const gst = Math.round(subtotal * 0.18)
+    const subtotal = (bill.items || []).reduce((sum, item) => sum + item.unitPrice * item.quantity, 0)
+    const settings = this.getSettings()
+    const cgstRate = Number(settings.cgstRate) || 9
+    const sgstRate = Number(settings.sgstRate) || 9
+    const gst = Math.round((subtotal * (cgstRate + sgstRate)) / 100)
     const grandTotal = subtotal + gst
-    const totalVolume = bill.items.reduce((sum, item) => sum + (item.quantity * 12), 0)
+    const totalVolume = (bill.items || []).reduce((sum, item) => sum + (item.quantity * 12), 0)
 
     const newTx = {
       id: bill.invoiceNumber.replace(/[^0-9]/g, '').slice(-3) ? `INV-${bill.invoiceNumber.replace(/[^0-9]/g, '').slice(-3)}` : `INV-${Date.now().toString().slice(-3)}`,
       date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
       customer: bill.customer ? bill.customer.name : 'Walk-in Patron',
-      project: bill.customer ? bill.customer.location || 'Direct Yard Sale' : 'Direct Yard Sale',
+      project: bill.customer ? bill.customer.location || 'Sivakasi Yard Sale' : 'Sivakasi Yard Sale',
       wood: bill.items[0]?.name?.split(' ')[0] ? `${bill.items[0].name.split(' ')[0]} Artisan Wood` : 'Teak Wood',
       item: bill.items[0]?.name ? `${bill.items[0].name}${bill.items.length > 1 ? ` + ${bill.items.length - 1} more` : ''}` : 'Artisan Timber Order',
       volume: totalVolume || 36,
@@ -558,7 +531,8 @@ export const DataStore = {
 
     // Deduct stock
     const products = this.getProducts()
-    bill.items.forEach((item) => {
+    const billItems = bill.items || []
+    billItems.forEach((item) => {
       const p = products.find((prod) => prod.sku === item.sku || prod.name === item.name)
       if (p) {
         p.stockQuantity = Math.max(0, p.stockQuantity - item.quantity)
@@ -566,7 +540,7 @@ export const DataStore = {
     })
     this.saveProducts(products)
 
-    // Update customer stats if matched
+    // Update customer stats
     if (bill.customer) {
       const customers = this.getCustomers()
       const c = customers.find((cust) => cust.id === bill.customer.id || cust.name === bill.customer.name)

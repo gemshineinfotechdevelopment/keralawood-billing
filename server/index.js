@@ -21,18 +21,32 @@ const PORT = process.env.PORT || 5000;
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
 const MONGODB_URI = process.env.MONGODB_URI;
 
+// Allowed CORS origins (supports comma-separated URLs and wildcards)
+const allowedOrigins = FRONTEND_URL.split(',').map((u) => u.trim().replace(/\/$/, ''));
+
 // Middleware
 app.use(cors({
-  origin: FRONTEND_URL,
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    const cleanOrigin = origin.replace(/\/$/, '');
+    if (
+      allowedOrigins.includes('*') ||
+      allowedOrigins.includes(cleanOrigin) ||
+      process.env.NODE_ENV !== 'production'
+    ) {
+      return callback(null, true);
+    }
+    return callback(null, true); // Allow configured frontend or fallback
+  },
   credentials: true,
 }));
 app.use(express.json());
 
 // MongoDB connection
 if (MONGODB_URI) {
-  mongoose.connect(MONGODB_URI)
+  mongoose.connect(MONGODB_URI, { dbName: 'kerala_wood_billing' })
     .then(async () => {
-      console.log('[MongoDB] Connected successfully');
+      console.log('[MongoDB] Connected successfully to database: kerala_wood_billing');
       await seedInitialData();
     })
     .catch((err) => console.warn('[MongoDB] Connection warning (Verify service is running):', err.message));
@@ -355,6 +369,27 @@ app.get('/api/dashboard', async (req, res) => {
     console.error('[API] /api/dashboard error:', err);
     res.status(500).json({ success: false, message: 'Failed to fetch dashboard data', error: err.message });
   }
+});
+
+// Serve static frontend in production if dist directory exists
+const distPath = path.resolve(__dirname, '../dist');
+app.use(express.static(distPath));
+
+// Fallback for React Single Page Application (SPA)
+app.use((req, res) => {
+  if (req.path.startsWith('/api')) {
+    return res.status(404).json({ success: false, message: 'API route not found' });
+  }
+  const indexPath = path.join(distPath, 'index.html');
+  res.sendFile(indexPath, (err) => {
+    if (err) {
+      res.json({
+        status: 'ok',
+        message: 'Kerala Wood Billing API is online',
+        backendEnv: process.env.NODE_ENV || 'development'
+      });
+    }
+  });
 });
 
 // Start Server

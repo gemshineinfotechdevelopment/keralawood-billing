@@ -1,13 +1,23 @@
 import { useState } from 'react'
 import './Sidebar.css'
 
-export default function Sidebar({ activeItem = 'Stock Management', onItemSelect, onClose, onLogout }) {
+export default function Sidebar({
+  activeItem = 'Stock Management',
+  onItemSelect,
+  isCollapsed = false,
+  onToggleCollapse,
+  isMobileOpen = false,
+  onCloseMobile,
+  onClose,
+  onLogout,
+}) {
   const [localActive, setLocalActive] = useState(activeItem)
   const current = activeItem !== undefined ? activeItem : localActive
 
   const handleSelect = (name) => {
     setLocalActive(name)
     if (onItemSelect) onItemSelect(name)
+    if (onCloseMobile) onCloseMobile()
   }
 
   const navItems = [
@@ -140,38 +150,75 @@ export default function Sidebar({ activeItem = 'Stock Management', onItemSelect,
   ]
 
   return (
-    <aside className="sidebar-container" aria-label="Main Navigation">
+    <aside
+      className={`sidebar-container ${isCollapsed ? 'collapsed' : ''} ${isMobileOpen ? 'mobile-open' : ''}`}
+      aria-label="Main Navigation"
+    >
       {/* Header */}
       <div className="sidebar-header">
-        <div className="sidebar-brand">
-          <span className="sidebar-brand-title">SIVAKASI WOOD</span>
-          <span className="sidebar-brand-subtitle">HERITAGE ARTISAN TIMBER</span>
-        </div>
-        <button
-          type="button"
-          className="sidebar-close-btn"
-          onClick={onClose}
-          aria-label="Close sidebar"
-        >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+        {!isCollapsed ? (
+          <div className="sidebar-brand">
+            <span className="sidebar-brand-title">KERALA WOOD FURNITURE</span>
+            <span className="sidebar-brand-subtitle">HERITAGE ARTISAN TIMBER • SIVAKASI</span>
+          </div>
+        ) : (
+          <div className="sidebar-brand-mini" title="Kerala Wood Furniture • Sivakasi">
+            <span className="mini-emblem-text">KWF</span>
+          </div>
+        )}
+
+        <div className="sidebar-header-actions">
+          {/* Collapse Toggle for Desktop (Requirement 1) */}
+          <button
+            type="button"
+            className="sidebar-collapse-btn"
+            onClick={onToggleCollapse}
+            title={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+            aria-label={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
           >
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
-        </button>
+            {isCollapsed ? (
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="13 17 18 12 13 7" />
+                <polyline points="6 17 11 12 6 7" />
+              </svg>
+            ) : (
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="11 17 6 12 11 7" />
+                <polyline points="18 17 13 12 18 7" />
+              </svg>
+            )}
+          </button>
+
+          {/* Close button for Mobile View Menu */}
+          <button
+            type="button"
+            className="sidebar-mobile-close-btn"
+            onClick={onCloseMobile || onClose}
+            aria-label="Close sidebar menu"
+            title="Close menu"
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       {/* Navigation Items */}
       <div className="sidebar-nav-section">
-        <span className="sidebar-section-label">OPERATIONS & LEDGER</span>
+        {!isCollapsed && (
+          <span className="sidebar-section-label">OPERATIONS & LEDGER</span>
+        )}
         <ul className="sidebar-menu">
           {navItems.map((item) => {
             const isActive = current === item.name
@@ -181,9 +228,10 @@ export default function Sidebar({ activeItem = 'Stock Management', onItemSelect,
                   type="button"
                   className={`sidebar-menu-btn ${isActive ? 'active' : ''}`}
                   onClick={() => handleSelect(item.name)}
+                  title={isCollapsed ? item.name : undefined}
                 >
                   <span className="sidebar-menu-icon">{item.icon}</span>
-                  <span>{item.name}</span>
+                  {!isCollapsed && <span>{item.name}</span>}
                 </button>
               </li>
             )
@@ -193,9 +241,9 @@ export default function Sidebar({ activeItem = 'Stock Management', onItemSelect,
 
       {/* Bottom User Card & Logout */}
       <div className="sidebar-footer">
-        <div className="sidebar-user-card">
+        <div className={`sidebar-user-card ${isCollapsed ? 'compact' : ''}`}>
           <div className="sidebar-user-top">
-            <div className="sidebar-user-avatar">
+            <div className="sidebar-user-avatar" title="Rajesh Sivan • Depot Lead & Store Manager">
               <svg
                 width="16"
                 height="16"
@@ -210,23 +258,30 @@ export default function Sidebar({ activeItem = 'Stock Management', onItemSelect,
                 <circle cx="12" cy="7" r="4" />
               </svg>
             </div>
-            <div className="sidebar-user-info">
-              <span className="sidebar-user-name">Rajesh Sivan</span>
-              <span className="sidebar-user-role">Depot Lead & Store Manager</span>
-            </div>
+            {!isCollapsed && (
+              <div className="sidebar-user-info">
+                <span className="sidebar-user-name">Rajesh Sivan</span>
+                <span className="sidebar-user-role">Depot Lead & Store Manager</span>
+              </div>
+            )}
           </div>
-          <div className="depot-divider"></div>
-          <div className="depot-status-row">
-            <span className="depot-ext-text">IT Ext. 104 • Sivakasi</span>
-            <span className="depot-pulse-dot" title="Online"></span>
-          </div>
+          {!isCollapsed && (
+            <>
+              <div className="depot-divider"></div>
+              <div className="depot-status-row">
+                <span className="depot-ext-text">IT Ext. 104 • Sivakasi</span>
+                <span className="depot-pulse-dot" title="Online"></span>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Logout Button */}
         <button
           type="button"
-          className="sidebar-logout-btn"
+          className={`sidebar-logout-btn ${isCollapsed ? 'compact' : ''}`}
           onClick={onLogout || onClose}
+          title={isCollapsed ? 'Logout' : undefined}
           aria-label="Logout"
         >
           <svg
@@ -243,7 +298,7 @@ export default function Sidebar({ activeItem = 'Stock Management', onItemSelect,
             <polyline points="16 17 21 12 16 7" />
             <line x1="21" y1="12" x2="9" y2="12" />
           </svg>
-          <span>Logout</span>
+          {!isCollapsed && <span>Logout</span>}
         </button>
       </div>
     </aside>

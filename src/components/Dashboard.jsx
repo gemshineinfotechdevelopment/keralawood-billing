@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { DataStore } from '../services/dataStore'
 import './Dashboard.css'
 
 const DEFAULT_SALES = [
@@ -36,41 +37,56 @@ const DEFAULT_SALES = [
   },
 ]
 
-const DEFAULT_LOW_STOCK = [
-  {
-    name: 'Nilambur Teak 6-Seater',
-    category: 'Dining Table',
-    count: '2 left',
-  },
-  {
-    name: 'Solid Rosewood King Bed',
-    category: 'Hand-Carved Headboard',
-    count: '1 left',
-  },
-  {
-    name: 'Teakwood Ergonomic Armchair',
-    category: 'Cane Weave Seating',
-    count: '3 left',
-  },
-  {
-    name: 'Cane & Teak Bookcase',
-    category: '5-Tier Architectural',
-    count: '2 left',
-  },
-]
-
-export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice }) {
+export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice, onNavigate }) {
   const [recentSales, setRecentSales] = useState(DEFAULT_SALES)
-  const [lowStockItems, setLowStockItems] = useState(DEFAULT_LOW_STOCK)
+  const [products, setProducts] = useState(() => DataStore.getProducts())
+  const [reorderedMap, setReorderedMap] = useState({})
+  const [toastMessage, setToastMessage] = useState('')
   const [stats, setStats] = useState({
     todaySales: '₹1,84,500',
     ordersToday: '18 orders processed today',
     totalStock: '3,892',
-    stockLocationNote: 'Across Nilambur & Kochi depots',
-    lowStockCount: '4 items',
+    stockLocationNote: 'Across Sivakasi master timber yards',
+    lowStockCount: '3 items',
   })
-  const [lookupQuery, setLookupQuery] = useState('')
   const [salesSearch, setSalesSearch] = useState('')
+
+  useEffect(() => {
+    const handleStoreUpdate = () => {
+      setProducts(DataStore.getProducts())
+    }
+    window.addEventListener('timber_store_updated', handleStoreUpdate)
+    return () => window.removeEventListener('timber_store_updated', handleStoreUpdate)
+  }, [])
+
+  // Dynamic low stock items (Requirement 3)
+  const dynamicLowStock = products.filter(
+    (p) => Number(p.stockQuantity) <= Number(p.lowStockThreshold || 3)
+  )
+  const displayLowStock = dynamicLowStock.length > 0
+    ? dynamicLowStock
+    : [...products].sort((a, b) => a.stockQuantity - b.stockQuantity).slice(0, 3)
+
+  // Dynamic Reorder action (Requirement 3)
+  const handleReorder = (prod) => {
+    const qtyToAdd = 5
+    const updated = products.map((p) => {
+      if (p.id === prod.id || p.sku === prod.sku) {
+        return { ...p, stockQuantity: (p.stockQuantity || 0) + qtyToAdd }
+      }
+      return p
+    })
+    DataStore.saveProducts(updated)
+    setProducts(updated)
+    setReorderedMap((prev) => ({ ...prev, [prod.sku]: true }))
+    setToastMessage(`✓ Reordered: +${qtyToAdd} units added to ${prod.name}!`)
+    setTimeout(() => {
+      setReorderedMap((prev) => ({ ...prev, [prod.sku]: false }))
+    }, 2500)
+    setTimeout(() => {
+      setToastMessage('')
+    }, 3200)
+  }
 
   useEffect(() => {
     const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
@@ -83,9 +99,6 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice 
         if (data?.success) {
           if (Array.isArray(data.recentSales) && data.recentSales.length > 0) {
             setRecentSales(data.recentSales)
-          }
-          if (Array.isArray(data.lowStockItems) && data.lowStockItems.length > 0) {
-            setLowStockItems(data.lowStockItems)
           }
           if (data.stats) {
             setStats(data.stats)
@@ -108,61 +121,17 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice 
 
   return (
     <div className="dashboard-container">
-      {/* Top Bar */}
-      <div className="dashboard-topbar">
-        <div className="topbar-search-container">
-          <span className="topbar-search-icon">
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-          </span>
-          <input
-            type="text"
-            className="topbar-search-input"
-            value={lookupQuery}
-            onChange={(e) => setLookupQuery(e.target.value)}
-            placeholder="Lookup SKU, Timber Batch, Invoice #..."
-          />
+      {/* Dynamic Toast Feedback */}
+      {toastMessage && (
+        <div className="dashboard-toast">
+          <span>{toastMessage}</span>
         </div>
-
-        <div className="topbar-actions">
-          <div className="time-badge">
-            <svg
-              width="13"
-              height="13"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#B07D4F"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <circle cx="12" cy="12" r="10" />
-              <polyline points="12 6 12 12 16 14" />
-            </svg>
-            <span>Today • Sivakasi Standard Time</span>
-          </div>
-
-          <button type="button" className="btn-new-bill" onClick={onNavigateToNewBill}>
-            <span>+ + New Bill</span>
-          </button>
-        </div>
-      </div>
+      )}
 
       {/* Page Title & New Invoice Button */}
       <div className="dashboard-page-header">
         <div>
-          <h1 className="depot-main-title">Ernakulam Central Depot</h1>
+          <h1 className="depot-main-title">Sivakasi Central Depot</h1>
           <p className="depot-main-subtitle">
             Overview of daily sales, inventory levels, and stock replenishment alerts.
           </p>
@@ -198,7 +167,7 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice 
         <div className="kpi-card">
           <span className="kpi-label">TOTAL ITEMS IN STOCK</span>
           <div className="kpi-value">{stats.totalStock || '3,892'}</div>
-          <span className="kpi-subtext">{stats.stockLocationNote || 'Across Nilambur & Kochi depots'}</span>
+          <span className="kpi-subtext">{stats.stockLocationNote || 'Across Sivakasi master timber yards'}</span>
         </div>
 
         <div className="kpi-card">
@@ -219,22 +188,84 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice 
             </svg>
             LOW STOCK ALERTS
           </span>
-          <div className="kpi-value alert">{stats.lowStockCount || '4 items'}</div>
+          <div className="kpi-value alert">{displayLowStock.length} items</div>
           <span className="kpi-subtext">Urgent reorders required</span>
         </div>
       </div>
 
       {/* Middle Section: Quick Actions & Low Stock Items */}
       <div className="dashboard-middle-row">
-        {/* Depot Quick Actions */}
+        {/* Simple Depot Quick Actions (Requirement 2) */}
         <div className="actions-card">
           <div className="card-top-row">
             <span className="card-heading">Depot Quick Actions</span>
-            <span className="card-hint">Common depot workflows</span>
+            <span className="card-hint">Direct operational shortcuts</span>
           </div>
 
           <div className="quick-actions-grid">
-            <div className="quick-action-box">
+            <div
+              className="quick-action-box"
+              onClick={() => (onNavigate ? onNavigate('Billing & POS') : onNavigateToNewBill && onNavigateToNewBill())}
+              role="button"
+              tabIndex={0}
+              title="Open Billing & POS to generate customer bills"
+            >
+              <span className="action-icon-wrap">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="16" y1="13" x2="8" y2="13" />
+                  <line x1="16" y1="17" x2="8" y2="17" />
+                  <polyline points="10 9 9 9 8 9" />
+                </svg>
+              </span>
+              <span className="action-title">Create New Bill</span>
+              <span className="action-sub">Open counter POS</span>
+            </div>
+
+            <div
+              className="quick-action-box"
+              onClick={() => (onNavigate ? onNavigate('Products') : onNavigateToNewBill && onNavigateToNewBill())}
+              role="button"
+              tabIndex={0}
+              title="Add a new timber furniture item to the catalog"
+            >
+              <span className="action-icon-wrap">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="16" />
+                  <line x1="8" y1="12" x2="16" y2="12" />
+                </svg>
+              </span>
+              <span className="action-title">Add Furniture</span>
+              <span className="action-sub">Catalog new timber item</span>
+            </div>
+
+            <div
+              className="quick-action-box"
+              onClick={() => (onNavigate ? onNavigate('Stock Management') : onNavigateToNewInvoice && onNavigateToNewInvoice())}
+              role="button"
+              tabIndex={0}
+              title="View and manage timber reserves"
+            >
               <span className="action-icon-wrap">
                 <svg
                   width="18"
@@ -251,49 +282,8 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice 
                   <path d="M12 22V12" />
                 </svg>
               </span>
-              <span className="action-title">Stock Inward</span>
-              <span className="action-sub">Receive new wood lots</span>
-            </div>
-
-            <div className="quick-action-box">
-              <span className="action-icon-wrap">
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
-                  <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
-                  <polyline points="9 14 11 16 15 11" />
-                </svg>
-              </span>
-              <span className="action-title">Requisition</span>
-              <span className="action-sub">Order workshop timber</span>
-            </div>
-
-            <div className="quick-action-box">
-              <span className="action-icon-wrap">
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                  <path d="m9 12 2 2 4-4" />
-                </svg>
-              </span>
-              <span className="action-title">Gate Audit</span>
-              <span className="action-sub">Clear vehicle pass</span>
+              <span className="action-title">Stock Inventory</span>
+              <span className="action-sub">Manage timber reserves</span>
             </div>
           </div>
 
@@ -312,32 +302,44 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice 
               <line x1="12" y1="16" x2="12" y2="12" />
               <line x1="12" y1="8" x2="12.01" y2="8" />
             </svg>
-            <span>All timber FSC certified and tracked from Nilambur mill.</span>
+            <span>Direct shortcuts for Sivakasi timber depot and store operations.</span>
           </div>
         </div>
 
-        {/* Low Stock Items */}
+        {/* Dynamic Low Stock Items with Working Reorder (Requirement 3) */}
         <div className="low-stock-card">
           <div className="card-top-row">
             <span className="card-heading">Low Stock Items</span>
-            <span className="count-badge-red">{lowStockItems.length} ITEMS</span>
+            <span className="count-badge-red">{displayLowStock.length} ITEMS</span>
           </div>
 
           <div className="low-stock-list">
-            {lowStockItems.map((item) => (
-              <div key={item.name} className="low-stock-row">
-                <div className="item-info">
-                  <span className="item-name">{item.name}</span>
-                  <span className="item-category">{item.category}</span>
+            {displayLowStock.map((item) => {
+              const isReordered = reorderedMap[item.sku]
+              return (
+                <div key={item.sku} className="low-stock-row">
+                  <div className="item-info">
+                    <span className="item-name">{item.name}</span>
+                    <span className="item-category">
+                      {item.category} • {item.woodSpecies || 'Hardwood'}
+                    </span>
+                  </div>
+                  <div className="item-action-wrap">
+                    <span className="stock-left-text">
+                      {item.stockQuantity} {item.stockQuantity === 1 ? 'unit left' : 'units left'}
+                    </span>
+                    <button
+                      type="button"
+                      className={`btn-reorder ${isReordered ? 'reordered' : ''}`}
+                      onClick={() => handleReorder(item)}
+                      title="Click to restock +5 units dynamically from yard reserves"
+                    >
+                      {isReordered ? '✓ Restocked +5' : 'Reorder'}
+                    </button>
+                  </div>
                 </div>
-                <div className="item-action-wrap">
-                  <span className="stock-left-text">{item.count}</span>
-                  <button type="button" className="btn-reorder">
-                    Reorder
-                  </button>
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       </div>
@@ -348,7 +350,7 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice 
           <div>
             <h2 className="table-title">Recent Sales & Dispatches</h2>
             <p className="table-subtitle">
-              Completed sales and cleared passes from Ernakulam Depot
+              Completed sales and cleared passes from Sivakasi Depot
             </p>
           </div>
 

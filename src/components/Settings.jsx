@@ -1,42 +1,73 @@
 import { useState } from 'react'
+import { DataStore } from '../services/dataStore'
 import './Settings.css'
 
 export default function Settings() {
+  const initial = DataStore.getSettings()
+
   // General Depot Profile
-  const [depotName, setDepotName] = useState('Sivakasi Wood Furniture - Sivakasi Depot')
-  const [contactPhone, setContactPhone] = useState('+91 484 289 1204')
-  const [contactEmail, setContactEmail] = useState('depot@sivakasiwood.in')
-  const [address, setAddress] = useState('Sivakasi Central Depot & Mill Yard, Sivakasi')
-  const [dealerLicense, setDealerLicense] = useState('SFD/SVK/TMR/2023-884')
-  const [operatingHours, setOperatingHours] = useState('Mon - Sat: 08:30 AM - 06:30 PM (Sun: Closed)')
+  const [depotName, setDepotName] = useState(initial.depotName || 'Kerala Wood Furniture - Sivakasi Depot')
+  const [contactPhone, setContactPhone] = useState(initial.contactPhone || '+91 484 289 1204')
+  const [contactEmail, setContactEmail] = useState(initial.contactEmail || 'depot@keralawood.in')
+  const [address, setAddress] = useState(initial.address || 'Sivakasi Central Depot & Mill Yard, Sivakasi')
+  const [dealerLicense, setDealerLicense] = useState(initial.dealerLicense || 'SFD/SVK/TMR/2023-884')
+  const [operatingHours, setOperatingHours] = useState(initial.operatingHours || 'Mon - Sat: 08:30 AM - 06:30 PM (Sun: Closed)')
 
   // Tax, GST & Banking Defaults
-  const [gstin, setGstin] = useState('32AABCP9821K1ZK')
-  const [hsnCode, setHsnCode] = useState('9403')
-  const taxRate = '18% (Standard GST)'
-  const [bankName, setBankName] = useState('State Bank of India - Sivakasi Branch')
-  const [accountNumber, setAccountNumber] = useState('4092817290192')
-  const [ifscCode, setIfscCode] = useState('SBIN0008839')
-  const [upiId, setUpiId] = useState('sivakasiwood.depot@sbi')
+  const [gstin, setGstin] = useState(initial.gstin || '32AABCP9821K1ZK')
+  const [hsnCode, setHsnCode] = useState(initial.hsnCode || '9403')
+  const [taxRate, setTaxRate] = useState(initial.taxRate || '18% (Standard GST)')
+  const [cgstRate, setCgstRate] = useState(initial.cgstRate !== undefined ? initial.cgstRate : 9)
+  const [sgstRate, setSgstRate] = useState(initial.sgstRate !== undefined ? initial.sgstRate : 9)
+  const [bankName, setBankName] = useState(initial.bankName || 'State Bank of India - Sivakasi Branch')
+  const [accountNumber, setAccountNumber] = useState(initial.accountNumber || '4092817290192')
+  const [ifscCode, setIfscCode] = useState(initial.ifscCode || 'SBIN0008839')
+  const [upiId, setUpiId] = useState(initial.upiId || 'keralawood.depot@sbi')
 
   // Stock Alerts & Quality Parameters
-  const [minStockThreshold, setMinStockThreshold] = useState('5')
-  const moistureTarget = '10% - 12%'
-  const [emailAlerts, setEmailAlerts] = useState(true)
-  const [smsNotifications, setSmsNotifications] = useState(true)
+  const [minStockThreshold, setMinStockThreshold] = useState(initial.minStockThreshold || '5')
+  const moistureTarget = initial.moistureTarget || '10% - 12%'
+  const [emailAlerts, setEmailAlerts] = useState(initial.emailAlerts !== undefined ? initial.emailAlerts : true)
+  const [smsNotifications, setSmsNotifications] = useState(initial.smsNotifications !== undefined ? initial.smsNotifications : true)
 
   // Invoice, Printing & Legal Terms
-  const [printFormat, setPrintFormat] = useState('A4 Ledger') // 'A4 Ledger' | 'Thermal Slip'
-  const [paymentTerms, setPaymentTerms] = useState('Immediate / POS') // 'Immediate / POS' | 'Net 30 Days'
-  const [signatoryName, setSignatoryName] = useState('Rajesh Sivan')
-  const [signatoryDesignation, setSignatoryDesignation] = useState('Depot Lead & Store Manager')
+  const [printFormat, setPrintFormat] = useState(initial.printFormat || 'A4 Ledger') // 'A4 Ledger' | 'Thermal Slip'
+  const [paymentTerms, setPaymentTerms] = useState(initial.paymentTerms || 'Immediate / POS') // 'Immediate / POS' | 'Net 30 Days'
+  const [signatoryName, setSignatoryName] = useState(initial.signatoryName || 'Rajesh Sivan')
+  const [signatoryDesignation, setSignatoryDesignation] = useState(initial.signatoryDesignation || 'Depot Lead & Store Manager')
   const [disclaimer, setDisclaimer] = useState(
-    'Natural variations in teak & rosewood grain are organic characteristics. Claims accepted within 7 days of yard delivery.'
+    initial.disclaimer || 'Natural variations in teak & rosewood grain are organic characteristics. Claims accepted within 7 days of yard delivery.'
   )
 
   const [savedSuccess, setSavedSuccess] = useState(false)
 
   const handleSaveSettings = () => {
+    DataStore.saveSettings({
+      depotName,
+      contactPhone,
+      contactEmail,
+      address,
+      dealerLicense,
+      operatingHours,
+      gstin,
+      hsnCode,
+      taxRate,
+      cgstRate,
+      sgstRate,
+      bankName,
+      accountNumber,
+      ifscCode,
+      upiId,
+      minStockThreshold,
+      moistureTarget,
+      emailAlerts,
+      smsNotifications,
+      printFormat,
+      paymentTerms,
+      signatoryName,
+      signatoryDesignation,
+      disclaimer,
+    })
     setSavedSuccess(true)
     setTimeout(() => {
       setSavedSuccess(false)
@@ -220,11 +251,33 @@ export default function Settings() {
               />
             </div>
             <div className="settings-field-group">
-              <label className="settings-field-label">Default Tax Rate</label>
-              <div className="tax-rate-display-box">
-                <span className="tax-rate-main">{taxRate}</span>
-                <span className="tax-rate-split">CGST 9% + SGST 9%</span>
-              </div>
+              <label className="settings-field-label">Default Tax Rate (GST)</label>
+              <select
+                className="settings-input"
+                value={taxRate}
+                onChange={(e) => {
+                  const val = e.target.value
+                  setTaxRate(val)
+                  if (val.includes('18%')) {
+                    setCgstRate(9)
+                    setSgstRate(9)
+                  } else if (val.includes('12%')) {
+                    setCgstRate(6)
+                    setSgstRate(6)
+                  } else if (val.includes('5%')) {
+                    setCgstRate(2.5)
+                    setSgstRate(2.5)
+                  } else if (val.includes('28%')) {
+                    setCgstRate(14)
+                    setSgstRate(14)
+                  }
+                }}
+              >
+                <option value="18% (Standard GST)">18% (Standard GST) • CGST 9% + SGST 9%</option>
+                <option value="12% (Artisan Timber)">12% (Artisan Timber) • CGST 6% + SGST 6%</option>
+                <option value="5% (Raw Logs)">5% (Raw Logs) • CGST 2.5% + SGST 2.5%</option>
+                <option value="28% (Luxury Craft)">28% (Luxury Craft) • CGST 14% + SGST 14%</option>
+              </select>
             </div>
           </div>
 

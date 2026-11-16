@@ -208,6 +208,151 @@
   border-color: #D6C5BC;
 }
 
+/* Customer & Delivery Form in Billing (Prompt Requirement 3) */
+.pos-customer-edit-card {
+  background-color: #FFFFFF;
+  border: 1px solid #F0E6DE;
+  border-radius: 8px;
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 1px 3px rgba(49, 25, 11, 0.02);
+}
+
+.pos-customer-edit-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #F7ECE6;
+  padding-bottom: 8px;
+}
+
+.pos-customer-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pos-customer-title-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: #FAF1EE;
+  color: #5C3A21;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pos-customer-edit-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #5C3A21;
+}
+
+.btn-pick-existing-customer {
+  background-color: #FDFBF7;
+  border: 1px solid #EAE0D8;
+  color: #734826;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.btn-pick-existing-customer:hover {
+  background-color: #F7ECE6;
+  border-color: #D4A373;
+}
+
+.pos-customer-fields-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pos-customer-row-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 640px) {
+  .pos-customer-row-2col {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pos-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pos-field-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #734826;
+}
+
+.pos-field-input {
+  background-color: #FEF0ED;
+  border: 1px solid #EAE0D8;
+  border-radius: 6px;
+  height: 34px;
+  padding: 0 11px;
+  font-size: 11.5px;
+  color: #31190B;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.15s ease;
+  width: 100%;
+}
+
+.pos-field-input:focus {
+  border-color: #C88D58;
+  background-color: #FFFFFF;
+}
+
+.btn-add-furniture-cart {
+  background-color: #FDFBF7;
+  border: 1px solid #EAE0D8;
+  color: #5C3A21;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.15s ease;
+}
+
+.btn-add-furniture-cart:hover {
+  background-color: #5C3A21;
+  color: #FFFFFF;
+  border-color: #5C3A21;
+}
+
+.inv-client-delivery {
+  font-size: 11px;
+  color: #31190B;
+  margin: 3px 0 0 0;
+  line-height: 1.35;
+}
+
 /* Search & Filters Bar */
 .pos-search-filter-row {
   display: flex;
@@ -787,17 +932,176 @@
   background-color: #F3E5DE;
 }
 
-/* Responsiveness */
-@media (max-width: 900px) {
-  .pos-main-grid {
-    grid-template-columns: 1fr;
-  }
+/* Autocomplete Popover for Search */
+.pos-sku-search-box {
+  position: relative;
+}
+
+.pos-search-autocomplete {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background-color: #FFFFFF;
+  border: 1px solid #EAE0D8;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(49, 25, 11, 0.15);
+  max-height: 260px;
+  overflow-y: auto;
+  z-index: 100;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.search-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+
+.search-item-row:hover {
+  background-color: #FAF1EE;
+}
+
+.search-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.search-item-name {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #31190B;
+}
+
+.search-item-sku {
+  font-size: 10px;
+  color: #8C7B72;
+}
+
+.search-item-price-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.search-price {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #A06A3A;
+}
+
+.btn-add-search-chip {
+  background-color: #31190B;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  cursor: pointer;
+}
+
+.search-no-results {
+  font-size: 11px;
+  color: #8C7B72;
+  text-align: center;
+  padding: 12px;
+}
+
+/* Cart Header Actions & Clear Cart (Requirement 5) */
+.pos-cart-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-clear-cart {
+  background-color: transparent;
+  border: 1px solid #EAE0D8;
+  color: #8C7B72;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 4px;
+  padding: 2px 7px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.btn-clear-cart:hover {
+  background-color: #FAF1EE;
+  color: #C0392B;
+  border-color: #E6B8B8;
+}
+
+/* Clean Empty Cart State */
+.pos-empty-cart-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 38px 20px;
+  text-align: center;
+  background-color: #FAF6F3;
+  border: 1px dashed #E0D3C9;
+  border-radius: 8px;
+  margin: 4px 0;
+  gap: 8px;
+}
+
+.empty-cart-icon-wrap {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: #FAF1EE;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2px;
+}
+
+.empty-cart-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: #31190B;
+  margin: 0;
+}
+
+.empty-cart-subtitle {
+  font-size: 11.5px;
+  color: #8C7B72;
+  max-width: 360px;
+  margin: 0 0 6px 0;
+  line-height: 1.4;
+}
+
+.btn-browse-timber-cta {
+  background-color: #31190B;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 16px;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.btn-browse-timber-cta:hover {
+  background-color: #4A2E18;
 }
 
 /* ===================================================
-   Multi-Bill Concurrent Drafts & Modals (Feature 1 & 4)
+   Multi-Bill Concurrent Drafts (Prompt 9 Requirement 1)
    =================================================== */
-
 .pos-drafts-tab-bar {
   display: flex;
   justify-content: space-between;
@@ -913,62 +1217,24 @@
   border-style: solid;
 }
 
-/* Category Mini Catalog Row */
-.pos-catalog-mini-row {
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  padding: 2px 0;
-}
-
-.pos-catalog-item-chip {
-  background-color: #FFFFFF;
-  border: 1px solid #EAE0D8;
-  border-radius: 6px;
-  padding: 6px 12px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  cursor: pointer;
-  white-space: nowrap;
-  box-shadow: 0 1px 2px rgba(49, 25, 11, 0.02);
-  transition: all 0.12s ease;
-}
-
-.pos-catalog-item-chip:hover {
-  border-color: #C88D58;
-  background-color: #FEF9F6;
-}
-
-.chip-name {
-  font-size: 11px;
-  font-weight: 600;
-  color: #31190B;
-}
-
-.chip-price {
-  font-size: 10.5px;
-  font-weight: 700;
-  color: #A06A3A;
-}
-
-/* Customer & Invoice Modals */
+/* Modals Overlay */
 .pos-modal-overlay {
   position: fixed;
   inset: 0;
-  background-color: rgba(49, 25, 11, 0.45);
+  background-color: rgba(49, 25, 11, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
   backdrop-filter: blur(2px);
+  padding: 16px;
 }
 
 .pos-modal-card {
   background-color: #FFFFFF;
   border-radius: 10px;
   width: 440px;
-  max-width: 90vw;
+  max-width: 95vw;
   padding: 20px;
   box-shadow: 0 10px 30px rgba(49, 25, 11, 0.2);
   display: flex;
@@ -993,11 +1259,17 @@
 .pos-modal-close {
   background: transparent;
   border: none;
-  font-size: 13px;
+  font-size: 14px;
   color: #8C7B72;
   cursor: pointer;
 }
 
+.picker-sub {
+  font-size: 10.5px;
+  color: #8C7B72;
+}
+
+/* Customer Picker List */
 .pos-customer-picker-list {
   display: flex;
   flex-direction: column;
@@ -1017,11 +1289,7 @@
   transition: all 0.12s ease;
 }
 
-.customer-picker-item:hover {
-  background-color: #FAF1EE;
-  border-color: #D6C5BC;
-}
-
+.customer-picker-item:hover,
 .customer-picker-item.active {
   background-color: #FAF1EE;
   border-color: #A06A3A;
@@ -1067,101 +1335,865 @@
   border-radius: 4px;
 }
 
-/* Invoice Receipt Card */
-.invoice-receipt-card {
-  text-align: center;
+/* Timber Catalog Modal */
+.catalog-picker-card {
+  width: 620px;
+  max-width: 95vw;
 }
 
-.receipt-header {
+.catalog-category-tabs {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
+  gap: 6px;
+  overflow-x: auto;
+  border-bottom: 1px solid #F0E6DE;
+  padding-bottom: 8px;
 }
 
-.receipt-badge {
-  background-color: #E8F5E9;
-  color: #1B5E20;
-  font-size: 9.5px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  padding: 3px 8px;
-  border-radius: 4px;
-}
-
-.receipt-inv-num {
-  font-family: 'Playfair Display', Georgia, serif;
-  font-size: 22px;
-  font-weight: 700;
-  color: #31190B;
-  margin: 4px 0 0 0;
-}
-
-.receipt-depot-name {
-  font-size: 11px;
-  color: #8C7B72;
-  margin: 0;
-}
-
-.receipt-body {
+.catalog-tab-btn {
   background-color: #FAF1EE;
+  border: 1px solid #EAE0D8;
   border-radius: 6px;
-  padding: 14px 16px;
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #5C3A21;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.catalog-tab-btn.active {
+  background-color: #31190B;
+  color: #FFFFFF;
+  border-color: #31190B;
+}
+
+.pos-catalog-grid-scroll {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  text-align: left;
+  max-height: 340px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
-.receipt-row {
+.catalog-grid-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border: 1px solid #F0E6DE;
+  border-radius: 6px;
+  background-color: #FFFFFF;
+}
+
+.catalog-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.catalog-item-sku {
+  font-size: 9.5px;
+  color: #8C7B72;
+  font-weight: 600;
+}
+
+.catalog-item-name {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #31190B;
+  margin: 0;
+}
+
+.catalog-item-finish {
+  font-size: 10.5px;
+  color: #734826;
+}
+
+.catalog-item-stock {
+  font-size: 10px;
+  color: #15803D;
+  font-weight: 600;
+}
+
+.catalog-item-action {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.catalog-price {
+  font-size: 13px;
+  font-weight: 700;
+  color: #A06A3A;
+}
+
+.btn-catalog-add {
+  background-color: #31190B;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+
+.btn-catalog-add:hover {
+  background-color: #4A2E18;
+}
+
+.catalog-picker-footer {
+  display: flex;
+  justify-content: flex-end;
+  border-top: 1px solid #F0E6DE;
+  padding-top: 10px;
+}
+
+.btn-done-picking {
+  background-color: #FAF1EE;
+  color: #31190B;
+  border: 1px solid #D6C5BC;
+  border-radius: 6px;
+  padding: 7px 16px;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* ===================================================
+   Full Tax Invoice Modal (Settings-Derived & Editable)
+   =================================================== */
+.pos-invoice-full-modal {
+  background-color: #FFFFFF;
+  border-radius: 12px;
+  width: 780px;
+  max-width: 95vw;
+  max-height: 92vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 50px rgba(49, 25, 11, 0.3);
+  display: flex;
+  flex-direction: column;
+}
+
+.invoice-modal-header-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 12px 18px;
+  background-color: #FAF1EE;
+  border-bottom: 1px solid #EAE0D8;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.inv-tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.inv-tab-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #5C3A21;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.inv-tab-btn.active {
+  background-color: #FFFFFF;
+  border-color: #D6C5BC;
+  color: #31190B;
+  box-shadow: 0 1px 3px rgba(49, 25, 11, 0.05);
+}
+
+.inv-header-right-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-inv-print {
+  background-color: #31190B;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
   font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-inv-close {
+  background: transparent;
+  border: none;
+  font-size: 15px;
+  color: #8C7B72;
+  cursor: pointer;
+}
+
+/* Printable Invoice Area */
+.invoice-print-area {
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background-color: #FFFFFF;
+  color: #2E2925;
+}
+
+.inv-sheet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.inv-brand-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: #31190B;
+  display: block;
+}
+
+.inv-brand-tagline {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #A06A3A;
+  display: block;
+  margin-top: 2px;
+}
+
+.inv-depot-address,
+.inv-depot-contact {
+  font-size: 11px;
+  color: #6E5A4E;
+  margin: 2px 0 0 0;
+  line-height: 1.35;
+}
+
+.inv-gst-statutory-block {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.statutory-badge {
+  background-color: #FAF1EE;
+  color: #5C3A21;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 3px 8px;
+  border-radius: 4px;
+  display: inline-block;
+  align-self: flex-end;
+  border: 1px solid #EAE0D8;
+}
+
+.statutory-field {
+  font-size: 11px;
+  color: #4A3A31;
+}
+
+.inv-sheet-divider {
+  border-top: 1.5px solid #EAE0D8;
+}
+
+.inv-meta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  background-color: #FAF6F3;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid #F0E6DE;
+}
+
+.inv-section-title {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #8C7B72;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.inv-client-name {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: #31190B;
+  margin: 0;
+}
+
+.inv-client-phone,
+.inv-client-addr,
+.inv-client-gstin {
+  font-size: 11px;
+  color: #5C4537;
+  margin: 2px 0 0 0;
+}
+
+.inv-info-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #4A3A31;
+  padding: 1.5px 0;
+}
+
+.payment-badge {
+  color: #1B5E20;
+  background-color: #E8F5E9;
+  padding: 1px 6px;
+  border-radius: 3px;
+}
+
+/* Itemized Table */
+.inv-table-wrap {
+  overflow-x: auto;
+}
+
+.inv-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11.5px;
+}
+
+.inv-table th {
+  background-color: #F5EAE4;
+  color: #31190B;
+  text-align: left;
+  padding: 8px 10px;
+  font-weight: 700;
+  font-size: 10.5px;
+  letter-spacing: 0.03em;
+  border-bottom: 1.5px solid #D6C5BC;
+}
+
+.inv-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #F0E6DE;
   color: #31190B;
 }
 
-.receipt-divider {
-  border-top: 1px dashed #D6C5BC;
-  margin: 4px 0;
+.inv-table .num-col {
+  text-align: right;
 }
 
-.receipt-row.total {
-  font-size: 12.5px;
+.inv-table .font-bold {
   font-weight: 700;
 }
 
-.receipt-total-val {
+.inv-item-sub {
+  display: block;
+  font-size: 10px;
+  color: #8C7B72;
+}
+
+/* Totals & Settlement Row */
+.inv-settlement-row {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.inv-bank-box {
+  background-color: #FAF6F3;
+  border: 1px solid #F0E6DE;
+  border-radius: 8px;
+  padding: 10px 14px;
+}
+
+.inv-box-heading {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #8C7B72;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.bank-meta {
+  font-size: 11px;
+  color: #4A3A31;
+  margin: 2px 0;
+}
+
+.packaging-note-text {
+  font-size: 10.5px;
+  color: #A06A3A;
+  margin-top: 6px;
+  border-top: 1px dashed #D6C5BC;
+  padding-top: 4px;
+}
+
+.inv-totals-box {
+  background-color: #FAF1EE;
+  border: 1px solid #EAE0D8;
+  border-radius: 8px;
+  padding: 10px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.inv-tot-line {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11.5px;
+  color: #4A3A31;
+}
+
+.inv-tot-divider {
+  border-top: 1.5px solid #D6C5BC;
+  margin: 4px 0;
+}
+
+.inv-tot-line.grand {
+  font-size: 13px;
+  font-weight: 800;
+  color: #31190B;
+}
+
+.grand-val {
   font-family: 'Playfair Display', Georgia, serif;
   font-size: 17px;
   color: #31190B;
 }
 
-.receipt-actions {
+/* Signatures & Legal */
+.inv-footer-signatures {
+  display: grid;
+  grid-template-columns: 1.3fr 0.9fr;
+  gap: 20px;
+  padding-top: 10px;
+  border-top: 1px dashed #D6C5BC;
+}
+
+.disclaimer-label {
+  font-size: 9px;
+  font-weight: 800;
+  color: #8C7B72;
+  letter-spacing: 0.06em;
+  display: block;
+}
+
+.disclaimer-text {
+  font-size: 10px;
+  color: #7D6B60;
+  margin: 3px 0 0 0;
+  line-height: 1.35;
+}
+
+.inv-signatory-block {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.signature-line {
+  width: 140px;
+  border-top: 1px solid #4A3A31;
+  margin-bottom: 4px;
+}
+
+.signatory-name {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #31190B;
+}
+
+.signatory-title {
+  font-size: 10px;
+  color: #6E5A4E;
+}
+
+.signatory-store {
+  font-size: 9.5px;
+  color: #A06A3A;
+  font-weight: 600;
+}
+
+/* Bottom Actions inside Modal */
+.inv-bottom-actions {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid #EAE0D8;
 }
 
-.btn-receipt-print {
+.btn-print-bill-primary {
   background-color: #31190B;
   color: #FFFFFF;
   border: none;
   border-radius: 6px;
-  padding: 8px 16px;
-  font-size: 11.5px;
+  padding: 8px 18px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
 }
 
-.btn-receipt-close {
+.btn-edit-bill-details {
+  background-color: #FAF1EE;
+  color: #5C3A21;
+  border: 1px solid #D6C5BC;
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-done-bill-next {
+  background-color: #E8F5E9;
+  color: #1B5E20;
+  border: 1px solid #A5D6A7;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Tab 2: Edit Form Styles */
+.invoice-edit-form-wrap {
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.edit-form-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #31190B;
+  margin: 0;
+}
+
+.edit-form-sub {
+  font-size: 11.5px;
+  color: #8C7B72;
+  margin: 2px 0 0 0;
+}
+
+.edit-fields-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.edit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.edit-field.full-width {
+  grid-column: 1 / -1;
+}
+
+.edit-field label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #4A3A31;
+}
+
+.edit-field input,
+.edit-field select,
+.edit-field textarea {
+  border: 1px solid #D6C5BC;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 12px;
+  color: #31190B;
+  background-color: #FAF6F3;
+  font-family: inherit;
+  outline: none;
+}
+
+.edit-field input:focus,
+.edit-field select:focus,
+.edit-field textarea:focus {
+  border-color: #A06A3A;
+  background-color: #FFFFFF;
+}
+
+.edit-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  border-top: 1px solid #F0E6DE;
+  padding-top: 12px;
+}
+
+.btn-save-bill-edits {
+  background-color: #31190B;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 6px;
+  padding: 9px 18px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-cancel-bill-edits {
   background-color: #FAF1EE;
   color: #5C3A21;
   border: none;
   border-radius: 6px;
-  padding: 8px 14px;
-  font-size: 11.5px;
+  padding: 9px 14px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
+}
+
+/* ===================================================
+   Full Mobile Responsive POS (Requirement 1)
+   =================================================== */
+@media (max-width: 900px) {
+  .pos-main-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .pos-page-container {
+    padding: 10px 12px;
+  }
+}
+
+@media (max-width: 768px) {
+  .pos-top-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .pos-drafts-tab-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .pos-drafts-list {
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .btn-add-draft {
+    width: 100%;
+    text-align: center;
+    padding: 8px 12px;
+    min-height: 40px;
+  }
+
+  .pos-customer-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .btn-change-customer {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
+  }
+
+  .pos-search-filter-row {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .pos-sku-search-box {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .btn-timber-provenance {
+    flex: 1;
+    min-height: 44px;
+    justify-content: center;
+  }
+
+  .btn-pos-tools {
+    min-height: 44px;
+    width: 44px;
+  }
+
+  .pos-categories-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .pos-category-card {
+    min-height: 52px;
+    padding: 8px 6px;
+  }
+
+  .pos-cart-item-row {
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 12px 10px;
+  }
+
+  .pos-item-details {
+    width: calc(100% - 46px);
+  }
+
+  .pos-item-stepper {
+    margin-left: 42px;
+  }
+
+  .stepper-btn {
+    width: 34px;
+    height: 34px;
+    font-size: 16px;
+  }
+
+  .stepper-val {
+    width: 32px;
+    font-size: 13px;
+  }
+
+  .pos-item-price-block {
+    text-align: right;
+    margin-left: auto;
+  }
+
+  .btn-delete-item {
+    padding: 8px;
+  }
+
+  .payment-modes-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .payment-mode-btn {
+    min-height: 44px;
+    font-size: 12px;
+  }
+
+  .btn-print-tax-invoice {
+    min-height: 48px;
+    font-size: 13px;
+  }
+
+  .pos-secondary-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .btn-secondary-pos {
+    min-height: 42px;
+    width: 100%;
+  }
+
+  .inv-sheet-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .inv-gst-statutory-block {
+    text-align: left;
+    align-items: flex-start;
+  }
+
+  .statutory-badge {
+    align-self: flex-start;
+  }
+
+  .inv-meta-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .inv-settlement-row {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .inv-footer-signatures {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .inv-signatory-block {
+    text-align: left;
+    align-items: flex-start;
+  }
+
+  .edit-fields-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .pos-categories-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .invoice-print-area {
+    padding: 14px 12px;
+  }
+
+  .inv-brand-title {
+    font-size: 17px;
+  }
+
+  .inv-bottom-actions {
+    flex-direction: column;
+  }
+
+  .btn-print-bill-primary,
+  .btn-edit-bill-details,
+  .btn-done-bill-next {
+    width: 100%;
+    min-height: 44px;
+    text-align: center;
+  }
+}
+
+/* Print CSS */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .invoice-print-area,
+  .invoice-print-area * {
+    visibility: visible;
+  }
+
+  .invoice-print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 20px;
+    background: #FFFFFF !important;
+    box-shadow: none !important;
+  }
+
+  .inv-bottom-actions,
+  .invoice-modal-header-bar,
+  .btn-clear-cart {
+    display: none !important;
+  }
 }

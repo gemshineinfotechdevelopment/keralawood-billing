@@ -393,6 +393,33 @@
   background-color: #F0E2D9;
 }
 
+.btn-reorder.reordered {
+  background-color: #E8F5E9;
+  color: #1B5E20;
+  border-color: #81C784;
+  font-weight: 700;
+}
+
+/* Toast Alert */
+.dashboard-toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background-color: #31190B;
+  color: #FFFFFF;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  box-shadow: 0 8px 24px rgba(49, 25, 11, 0.25);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-left: 4px solid #10B981;
+  animation: fadeIn 0.2s ease;
+}
+
 /* Recent Sales Table Container */
 .recent-sales-card {
   background-color: #FFFFFF;
@@ -585,10 +612,44 @@
 
 /* Responsive */
 @media (max-width: 900px) {
+  .dashboard-topbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .topbar-right {
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .dashboard-page-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .btn-new-invoice {
+    width: 100%;
+    justify-content: center;
+  }
   .dashboard-middle-row {
     grid-template-columns: 1fr;
   }
   .kpi-cards-grid {
     grid-template-columns: 1fr;
+  }
+  .quick-actions-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .table-header-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .sales-table-wrapper {
+    overflow-x: auto;
+  }
+  .sales-table {
+    min-width: 600px;
   }
 }
