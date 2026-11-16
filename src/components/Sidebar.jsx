@@ -158,8 +158,8 @@ export default function Sidebar({
       <div className="sidebar-header">
         {!isCollapsed ? (
           <div className="sidebar-brand">
-            <span className="sidebar-brand-title">KERALA WOOD FURNITURE</span>
-            <span className="sidebar-brand-subtitle">HERITAGE ARTISAN TIMBER • SIVAKASI</span>
+            <span className="sidebar-brand-title">Kerala Wood Furniture</span>
+            <span className="sidebar-brand-subtitle">Heritage Artisan Timber • Sivakasi</span>
           </div>
         ) : (
           <div className="sidebar-brand-mini" title="Kerala Wood Furniture • Sivakasi">

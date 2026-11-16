@@ -15,7 +15,7 @@ function App() {
   const [activeNav, setActiveNav] = useState('Dashboard')
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
-  const [email, setEmail] = useState('rajesh.s@sivakasiwood.com')
+  const [email, setEmail] = useState('rajesh.s@keralawood.in')
   const [password, setPassword] = useState('password123')
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(true)
@@ -194,7 +194,7 @@ function App() {
                   className="login-input"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@sivakasiwood.com"
+                  placeholder="name@keralawood.in"
                   autoComplete="username"
                   required
                 />
