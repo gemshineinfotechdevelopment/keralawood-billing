@@ -2,11 +2,13 @@ import { useState } from 'react'
 import treeLogo from './assets/tree-logo.png'
 import Sidebar from './components/Sidebar'
 import Dashboard from './components/Dashboard'
+import StockManagement from './components/StockManagement'
+import AddProduct from './components/AddProduct'
 import './App.css'
 
 function App() {
-  const [view, setView] = useState('login') // 'login' or 'billing'
-  const [activeNav, setActiveNav] = useState('Stock Management')
+  const [view, setView] = useState('billing') // 'billing' or 'login'
+  const [activeNav, setActiveNav] = useState('Products')
   const [email, setEmail] = useState('rajesh.s@keralawood.com')
   const [password, setPassword] = useState('password123')
   const [showPassword, setShowPassword] = useState(false)
@@ -26,10 +28,18 @@ function App() {
           activeItem={activeNav}
           onItemSelect={(name) => setActiveNav(name)}
           onClose={() => setView('login')}
+          onLogout={() => setView('login')}
         />
         <main className="billing-main-area">
-          {activeNav === 'Dashboard' || activeNav === 'Stock Management' ? (
-            <Dashboard />
+          {activeNav === 'Products' ? (
+            <AddProduct onProductSaved={() => setActiveNav('Stock Management')} />
+          ) : activeNav === 'Stock Management' ? (
+            <StockManagement onAddNewProduct={() => setActiveNav('Products')} />
+          ) : activeNav === 'Dashboard' ? (
+            <Dashboard
+              onNavigateToNewBill={() => setActiveNav('Products')}
+              onNavigateToNewInvoice={() => setActiveNav('Stock Management')}
+            />
           ) : (
             <div className="module-placeholder">
               <div className="placeholder-card">
@@ -38,9 +48,9 @@ function App() {
                 <button
                   type="button"
                   className="btn-back-dash"
-                  onClick={() => setActiveNav('Dashboard')}
+                  onClick={() => setActiveNav('Products')}
                 >
-                  ← Return to Dashboard
+                  ← Return to Products
                 </button>
               </div>
             </div>

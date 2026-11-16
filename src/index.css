@@ -1,3 +1,28 @@
+/* Straight Indian Rupee (₹) symbol override across serif font families */
+@font-face {
+  font-family: 'Playfair Display';
+  font-style: normal;
+  font-weight: 100 900;
+  src: local('Segoe UI'), local('Plus Jakarta Sans'), local('Roboto'), local('Arial'), local('Helvetica Neue');
+  unicode-range: U+20B9;
+}
+
+@font-face {
+  font-family: 'Georgia';
+  font-style: normal;
+  font-weight: 100 900;
+  src: local('Segoe UI'), local('Plus Jakarta Sans'), local('Roboto'), local('Arial'), local('Helvetica Neue');
+  unicode-range: U+20B9;
+}
+
+@font-face {
+  font-family: 'Times New Roman';
+  font-style: normal;
+  font-weight: 100 900;
+  src: local('Segoe UI'), local('Plus Jakarta Sans'), local('Roboto'), local('Arial'), local('Helvetica Neue');
+  unicode-range: U+20B9;
+}
+
 * {
   margin: 0;
   padding: 0;

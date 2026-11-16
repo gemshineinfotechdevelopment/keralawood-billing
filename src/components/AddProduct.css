@@ -1,0 +1,422 @@
+/* Add Product Container */
+.add-product-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 1080px;
+  width: 100%;
+  margin: 0 auto;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  color: #31190B;
+}
+
+/* Breadcrumb */
+.product-breadcrumb {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #9E8E85;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.breadcrumb-slash {
+  color: #C88D58;
+}
+
+.breadcrumb-active {
+  color: #C88D58;
+}
+
+/* Page Header */
+.add-product-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.product-title-wrap {
+  max-width: 580px;
+}
+
+.product-page-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 28px;
+  font-weight: 600;
+  color: #31190B;
+  margin-bottom: 4px;
+  letter-spacing: -0.01em;
+}
+
+.product-page-subtitle {
+  font-size: 11.5px;
+  color: #6D5C52;
+  line-height: 1.45;
+}
+
+.product-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.btn-save-draft {
+  background-color: #FFFFFF;
+  border: 1px solid #E2CEBE;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #31190B;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.18s ease;
+  box-shadow: 0 1px 2px rgba(49, 25, 11, 0.04);
+}
+
+.btn-save-draft:hover {
+  background-color: #FEF1ED;
+  border-color: #D3B9A5;
+}
+
+.btn-save-product {
+  background-color: #D7A676;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 18px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #31190B;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background-color 0.18s ease;
+  box-shadow: 0 1px 3px rgba(49, 25, 11, 0.08);
+}
+
+.btn-save-product:hover {
+  background-color: #C89767;
+}
+
+/* 2x2 Grid of Cards */
+.product-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+}
+
+.form-section-card {
+  background-color: #FFFFFF;
+  border-radius: 10px;
+  border: 1px solid #F0E5DF;
+  box-shadow: 0 2px 8px rgba(65, 33, 15, 0.02);
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Card Header */
+.card-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.card-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-icon {
+  color: #8C7B72;
+  display: flex;
+  align-items: center;
+}
+
+.card-section-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #31190B;
+}
+
+.section-badge-tan {
+  background-color: #F7ECE6;
+  color: #A0724A;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.06em;
+}
+
+.section-badge-dark {
+  background-color: #1C130D;
+  color: #C88D58;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.06em;
+}
+
+.section-badge-green {
+  background-color: #E2F5E9;
+  color: #15803D;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.06em;
+}
+
+/* Form Groups & Controls */
+.form-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.field-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.field-label {
+  font-size: 9px;
+  font-weight: 700;
+  color: #31190B;
+  letter-spacing: 0.05em;
+  text-transform: capitalize;
+}
+
+.field-action-link {
+  font-size: 9px;
+  font-weight: 700;
+  color: #A0724A;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.field-action-link:hover {
+  text-decoration: underline;
+}
+
+.input-styled {
+  background-color: #FEF0ED;
+  border: 1px solid #EAE0D8;
+  border-radius: 6px;
+  height: 35px;
+  padding: 0 12px;
+  font-size: 11.5px;
+  color: #31190B;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.16s ease;
+  width: 100%;
+}
+
+.input-styled:focus {
+  border-color: #C88D58;
+}
+
+.textarea-styled {
+  background-color: #FEF0ED;
+  border: 1px solid #EAE0D8;
+  border-radius: 6px;
+  padding: 10px 12px;
+  font-size: 11px;
+  color: #31190B;
+  font-family: inherit;
+  outline: none;
+  resize: vertical;
+  min-height: 64px;
+  line-height: 1.45;
+  transition: border-color 0.16s ease;
+  width: 100%;
+}
+
+.textarea-styled:focus {
+  border-color: #C88D58;
+}
+
+.select-styled {
+  background-color: #FEF0ED;
+  border: 1px solid #EAE0D8;
+  border-radius: 6px;
+  height: 35px;
+  padding: 0 12px;
+  font-size: 11.5px;
+  color: #31190B;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.16s ease;
+  width: 100%;
+}
+
+.select-styled:focus {
+  border-color: #C88D58;
+}
+
+/* Form Row Layouts */
+.form-row-2col {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.form-row-4col {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+/* Pill Selectors */
+.pill-options-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pill-option-btn {
+  flex: 1;
+  background-color: #FEF0ED;
+  border: 1px solid #EAE0D8;
+  border-radius: 6px;
+  height: 34px;
+  padding: 0 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #31190B;
+  cursor: pointer;
+  transition: all 0.16s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.pill-option-btn:hover:not(.active) {
+  background-color: #FAF2EE;
+}
+
+.pill-option-btn.active {
+  background-color: #4A2814;
+  border-color: #4A2814;
+  color: #FFFFFF;
+  font-weight: 600;
+}
+
+/* Selling Price Margin Badge */
+.price-margin-badge {
+  background-color: #E2F5E9;
+  color: #15803D;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* Forest Transit Pass Card */
+.forest-pass-card {
+  background-color: #FEF0ED;
+  border: 1px solid #F0E5DF;
+  border-radius: 8px;
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  margin-top: 4px;
+}
+
+.pass-card-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.pass-icon-gold {
+  color: #A0724A;
+  margin-top: 2px;
+  display: flex;
+}
+
+.pass-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pass-title {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #31190B;
+}
+
+.pass-subtext {
+  font-size: 10px;
+  color: #6D5C52;
+  line-height: 1.35;
+}
+
+/* Toggle Switch */
+.toggle-switch-wrap {
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggle-pill {
+  width: 38px;
+  height: 20px;
+  border-radius: 9999px;
+  background-color: #D3C4B8;
+  position: relative;
+  transition: background-color 0.2s ease;
+  display: inline-block;
+}
+
+.toggle-pill.checked {
+  background-color: #31190B;
+}
+
+.toggle-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background-color: #FFFFFF;
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  transition: transform 0.2s ease;
+}
+
+.toggle-pill.checked .toggle-thumb {
+  transform: translateX(18px);
+}
+
+/* Responsive adjustments */
+@media (max-width: 900px) {
+  .product-form-grid {
+    grid-template-columns: 1fr;
+  }
+  .form-row-4col {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

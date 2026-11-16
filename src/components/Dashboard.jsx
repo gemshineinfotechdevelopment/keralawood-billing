@@ -1,63 +1,110 @@
+import { useState, useEffect } from 'react'
 import './Dashboard.css'
 
-export default function Dashboard() {
-  const recentSales = [
-    {
-      invoice: '#KWF-0891',
-      customer: 'Anoop Menon',
-      location: 'Panampilly Nagar, Kochi',
-      items: '1x Solid Rosewood Royal King Bed, 2x Nightstands',
-      amount: '₹78,400',
-      status: 'Dispatched',
-    },
-    {
-      invoice: '#KWF-0890',
-      customer: 'Lakshmi Nair',
-      location: 'Thottakkattukara, Aluva',
-      items: '1x Nilambur Teak Dining Table, 6x Artisan Chairs',
-      amount: '₹52,000',
-      status: 'Dispatched',
-    },
-    {
-      invoice: '#KWF-0889',
-      customer: 'Dr. Thomas Varghese',
-      location: 'Kumaranalloor, Kottayam',
-      items: '2x Teakwood Ergonomic Armchairs, 1x Coffee Table',
-      amount: '₹31,500',
-      status: 'Dispatched',
-    },
-    {
-      invoice: '#KWF-0888',
-      customer: 'Deepak Kurian & Architects',
-      location: 'Fort Kochi Heritage Zone',
-      items: '1x Handcrafted Cane Bookcase, 1x Side Table',
-      amount: '₹22,600',
-      status: 'Dispatched',
-    },
-  ]
+const DEFAULT_SALES = [
+  {
+    invoice: '#KWF-0891',
+    customer: 'Anoop Menon',
+    location: 'Panampilly Nagar, Kochi',
+    items: '1x Solid Rosewood Royal King Bed, 2x Nightstands',
+    amount: '₹78,400',
+    status: 'Dispatched',
+  },
+  {
+    invoice: '#KWF-0890',
+    customer: 'Lakshmi Nair',
+    location: 'Thottakkattukara, Aluva',
+    items: '1x Nilambur Teak Dining Table, 6x Artisan Chairs',
+    amount: '₹52,000',
+    status: 'Dispatched',
+  },
+  {
+    invoice: '#KWF-0889',
+    customer: 'Dr. Thomas Varghese',
+    location: 'Kumaranalloor, Kottayam',
+    items: '2x Teakwood Ergonomic Armchairs, 1x Coffee Table',
+    amount: '₹31,500',
+    status: 'Dispatched',
+  },
+  {
+    invoice: '#KWF-0888',
+    customer: 'Deepak Kurian & Architects',
+    location: 'Fort Kochi Heritage Zone',
+    items: '1x Handcrafted Cane Bookcase, 1x Side Table',
+    amount: '₹22,600',
+    status: 'Dispatched',
+  },
+]
 
-  const lowStockItems = [
-    {
-      name: 'Nilambur Teak 6-Seater',
-      category: 'Dining Table',
-      count: '2 left',
-    },
-    {
-      name: 'Solid Rosewood King Bed',
-      category: 'Hand-Carved Headboard',
-      count: '1 left',
-    },
-    {
-      name: 'Teakwood Ergonomic Armchair',
-      category: 'Cane Weave Seating',
-      count: '3 left',
-    },
-    {
-      name: 'Cane & Teak Bookcase',
-      category: '5-Tier Architectural',
-      count: '2 left',
-    },
-  ]
+const DEFAULT_LOW_STOCK = [
+  {
+    name: 'Nilambur Teak 6-Seater',
+    category: 'Dining Table',
+    count: '2 left',
+  },
+  {
+    name: 'Solid Rosewood King Bed',
+    category: 'Hand-Carved Headboard',
+    count: '1 left',
+  },
+  {
+    name: 'Teakwood Ergonomic Armchair',
+    category: 'Cane Weave Seating',
+    count: '3 left',
+  },
+  {
+    name: 'Cane & Teak Bookcase',
+    category: '5-Tier Architectural',
+    count: '2 left',
+  },
+]
+
+export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice }) {
+  const [recentSales, setRecentSales] = useState(DEFAULT_SALES)
+  const [lowStockItems, setLowStockItems] = useState(DEFAULT_LOW_STOCK)
+  const [stats, setStats] = useState({
+    todaySales: '₹1,84,500',
+    ordersToday: '18 orders processed today',
+    totalStock: '3,892',
+    stockLocationNote: 'Across Nilambur & Kochi depots',
+    lowStockCount: '4 items',
+  })
+  const [lookupQuery, setLookupQuery] = useState('')
+  const [salesSearch, setSalesSearch] = useState('')
+
+  useEffect(() => {
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+    fetch(`${apiUrl}/api/dashboard`)
+      .then((res) => {
+        if (!res.ok) throw new Error('Network response not ok')
+        return res.json()
+      })
+      .then((data) => {
+        if (data?.success) {
+          if (Array.isArray(data.recentSales) && data.recentSales.length > 0) {
+            setRecentSales(data.recentSales)
+          }
+          if (Array.isArray(data.lowStockItems) && data.lowStockItems.length > 0) {
+            setLowStockItems(data.lowStockItems)
+          }
+          if (data.stats) {
+            setStats(data.stats)
+          }
+        }
+      })
+      .catch((err) => {
+        console.warn('[Dashboard] Backend API offline or unreachable, using fallback dataset:', err.message)
+      })
+  }, [])
+
+  const filteredSales = recentSales.filter((sale) => {
+    const q = salesSearch.toLowerCase()
+    return (
+      sale.customer.toLowerCase().includes(q) ||
+      sale.invoice.toLowerCase().includes(q) ||
+      sale.items.toLowerCase().includes(q)
+    )
+  })
 
   return (
     <div className="dashboard-container">
@@ -82,6 +129,8 @@ export default function Dashboard() {
           <input
             type="text"
             className="topbar-search-input"
+            value={lookupQuery}
+            onChange={(e) => setLookupQuery(e.target.value)}
             placeholder="Lookup SKU, Timber Batch, Invoice #..."
           />
         </div>
@@ -104,31 +153,9 @@ export default function Dashboard() {
             <span>Today • Kerala Standard Time</span>
           </div>
 
-          <button type="button" className="btn-new-bill">
+          <button type="button" className="btn-new-bill" onClick={onNavigateToNewBill}>
             <span>+ + New Bill</span>
           </button>
-
-          <div className="user-profile-widget">
-            <div className="user-meta">
-              <span className="user-name">Rajesh Sivan</span>
-              <span className="user-role">Depot Lead & Store Manager</span>
-            </div>
-            <div className="user-avatar-circle">
-              <svg
-                width="15"
-                height="15"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                <circle cx="12" cy="7" r="4" />
-              </svg>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -140,7 +167,7 @@ export default function Dashboard() {
             Overview of daily sales, inventory levels, and stock replenishment alerts.
           </p>
         </div>
-        <button type="button" className="btn-new-invoice">
+        <button type="button" className="btn-new-invoice" onClick={onNavigateToNewInvoice}>
           <svg
             width="13"
             height="13"
@@ -164,14 +191,14 @@ export default function Dashboard() {
       <div className="kpi-cards-grid">
         <div className="kpi-card">
           <span className="kpi-label">TODAY'S SALES</span>
-          <div className="kpi-value">₹1,84,500</div>
-          <span className="kpi-subtext">18 orders processed today</span>
+          <div className="kpi-value">{stats.todaySales || '₹1,84,500'}</div>
+          <span className="kpi-subtext">{stats.ordersToday || '18 orders processed today'}</span>
         </div>
 
         <div className="kpi-card">
           <span className="kpi-label">TOTAL ITEMS IN STOCK</span>
-          <div className="kpi-value">3,892</div>
-          <span className="kpi-subtext">Across Nilambur & Kochi depots</span>
+          <div className="kpi-value">{stats.totalStock || '3,892'}</div>
+          <span className="kpi-subtext">{stats.stockLocationNote || 'Across Nilambur & Kochi depots'}</span>
         </div>
 
         <div className="kpi-card">
@@ -192,7 +219,7 @@ export default function Dashboard() {
             </svg>
             LOW STOCK ALERTS
           </span>
-          <div className="kpi-value alert">4 items</div>
+          <div className="kpi-value alert">{stats.lowStockCount || '4 items'}</div>
           <span className="kpi-subtext">Urgent reorders required</span>
         </div>
       </div>
@@ -293,7 +320,7 @@ export default function Dashboard() {
         <div className="low-stock-card">
           <div className="card-top-row">
             <span className="card-heading">Low Stock Items</span>
-            <span className="count-badge-red">4 ITEMS</span>
+            <span className="count-badge-red">{lowStockItems.length} ITEMS</span>
           </div>
 
           <div className="low-stock-list">
@@ -342,6 +369,8 @@ export default function Dashboard() {
             <input
               type="text"
               className="table-search-input"
+              value={salesSearch}
+              onChange={(e) => setSalesSearch(e.target.value)}
               placeholder="Search customer or invoice..."
             />
           </div>
@@ -358,7 +387,7 @@ export default function Dashboard() {
             </tr>
           </thead>
           <tbody>
-            {recentSales.map((sale) => (
+            {filteredSales.map((sale) => (
               <tr key={sale.invoice}>
                 <td className="invoice-col">{sale.invoice}</td>
                 <td className="customer-col">
@@ -391,7 +420,7 @@ export default function Dashboard() {
 
         {/* Pagination Bar */}
         <div className="pagination-bar">
-          <span className="pagination-info">Showing 1 - 4 of 18 transactions</span>
+          <span className="pagination-info">Showing 1 - {filteredSales.length} of {recentSales.length || 18} transactions</span>
           <div className="pagination-controls">
             <button type="button" className="page-btn arrow">
               ‹

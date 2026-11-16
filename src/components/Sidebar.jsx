@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import './Sidebar.css'
 
-export default function Sidebar({ activeItem = 'Stock Management', onItemSelect, onClose }) {
+export default function Sidebar({ activeItem = 'Stock Management', onItemSelect, onClose, onLogout }) {
   const [localActive, setLocalActive] = useState(activeItem)
   const current = activeItem !== undefined ? activeItem : localActive
 
@@ -191,34 +191,60 @@ export default function Sidebar({ activeItem = 'Stock Management', onItemSelect,
         </ul>
       </div>
 
-      {/* Bottom Depot Card */}
+      {/* Bottom User Card & Logout */}
       <div className="sidebar-footer">
-        <div className="depot-card">
-          <div className="depot-card-header">
-            <svg
-              width="15"
-              height="15"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#A8774D"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-              <path d="m9 12 2 2 4-4" />
-            </svg>
-            <span className="depot-title">Sivakasi</span>
+        <div className="sidebar-user-card">
+          <div className="sidebar-user-top">
+            <div className="sidebar-user-avatar">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+            </div>
+            <div className="sidebar-user-info">
+              <span className="sidebar-user-name">Rajesh Sivan</span>
+              <span className="sidebar-user-role">Depot Lead & Store Manager</span>
+            </div>
           </div>
-          <p className="depot-desc">
-            Depot & Mill Yard • FSC & Kerala Forest Dept. Certified
-          </p>
           <div className="depot-divider"></div>
           <div className="depot-status-row">
-            <span className="depot-ext-text">IT Ext. 104</span>
+            <span className="depot-ext-text">IT Ext. 104 • Sivakasi</span>
             <span className="depot-pulse-dot" title="Online"></span>
           </div>
         </div>
+
+        {/* Logout Button */}
+        <button
+          type="button"
+          className="sidebar-logout-btn"
+          onClick={onLogout || onClose}
+          aria-label="Logout"
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
+          </svg>
+          <span>Logout</span>
+        </button>
       </div>
     </aside>
   )
