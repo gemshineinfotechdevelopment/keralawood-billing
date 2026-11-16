@@ -144,7 +144,7 @@ export default function Sidebar({ activeItem = 'Stock Management', onItemSelect,
       {/* Header */}
       <div className="sidebar-header">
         <div className="sidebar-brand">
-          <span className="sidebar-brand-title">KERALA WOOD</span>
+          <span className="sidebar-brand-title">SIVAKASI WOOD</span>
           <span className="sidebar-brand-subtitle">HERITAGE ARTISAN TIMBER</span>
         </div>
         <button

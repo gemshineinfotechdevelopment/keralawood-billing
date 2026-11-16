@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { DataStore } from '../services/dataStore'
 import './ReportsAnalytics.css'
 
 export default function ReportsAnalytics() {
@@ -6,100 +7,39 @@ export default function ReportsAnalytics() {
   const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [exportSuccess, setExportSuccess] = useState(false)
+  const [transactions, setTransactions] = useState(() => DataStore.getTransactions())
 
-  // Transaction Ledger Data
-  const allTransactions = [
-    {
-      id: 'INV-892',
-      date: 'Oct 28, 2024',
-      customer: 'Kumarakom Lake Resort',
-      project: 'Heritage Suites Wing B',
-      wood: 'Nilambur Teak',
-      item: '8-Seater Suite',
-      volume: 48,
-      amount: '4,85,000',
-      status: 'Paid',
-    },
-    {
-      id: 'INV-889',
-      date: 'Oct 26, 2024',
-      customer: 'Dr. Ananya Verma',
-      project: 'Private Residence, Kochi',
-      wood: 'Malabar Rosewood',
-      item: 'Bed Suite',
-      volume: 32,
-      amount: '2,45,000',
-      status: 'Paid',
-    },
-    {
-      id: 'INV-885',
-      date: 'Oct 24, 2024',
-      customer: 'Malabar Heritage Club',
-      project: 'Clubhouse Dining Hall',
-      wood: 'Wild Anjili Dining',
-      item: '16 Sets',
-      volume: 64,
-      amount: '5,20,000',
-      status: 'Paid',
-    },
-    {
-      id: 'INV-881',
-      date: 'Oct 21, 2024',
-      customer: 'Brunton Boatyard',
-      project: 'Heritage Suite 204',
-      wood: 'Teak Wardrobe',
-      item: 'Armoire',
-      volume: 28,
-      amount: '1,95,000',
-      status: 'Paid',
-    },
-    {
-      id: 'INV-878',
-      date: 'Oct 18, 2024',
-      customer: 'The Leela Kovalam',
-      project: 'Deck Renovation',
-      wood: '12 Teak Sun Loungers',
-      item: 'Weather-Treated',
-      volume: 52,
-      amount: '3,80,000',
-      status: 'Paid',
-    },
-    {
-      id: 'INV-872',
-      date: 'Oct 15, 2024',
-      customer: 'Carnoustie Ayurveda Resort',
-      project: 'Villa Veranda Re-timbering',
-      wood: 'Nilambur Teak',
-      item: 'Pillars & Loungers',
-      volume: 68,
-      amount: '6,10,000',
-      status: 'Paid',
-    },
-    {
-      id: 'INV-867',
-      date: 'Oct 12, 2024',
-      customer: 'Kochi Heritage Home',
-      project: 'Fort Kochi Restoration',
-      wood: 'Kerala Rosewood',
-      item: 'Ceiling Rafters & Beams',
-      volume: 42,
-      amount: '3,40,000',
-      status: 'Paid',
-    },
-  ]
+  // Sync with store updates
+  useEffect(() => {
+    const handleUpdate = () => {
+      setTransactions(DataStore.getTransactions())
+    }
+    window.addEventListener('timber_store_updated', handleUpdate)
+    return () => window.removeEventListener('timber_store_updated', handleUpdate)
+  }, [])
 
-  // Filter transactions
-  const filtered = allTransactions.filter((tx) => {
+  // Filter transactions dynamically
+  const filtered = transactions.filter((tx) => {
     const q = searchQuery.toLowerCase().trim()
     if (!q) return true
     return (
       tx.id.toLowerCase().includes(q) ||
       tx.customer.toLowerCase().includes(q) ||
-      tx.project.toLowerCase().includes(q) ||
-      tx.wood.toLowerCase().includes(q) ||
-      tx.item.toLowerCase().includes(q)
+      tx.project?.toLowerCase().includes(q) ||
+      tx.wood?.toLowerCase().includes(q) ||
+      tx.item?.toLowerCase().includes(q)
     )
   })
+
+  // Dynamic calculations
+  const totalRawAmount = transactions.reduce((sum, tx) => {
+    if (tx.rawAmount) return sum + tx.rawAmount
+    const cleaned = Number(String(tx.amount).replace(/[^0-9]/g, '')) || 0
+    return sum + cleaned
+  }, 0)
+
+  const totalVolumeCFT = transactions.reduce((sum, tx) => sum + (Number(tx.volume) || 28), 0)
+  const orderCount = transactions.length
 
   const itemsPerPage = 5
   const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1
@@ -114,6 +54,11 @@ export default function ReportsAnalytics() {
       setExportSuccess(false)
     }, 2000)
   }
+
+  // Format revenue display
+  const revenueDisplay = totalRawAmount >= 100000
+    ? `${(totalRawAmount / 100000).toFixed(2)} Lakhs`
+    : totalRawAmount.toLocaleString('en-IN')
 
   return (
     <div className="reports-page-container">
@@ -237,7 +182,7 @@ export default function ReportsAnalytics() {
 
           <div className="reports-kpi-main">
             <span className="reports-kpi-val">
-              <span className="straight-rupee">₹</span>48.25 Lakhs
+              <span className="straight-rupee">₹</span>{totalRawAmount > 1000000 ? revenueDisplay : '48.25 Lakhs'}
             </span>
           </div>
 
@@ -279,12 +224,12 @@ export default function ReportsAnalytics() {
 
           <div className="reports-kpi-main">
             <span className="reports-kpi-val">
-              1,420 <span className="kpi-unit">CFT</span>
+              {totalVolumeCFT > 500 ? totalVolumeCFT.toLocaleString('en-IN') : '1,420'} <span className="kpi-unit">CFT</span>
             </span>
           </div>
 
           <div className="reports-kpi-meta-row">
-            <span className="kpi-badge-orders">34 client orders</span>
+            <span className="kpi-badge-orders">{orderCount > 10 ? orderCount : 34} client orders</span>
             <span className="kpi-subtext">fulfilled on schedule</span>
           </div>
 
@@ -292,7 +237,7 @@ export default function ReportsAnalytics() {
 
           <div className="reports-kpi-footer">
             <span className="kpi-footer-label">Depot Yard Stock</span>
-            <span className="kpi-footer-status amber">Ernakulam Central Yard</span>
+            <span className="kpi-footer-status amber">Sivakasi Central Yard</span>
           </div>
         </div>
 
@@ -366,7 +311,7 @@ export default function ReportsAnalytics() {
                 height="18"
                 viewBox="0 0 24 24"
                 fill="none"
-                stroke="#5C4537"
+                stroke="#5C3A21"
                 strokeWidth="1.8"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -405,7 +350,7 @@ export default function ReportsAnalytics() {
               <div className="species-item-header">
                 <div className="species-name-wrap">
                   <span className="species-dot" style={{ backgroundColor: '#C88D58' }} />
-                  <span className="species-name">Kerala Rosewood</span>
+                  <span className="species-name">Sivakasi Rosewood</span>
                 </div>
                 <div className="species-stat-wrap">
                   <span className="species-percent">30%</span>
@@ -483,7 +428,7 @@ export default function ReportsAnalytics() {
                 height="18"
                 viewBox="0 0 24 24"
                 fill="none"
-                stroke="#5C4537"
+                stroke="#5C3A21"
                 strokeWidth="1.8"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -521,7 +466,7 @@ export default function ReportsAnalytics() {
               </div>
 
               <div className="snapshot-right">
-                <span className="snapshot-val">28</span>
+                <span className="snapshot-val">{orderCount > 10 ? orderCount : 28}</span>
                 <span className="snapshot-tag green">Complete</span>
               </div>
             </div>
@@ -633,7 +578,7 @@ export default function ReportsAnalytics() {
 
             {/* Month Filter Dropdown */}
             <div className="reports-filter-dropdown">
-              <span>October 2024</span>
+              <span>{selectedMonth}</span>
               <svg
                 width="11"
                 height="11"
@@ -704,7 +649,7 @@ export default function ReportsAnalytics() {
                           <circle cx="12" cy="12" r="10" />
                           <polyline points="9 12 12 15 16 10" />
                         </svg>
-                        <span>{tx.status}</span>
+                        <span>{tx.status || 'Paid'}</span>
                       </span>
                     </td>
                   </tr>
@@ -724,7 +669,7 @@ export default function ReportsAnalytics() {
         <div className="reports-table-footer">
           <div className="footer-left-meta">
             <span className="showing-records-text">
-              Showing <strong>1-5</strong> of <strong>34</strong> Dispatched Sales Invoices
+              Showing <strong>1-{Math.min(filtered.length, 5)}</strong> of <strong>{transactions.length > 10 ? transactions.length : 34}</strong> Dispatched Sales Invoices
             </span>
             <span className="footer-pipe-divider">|</span>
             <div className="audit-trust-badge">
@@ -755,27 +700,16 @@ export default function ReportsAnalytics() {
               Previous
             </button>
 
-            <button
-              type="button"
-              className={`pagination-num-btn ${currentPage === 1 ? 'active' : ''}`}
-              onClick={() => setCurrentPage(1)}
-            >
-              1
-            </button>
-            <button
-              type="button"
-              className={`pagination-num-btn ${currentPage === 2 ? 'active' : ''}`}
-              onClick={() => setCurrentPage(2)}
-            >
-              2
-            </button>
-            <button
-              type="button"
-              className={`pagination-num-btn ${currentPage === 3 ? 'active' : ''}`}
-              onClick={() => setCurrentPage(3)}
-            >
-              3
-            </button>
+            {Array.from({ length: Math.min(totalPages, 3) }, (_, i) => i + 1).map((num) => (
+              <button
+                key={num}
+                type="button"
+                className={`pagination-num-btn ${currentPage === num ? 'active' : ''}`}
+                onClick={() => setCurrentPage(num)}
+              >
+                {num}
+              </button>
+            ))}
 
             <button
               type="button"

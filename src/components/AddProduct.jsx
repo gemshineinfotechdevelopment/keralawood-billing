@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { DataStore } from '../services/dataStore'
 import './AddProduct.css'
 
 const DEFAULT_CATEGORIES = [
@@ -146,6 +147,9 @@ export default function AddProduct({ onProductSaved }) {
       tradeDiscount,
       transitPass: transitPassEnabled,
     }
+
+    // Add to centralized dynamic data store
+    DataStore.addProduct(productPayload)
 
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
@@ -691,7 +695,7 @@ export default function AddProduct({ onProductSaved }) {
               <div className="pass-meta">
                 <span className="pass-title">Forest Transit Pass (Form IV)</span>
                 <span className="pass-subtext">
-                  Mandatory Kerala Forest Dept. movement permit for Nilambur Teak transit
+                  Mandatory Sivakasi Forest Dept. movement permit for Nilambur Teak transit
                 </span>
               </div>
             </div>

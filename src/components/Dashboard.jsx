@@ -150,7 +150,7 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice 
               <circle cx="12" cy="12" r="10" />
               <polyline points="12 6 12 12 16 14" />
             </svg>
-            <span>Today • Kerala Standard Time</span>
+            <span>Today • Sivakasi Standard Time</span>
           </div>
 
           <button type="button" className="btn-new-bill" onClick={onNavigateToNewBill}>

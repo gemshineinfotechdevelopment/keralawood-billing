@@ -3,21 +3,21 @@ import './Settings.css'
 
 export default function Settings() {
   // General Depot Profile
-  const [depotName, setDepotName] = useState('Kerala Wood Furniture - Ernakulam Depot')
+  const [depotName, setDepotName] = useState('Sivakasi Wood Furniture - Sivakasi Depot')
   const [contactPhone, setContactPhone] = useState('+91 484 289 1204')
-  const [contactEmail, setContactEmail] = useState('depot@keralawood.in')
-  const [address, setAddress] = useState('Ernakulam Central Depot & Mill Yard, Kochi, Kerala')
-  const [dealerLicense, setDealerLicense] = useState('KFD/ERN/TMR/2023-884')
+  const [contactEmail, setContactEmail] = useState('depot@sivakasiwood.in')
+  const [address, setAddress] = useState('Sivakasi Central Depot & Mill Yard, Sivakasi')
+  const [dealerLicense, setDealerLicense] = useState('SFD/SVK/TMR/2023-884')
   const [operatingHours, setOperatingHours] = useState('Mon - Sat: 08:30 AM - 06:30 PM (Sun: Closed)')
 
   // Tax, GST & Banking Defaults
   const [gstin, setGstin] = useState('32AABCP9821K1ZK')
   const [hsnCode, setHsnCode] = useState('9403')
   const taxRate = '18% (Standard GST)'
-  const [bankName, setBankName] = useState('State Bank of India - Broadway Ernakulam Branch')
+  const [bankName, setBankName] = useState('State Bank of India - Sivakasi Branch')
   const [accountNumber, setAccountNumber] = useState('4092817290192')
   const [ifscCode, setIfscCode] = useState('SBIN0008839')
-  const [upiId, setUpiId] = useState('keralawood.depot@sbi')
+  const [upiId, setUpiId] = useState('sivakasiwood.depot@sbi')
 
   // Stock Alerts & Quality Parameters
   const [minStockThreshold, setMinStockThreshold] = useState('5')

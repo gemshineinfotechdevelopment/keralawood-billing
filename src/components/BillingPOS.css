@@ -793,3 +793,375 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ===================================================
+   Multi-Bill Concurrent Drafts & Modals (Feature 1 & 4)
+   =================================================== */
+
+.pos-drafts-tab-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  background-color: #FFFFFF;
+  border: 1px solid #F0E6DE;
+  border-radius: 8px;
+  padding: 6px 12px;
+  box-shadow: 0 1px 3px rgba(49, 25, 11, 0.02);
+}
+
+.pos-drafts-list {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+}
+
+.pos-draft-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #FAF1EE;
+  border: 1px solid #EAE0D8;
+  border-radius: 6px;
+  padding: 5px 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.pos-draft-tab:hover {
+  background-color: #F5EAE4;
+}
+
+.pos-draft-tab.active {
+  background-color: #31190B;
+  color: #FFFFFF;
+  border-color: #31190B;
+}
+
+.draft-tab-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.draft-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #8C7B72;
+}
+
+.draft-dot.active {
+  background-color: #22C55E;
+}
+
+.draft-tab-label {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.pos-draft-tab.active .draft-tab-label {
+  color: #FFFFFF;
+}
+
+.draft-items-pill {
+  font-size: 9.5px;
+  padding: 1px 5px;
+  border-radius: 10px;
+  background-color: rgba(49, 25, 11, 0.08);
+  color: #5C3A21;
+}
+
+.pos-draft-tab.active .draft-items-pill {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: #FFFFFF;
+}
+
+.btn-close-draft {
+  background: transparent;
+  border: none;
+  font-size: 10px;
+  color: inherit;
+  opacity: 0.6;
+  cursor: pointer;
+  padding: 0 2px;
+  line-height: 1;
+}
+
+.btn-close-draft:hover {
+  opacity: 1;
+}
+
+.btn-add-draft {
+  background-color: #FAF1EE;
+  color: #A06A3A;
+  border: 1px dashed #D6C5BC;
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.btn-add-draft:hover {
+  background-color: #31190B;
+  color: #FFFFFF;
+  border-style: solid;
+}
+
+/* Category Mini Catalog Row */
+.pos-catalog-mini-row {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 2px 0;
+}
+
+.pos-catalog-item-chip {
+  background-color: #FFFFFF;
+  border: 1px solid #EAE0D8;
+  border-radius: 6px;
+  padding: 6px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgba(49, 25, 11, 0.02);
+  transition: all 0.12s ease;
+}
+
+.pos-catalog-item-chip:hover {
+  border-color: #C88D58;
+  background-color: #FEF9F6;
+}
+
+.chip-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: #31190B;
+}
+
+.chip-price {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #A06A3A;
+}
+
+/* Customer & Invoice Modals */
+.pos-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(49, 25, 11, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(2px);
+}
+
+.pos-modal-card {
+  background-color: #FFFFFF;
+  border-radius: 10px;
+  width: 440px;
+  max-width: 90vw;
+  padding: 20px;
+  box-shadow: 0 10px 30px rgba(49, 25, 11, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.pos-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pos-modal-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 17px;
+  font-weight: 600;
+  color: #31190B;
+  margin: 0;
+}
+
+.pos-modal-close {
+  background: transparent;
+  border: none;
+  font-size: 13px;
+  color: #8C7B72;
+  cursor: pointer;
+}
+
+.pos-customer-picker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.customer-picker-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #F0E6DE;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.customer-picker-item:hover {
+  background-color: #FAF1EE;
+  border-color: #D6C5BC;
+}
+
+.customer-picker-item.active {
+  background-color: #FAF1EE;
+  border-color: #A06A3A;
+}
+
+.picker-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #4A2E18;
+  color: #FFFFFF;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.picker-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.picker-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: #31190B;
+}
+
+.picker-phone {
+  font-size: 10.5px;
+  color: #8C7B72;
+}
+
+.picker-type {
+  font-size: 10px;
+  font-weight: 600;
+  color: #A06A3A;
+  background-color: #F6ECE5;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* Invoice Receipt Card */
+.invoice-receipt-card {
+  text-align: center;
+}
+
+.receipt-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.receipt-badge {
+  background-color: #E8F5E9;
+  color: #1B5E20;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.receipt-inv-num {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: #31190B;
+  margin: 4px 0 0 0;
+}
+
+.receipt-depot-name {
+  font-size: 11px;
+  color: #8C7B72;
+  margin: 0;
+}
+
+.receipt-body {
+  background-color: #FAF1EE;
+  border-radius: 6px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+}
+
+.receipt-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11.5px;
+  color: #31190B;
+}
+
+.receipt-divider {
+  border-top: 1px dashed #D6C5BC;
+  margin: 4px 0;
+}
+
+.receipt-row.total {
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.receipt-total-val {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 17px;
+  color: #31190B;
+}
+
+.receipt-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.btn-receipt-print {
+  background-color: #31190B;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-receipt-close {
+  background-color: #FAF1EE;
+  color: #5C3A21;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+}

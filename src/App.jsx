@@ -13,7 +13,7 @@ import './App.css'
 function App() {
   const [view, setView] = useState('billing') // 'billing' or 'login'
   const [activeNav, setActiveNav] = useState('Products')
-  const [email, setEmail] = useState('rajesh.s@keralawood.com')
+  const [email, setEmail] = useState('rajesh.s@sivakasiwood.com')
   const [password, setPassword] = useState('password123')
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(true)
@@ -51,12 +51,12 @@ function App() {
           ) : activeNav === 'Billing & POS' ? (
             <BillingPOS />
           ) : activeNav === 'Customers' ? (
-            <Customers />
+            <Customers onNavigateToBilling={() => setActiveNav('Billing & POS')} />
           ) : (
             <div className="module-placeholder">
               <div className="placeholder-card">
                 <h2>{activeNav}</h2>
-                <p>This module is connected to the Kerala Wood ERP system.</p>
+                <p>This module is connected to the Sivakasi Wood ERP system.</p>
                 <button
                   type="button"
                   className="btn-back-dash"
@@ -78,9 +78,9 @@ function App() {
       {/* Top Header */}
       <header className="login-header">
         <div className="brand-section">
-          <img src={treeLogo} alt="Kerala Wood" className="header-logo" />
+          <img src={treeLogo} alt="Sivakasi Wood" className="header-logo" />
           <div className="brand-text">
-            <span className="brand-title">Kerala Wood</span>
+            <span className="brand-title">Sivakasi Wood</span>
             <span className="brand-subtitle">HERITAGE ARTISAN TIMBER</span>
           </div>
         </div>
@@ -112,13 +112,13 @@ function App() {
       {/* Main Login Card */}
       <main className="login-main">
         <div className="login-card">
-          <img src={treeLogo} alt="Kerala Wood Emblem" className="card-logo" />
-          <h2 className="card-brand-title">Kerala Wood</h2>
+          <img src={treeLogo} alt="Sivakasi Wood Emblem" className="card-logo" />
+          <h2 className="card-brand-title">Sivakasi Wood</h2>
           <div className="card-brand-subtitle">HERITAGE ARTISAN TIMBER</div>
 
           <h1 className="card-welcome-title">Welcome back</h1>
           <p className="card-description">
-            Enter your credentials to access the Kerala Wood ERP
+            Enter your credentials to access the Sivakasi Wood ERP
           </p>
 
           <form className="login-form" onSubmit={handleSubmit}>
@@ -151,7 +151,7 @@ function App() {
                   className="login-input"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@keralawood.com"
+                  placeholder="name@sivakasiwood.com"
                   autoComplete="username"
                   required
                 />
@@ -307,7 +307,7 @@ function App() {
       {/* Footer */}
       <footer className="login-footer">
         <span className="footer-copyright">
-          © 2024 Kerala Wood Timber Guild. All rights reserved.
+          © 2024 Sivakasi Wood Timber Guild. All rights reserved.
         </span>
         <div className="footer-links">
           <a href="#privacy" className="footer-link" onClick={(e) => e.preventDefault()}>

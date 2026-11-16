@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { DataStore } from '../services/dataStore'
 import './StockManagement.css'
 
 const DEFAULT_PRODUCTS = [
@@ -14,7 +15,7 @@ const DEFAULT_PRODUCTS = [
   {
     id: 2,
     name: 'Solid Rosewood Royal King Bed',
-    sku: 'KWF-BD-RW-K01 • Kerala Rosewood',
+    sku: 'KWF-BD-RW-K01 • Sivakasi Rosewood',
     category: 'Beds',
     stock: '1 left (Critical)',
     stockType: 'critical',
@@ -141,6 +142,8 @@ export default function StockManagement({ onAddNewProduct }) {
       prev.map((p) => (p.id === targetProduct.id ? updatedProduct : p))
     )
 
+    DataStore.updateStock(targetProduct.id, newQty)
+
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
       await fetch(`${apiUrl}/api/products/${targetProduct.id}`, {
@@ -222,6 +225,8 @@ export default function StockManagement({ onAddNewProduct }) {
     setProducts((prev) =>
       prev.map((p) => (p.id === editingProduct.id ? updatedProduct : p))
     )
+
+    DataStore.updateStock(editingProduct.id, qty)
 
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
@@ -337,7 +342,7 @@ export default function StockManagement({ onAddNewProduct }) {
           <h1 className="stock-main-title">Artisanal Stock & Timber Reserves</h1>
           <p className="stock-main-subtitle">
             Manage indigenous hardwood stock, kiln seasoning logs, warehouse allocations,
-            and unit pricing across Kerala's master artisan yards and coastal mill hubs.
+            and unit pricing across Sivakasi's master artisan yards and coastal mill hubs.
           </p>
         </div>
 
@@ -643,7 +648,7 @@ export default function StockManagement({ onAddNewProduct }) {
             </svg>
           </span>
           <span>
-            All timber lots are FSC-certified and compliant with Kerala Forest Department
+            All timber lots are FSC-certified and compliant with Sivakasi Forest Department
             guidelines.
           </span>
         </div>
@@ -820,7 +825,7 @@ export default function StockManagement({ onAddNewProduct }) {
                   <line x1="12" y1="16" x2="12" y2="12" />
                   <line x1="12" y1="8" x2="12.01" y2="8" />
                 </svg>
-                <span>Stock movement logged to Kerala Forest Dept & FSC transit audit trail.</span>
+                <span>Stock movement logged to Sivakasi Forest Dept & FSC transit audit trail.</span>
               </div>
             </div>
 

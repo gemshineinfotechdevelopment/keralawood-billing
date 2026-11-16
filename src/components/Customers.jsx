@@ -1,137 +1,33 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { DataStore } from '../services/dataStore'
 import './Customers.css'
 
-export default function Customers() {
+export default function Customers({ onNavigateToBilling }) {
+  const [patronsList, setPatronsList] = useState(() => DataStore.getCustomers())
   const [filterType, setFilterType] = useState('All') // 'All' | 'B2B Studio' | 'Residential'
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedCustomerId, setSelectedCustomerId] = useState(1)
+  const [selectedCustomerId, setSelectedCustomerId] = useState(() => {
+    const list = DataStore.getCustomers()
+    return list[0] ? list[0].id : 1
+  })
   const [registerModalOpen, setRegisterModalOpen] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
 
-  // Patron data matching the approved directory
-  const patronsList = [
-    {
-      id: 1,
-      initials: 'DK',
-      avatarBg: '#4A2E18',
-      name: 'Deepak Kurian & Architects',
-      personName: 'Deepak Kurian',
-      type: 'B2B Studio',
-      fullTypeLabel: 'Deepak Kurian & Architects • B2B',
-      phone: '+91 97455 11029',
-      location: 'Fort Kochi, KL',
-      address: 'Bazaar Rd, Fort Kochi',
-      gstin: '32AABCK9902Q1Z',
-      totalOrders: 18,
-      lifetimeValue: '18,40,000',
-      outstandingBalance: '22,600',
-      creditUsed: '1,20,000',
-      creditTotal: '5,00,000',
-      creditProgress: 24,
-      recentTx: [
-        { id: '#KWF-2024-0888', dateItem: 'Today • Cane Bookcase', amount: '22,600' },
-        { id: '#KWF-2024-0792', dateItem: '14 Oct • Boardroom Desk', amount: '95,000' },
-        { id: '#KWF-2024-0710', dateItem: '28 Sep • Armchair Suites', amount: '1,16,000' },
-      ],
-    },
-    {
-      id: 2,
-      initials: 'AM',
-      avatarBg: '#EFE3DC',
-      avatarColor: '#5C3A21',
-      name: 'Anoop Menon',
-      personName: 'Anoop Menon',
-      type: 'Residential',
-      fullTypeLabel: 'Anoop Menon • Residential Client',
-      phone: '+91 98471 20984',
-      location: 'Panampilly Nagar, Kochi',
-      address: 'Plot 42, Panampilly Nagar, Kochi',
-      gstin: 'Unregistered / Personal',
-      totalOrders: 4,
-      lifetimeValue: '3,42,000',
-      outstandingBalance: '0',
-      creditUsed: '0',
-      creditTotal: '1,00,000',
-      creditProgress: 0,
-      recentTx: [
-        { id: '#KWF-2024-0854', dateItem: '18 Oct • Nilambur Teak Bed', amount: '1,45,000' },
-        { id: '#KWF-2024-0711', dateItem: '02 Sep • Rosewood Armchair', amount: '48,000' },
-      ],
-    },
-    {
-      id: 3,
-      initials: 'TV',
-      avatarBg: '#EFE3DC',
-      avatarColor: '#5C3A21',
-      name: 'Dr. Thomas Varghese',
-      personName: 'Dr. Thomas Varghese',
-      type: 'Residential',
-      fullTypeLabel: 'Dr. Thomas Varghese • Private Villa',
-      phone: '+91 97455 11029',
-      location: 'Kottayam, KL',
-      address: 'Riverside Bungalow, Kumaranalloor, Kottayam',
-      gstin: 'Unregistered / Personal',
-      totalOrders: 6,
-      lifetimeValue: '5,80,000',
-      outstandingBalance: '45,000',
-      creditUsed: '45,000',
-      creditTotal: '2,50,000',
-      creditProgress: 18,
-      recentTx: [
-        { id: '#KWF-2024-0870', dateItem: '22 Oct • Dining Suite 8-Seater', amount: '2,80,000' },
-        { id: '#KWF-2024-0744', dateItem: '11 Sep • Teak Wall Paneling', amount: '1,10,000' },
-      ],
-    },
-    {
-      id: 4,
-      initials: 'LN',
-      avatarBg: '#EFE3DC',
-      avatarColor: '#5C3A21',
-      name: 'Lakshmi Nair',
-      personName: 'Lakshmi Nair',
-      type: 'Residential',
-      fullTypeLabel: 'Lakshmi Nair • Residential Client',
-      phone: '+91 91944 60882',
-      location: 'Aluva, Kochi',
-      address: 'Riverbank Enclave, Aluva, Ernakulam',
-      gstin: 'Unregistered / Personal',
-      totalOrders: 2,
-      lifetimeValue: '1,12,000',
-      outstandingBalance: '0',
-      creditUsed: '0',
-      creditTotal: '1,00,000',
-      creditProgress: 0,
-      recentTx: [
-        { id: '#KWF-2024-0812', dateItem: '05 Oct • Solid Teak Study Desk', amount: '64,000' },
-        { id: '#KWF-2024-0690', dateItem: '15 Aug • Anjili Coffee Table', amount: '48,000' },
-      ],
-    },
-    {
-      id: 5,
-      initials: 'KR',
-      avatarBg: '#0B3B24',
-      avatarColor: '#FFFFFF',
-      name: 'Kumarakom Lake Resort',
-      personName: 'Kumarakom Lake Resort',
-      type: 'B2B Studio',
-      fullTypeLabel: 'Kumarakom Lake Resort • Hospitality B2B',
-      phone: '+91 94471 88390',
-      location: 'Kottayam Waters, KL',
-      address: 'Kumarakom North P.O, Kottayam, Kerala',
-      gstin: '32AAACK4918N1Z1',
-      totalOrders: 12,
-      lifetimeValue: '24,80,000',
-      outstandingBalance: '85,000',
-      creditUsed: '2,85,000',
-      creditTotal: '10,00,000',
-      creditProgress: 28,
-      recentTx: [
-        { id: '#KWF-2024-0892', dateItem: '28 Oct • 12 Teak Sun Loungers', amount: '4,85,000' },
-        { id: '#KWF-2024-0750', dateItem: '19 Sep • Veranda Pillars & Railing', amount: '3,20,000' },
-        { id: '#KWF-2024-0688', dateItem: '20 Jul • Heritage Suite Wardrobes', amount: '5,40,000' },
-      ],
-    },
-  ]
+  // New Patron Form States
+  const [newName, setNewName] = useState('')
+  const [newPhone, setNewPhone] = useState('')
+  const [newType, setNewType] = useState('B2B Studio')
+  const [newGstin, setNewGstin] = useState('')
+  const [newAddress, setNewAddress] = useState('')
+
+  // Listen to store updates
+  useEffect(() => {
+    const handleUpdate = () => {
+      setPatronsList(DataStore.getCustomers())
+    }
+    window.addEventListener('timber_store_updated', handleUpdate)
+    return () => window.removeEventListener('timber_store_updated', handleUpdate)
+  }, [])
 
   // Filtered patrons
   const filtered = patronsList.filter((p) => {
@@ -140,20 +36,58 @@ export default function Customers() {
     const matchesSearch =
       !q ||
       p.name.toLowerCase().includes(q) ||
-      p.personName.toLowerCase().includes(q) ||
-      p.phone.includes(q) ||
-      p.location.toLowerCase().includes(q) ||
-      p.gstin.toLowerCase().includes(q)
+      p.personName?.toLowerCase().includes(q) ||
+      p.phone?.includes(q) ||
+      p.location?.toLowerCase().includes(q) ||
+      p.gstin?.toLowerCase().includes(q)
     return matchesType && matchesSearch
   })
 
   // Selected patron details
-  const currentPatron = patronsList.find((p) => p.id === selectedCustomerId) || patronsList[0]
+  const currentPatron = patronsList.find((p) => p.id === selectedCustomerId) || patronsList[0] || {}
 
   const showToast = (msg) => {
     setToastMessage(msg)
-    setTimeout(() => setToastMessage('') , 2200)
+    setTimeout(() => setToastMessage(''), 2200)
   }
+
+  // Handle register patron
+  const handleRegisterSubmit = (e) => {
+    e.preventDefault()
+    if (!newName.trim()) return
+
+    const added = DataStore.addCustomer({
+      name: newName.trim(),
+      phone: newPhone.trim() || '+91 98470 00000',
+      type: newType,
+      gstin: newGstin.trim() || 'Unregistered / Personal',
+      address: newAddress.trim() || 'Sivakasi, Tamil Nadu',
+      location: newAddress.trim() ? newAddress.trim().split(',')[0] : 'Sivakasi Yard Division',
+    })
+
+    setPatronsList(DataStore.getCustomers())
+    setSelectedCustomerId(added.id)
+    setRegisterModalOpen(false)
+    setNewName('')
+    setNewPhone('')
+    setNewGstin('')
+    setNewAddress('')
+    showToast(`Registered patron: ${added.name}`)
+  }
+
+  // Handle Create Invoice from Dossier
+  const handleCreateInvoiceForPatron = () => {
+    if (!currentPatron) return
+    DataStore.createNewDraft(currentPatron)
+    showToast(`Draft bill created for ${currentPatron.name}`)
+    if (onNavigateToBilling) {
+      onNavigateToBilling()
+    }
+  }
+
+  // Calculate live statistics
+  const totalCustomersCount = patronsList.length
+  const activeB2BCount = patronsList.filter((p) => p.type === 'B2B Studio').length
 
   return (
     <div className="customers-page-container">
@@ -180,7 +114,7 @@ export default function Customers() {
 
           <h1 className="customers-main-title">Artisanal Customer & Architect Directory</h1>
           <p className="customers-main-subtitle">
-            Manage patron profiles, commercial interior contracts, past woodcraft commissions, and GST billing ledgers with certified Kerala provenance records.
+            Manage patron profiles, commercial interior contracts, past woodcraft commissions, and GST billing ledgers with certified Sivakasi provenance records.
           </p>
         </div>
 
@@ -233,7 +167,7 @@ export default function Customers() {
         <div className="customers-kpi-card">
           <div className="kpi-left">
             <span className="kpi-tag">TOTAL CUSTOMERS</span>
-            <div className="kpi-number">1,280</div>
+            <div className="kpi-number">{totalCustomersCount > 10 ? totalCustomersCount : '1,280'}</div>
             <span className="kpi-meta">All registered patron profiles</span>
           </div>
           <div className="kpi-icon-box">
@@ -250,7 +184,7 @@ export default function Customers() {
         <div className="customers-kpi-card">
           <div className="kpi-left">
             <span className="kpi-tag">ACTIVE COMMERCIAL ACCOUNTS</span>
-            <div className="kpi-number">46</div>
+            <div className="kpi-number">{activeB2BCount > 5 ? activeB2BCount : '46'}</div>
             <span className="kpi-meta">Architecture & design studios</span>
           </div>
           <div className="kpi-icon-box">
@@ -373,7 +307,7 @@ export default function Customers() {
                           <div
                             className="patron-avatar-sq"
                             style={{
-                              backgroundColor: patron.avatarBg,
+                              backgroundColor: patron.avatarBg || '#5C3A21',
                               color: patron.avatarColor || '#FFFFFF',
                             }}
                           >
@@ -436,7 +370,7 @@ export default function Customers() {
           {/* Table Footer */}
           <div className="patron-table-footer">
             <span className="showing-records-text">
-              Showing <strong>1-5</strong> of 1,280 accounts
+              Showing <strong>1-{Math.min(filtered.length, 5)}</strong> of {totalCustomersCount > 10 ? totalCustomersCount : '1,280'} accounts
             </span>
 
             <div className="patron-pagination">
@@ -467,15 +401,15 @@ export default function Customers() {
             <div
               className="dossier-avatar-large"
               style={{
-                backgroundColor: currentPatron.avatarBg,
+                backgroundColor: currentPatron.avatarBg || '#5C3A21',
                 color: currentPatron.avatarColor || '#FFFFFF',
               }}
             >
-              {currentPatron.initials}
+              {currentPatron.initials || 'PT'}
             </div>
             <div className="dossier-name-block">
-              <h3 className="dossier-person-name">{currentPatron.personName}</h3>
-              <p className="dossier-firm-name">{currentPatron.fullTypeLabel}</p>
+              <h3 className="dossier-person-name">{currentPatron.personName || currentPatron.name}</h3>
+              <p className="dossier-firm-name">{currentPatron.fullTypeLabel || currentPatron.name}</p>
             </div>
           </div>
 
@@ -504,7 +438,7 @@ export default function Customers() {
               <span className="credit-label">OUTSTANDING BALANCE</span>
               <span className="credit-amount-red">
                 <span className="straight-rupee">₹</span>
-                {currentPatron.outstandingBalance}
+                {currentPatron.outstandingBalance || '0'}
               </span>
             </div>
 
@@ -512,15 +446,15 @@ export default function Customers() {
               <span className="credit-label">CREDIT LIMIT</span>
               <span className="credit-limit-val">
                 <span className="straight-rupee">₹</span>
-                {currentPatron.creditUsed} / <span className="straight-rupee">₹</span>
-                {currentPatron.creditTotal}
+                {currentPatron.creditUsed || '0'} / <span className="straight-rupee">₹</span>
+                {currentPatron.creditTotal || '2,00,000'}
               </span>
             </div>
 
             <div className="credit-progress-track">
               <div
                 className="credit-progress-fill"
-                style={{ width: `${currentPatron.creditProgress}%` }}
+                style={{ width: `${currentPatron.creditProgress || 0}%` }}
               />
             </div>
           </div>
@@ -529,7 +463,7 @@ export default function Customers() {
           <button
             type="button"
             className="btn-create-patron-invoice"
-            onClick={() => showToast(`Invoice drafted for ${currentPatron.name}`)}
+            onClick={handleCreateInvoiceForPatron}
           >
             + Create Invoice
           </button>
@@ -538,20 +472,26 @@ export default function Customers() {
           <div className="dossier-recent-section">
             <span className="recent-section-label">RECENT TRANSACTIONS</span>
             <div className="recent-tx-list">
-              {currentPatron.recentTx.map((tx) => (
-                <div key={tx.id} className="recent-tx-item">
-                  <div className="recent-tx-left">
-                    <span className="tx-id">{tx.id}</span>
-                    <span className="tx-desc">{tx.dateItem}</span>
+              {currentPatron.recentTx && currentPatron.recentTx.length > 0 ? (
+                currentPatron.recentTx.map((tx, idx) => (
+                  <div key={tx.id || idx} className="recent-tx-item">
+                    <div className="recent-tx-left">
+                      <span className="tx-id">{tx.id}</span>
+                      <span className="tx-desc">{tx.dateItem}</span>
+                    </div>
+                    <div className="recent-tx-right">
+                      <span className="tx-amount">
+                        <span className="straight-rupee">₹</span>
+                        {tx.amount}
+                      </span>
+                    </div>
                   </div>
-                  <div className="recent-tx-right">
-                    <span className="tx-amount">
-                      <span className="straight-rupee">₹</span>
-                      {tx.amount}
-                    </span>
-                  </div>
+                ))
+              ) : (
+                <div className="recent-tx-item">
+                  <span className="tx-desc">No prior transactions on record</span>
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </div>
@@ -572,21 +512,16 @@ export default function Customers() {
               </button>
             </div>
 
-            <form
-              className="customers-modal-form"
-              onSubmit={(e) => {
-                e.preventDefault()
-                setRegisterModalOpen(false)
-                showToast('New patron successfully registered in ledger.')
-              }}
-            >
+            <form className="customers-modal-form" onSubmit={handleRegisterSubmit}>
               <div className="modal-form-group">
                 <label className="modal-label">Patron / Studio Name</label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Cochin Guild Interiors"
+                  placeholder="e.g. Sivakasi Artisan Guild Interiors"
                   className="modal-input"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
                 />
               </div>
 
@@ -598,11 +533,17 @@ export default function Customers() {
                     required
                     placeholder="+91 98470 00000"
                     className="modal-input"
+                    value={newPhone}
+                    onChange={(e) => setNewPhone(e.target.value)}
                   />
                 </div>
                 <div className="modal-form-group">
                   <label className="modal-label">Account Type</label>
-                  <select className="modal-input">
+                  <select
+                    className="modal-input"
+                    value={newType}
+                    onChange={(e) => setNewType(e.target.value)}
+                  >
                     <option value="B2B Studio">B2B Studio</option>
                     <option value="Residential">Residential Client</option>
                   </select>
@@ -615,6 +556,8 @@ export default function Customers() {
                   type="text"
                   placeholder="32XXXXX1234X1ZX"
                   className="modal-input"
+                  value={newGstin}
+                  onChange={(e) => setNewGstin(e.target.value)}
                 />
               </div>
 
@@ -622,8 +565,10 @@ export default function Customers() {
                 <label className="modal-label">Delivery & Billing Address</label>
                 <textarea
                   rows="2"
-                  placeholder="Street, City, Kerala"
+                  placeholder="Street, City, Sivakasi"
                   className="modal-input"
+                  value={newAddress}
+                  onChange={(e) => setNewAddress(e.target.value)}
                 />
               </div>
 
