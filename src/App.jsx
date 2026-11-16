@@ -11,8 +11,8 @@ import Customers from './components/Customers'
 import './App.css'
 
 function App() {
-  const [view, setView] = useState('billing') // 'billing' or 'login'
-  const [activeNav, setActiveNav] = useState('Products')
+  const [view, setView] = useState('login') // Defaults to 'login' page on visit
+  const [activeNav, setActiveNav] = useState('Dashboard')
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [email, setEmail] = useState('rajesh.s@sivakasiwood.com')
@@ -24,6 +24,7 @@ function App() {
     e.preventDefault()
     // Smooth transition into dashboard when logging in
     setView('billing')
+    setActiveNav('Dashboard')
   }
 
   // Dashboard / Billing Workspace View
