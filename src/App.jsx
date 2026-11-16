@@ -11,8 +11,8 @@ import Customers from './components/Customers'
 import './App.css'
 
 function App() {
-  const [view, setView] = useState('login') // Defaults to 'login' page on visit
-  const [activeNav, setActiveNav] = useState('Dashboard')
+  const [view, setView] = useState(() => (sessionStorage.getItem('kwf_auth') === 'true' ? 'billing' : 'login'))
+  const [activeNav, setActiveNav] = useState('Billing & POS')
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [email, setEmail] = useState('rajesh.s@keralawood.in')
@@ -22,9 +22,10 @@ function App() {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    // Smooth transition into dashboard when logging in
+    // Persist session and open Billing & POS interface immediately
+    sessionStorage.setItem('kwf_auth', 'true')
     setView('billing')
-    setActiveNav('Dashboard')
+    setActiveNav('Billing & POS')
   }
 
   // Dashboard / Billing Workspace View
@@ -49,8 +50,12 @@ function App() {
           onToggleCollapse={() => setIsSidebarCollapsed((prev) => !prev)}
           isMobileOpen={mobileSidebarOpen}
           onCloseMobile={() => setMobileSidebarOpen(false)}
-          onClose={() => setView('login')}
-          onLogout={() => setView('login')}
+          onClose={() => setMobileSidebarOpen(false)}
+          onLogout={() => {
+            sessionStorage.removeItem('kwf_auth')
+            setView('login')
+            setMobileSidebarOpen(false)
+          }}
         />
 
         <main className="billing-main-area">

@@ -492,12 +492,19 @@
 
   .billing-layout {
     flex-direction: column;
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100vw;
   }
 
   .billing-main-area {
     padding: 12px 14px 28px 14px;
     height: auto;
     min-height: 100vh;
+    width: 100%;
+    max-width: 100vw;
+    box-sizing: border-box;
+    overflow-x: hidden;
   }
 }
 

@@ -391,7 +391,8 @@
 
 /* Mobile Drawer (max-width: 900px) */
 @media (max-width: 900px) {
-  .sidebar-container {
+  .sidebar-container,
+  .sidebar-container.collapsed {
     position: fixed;
     top: 0;
     left: 0;
@@ -406,7 +407,8 @@
     box-shadow: none;
   }
 
-  .sidebar-container.mobile-open {
+  .sidebar-container.mobile-open,
+  .sidebar-container.collapsed.mobile-open {
     transform: translateX(0);
     box-shadow: 12px 0 45px rgba(0, 0, 0, 0.65);
   }

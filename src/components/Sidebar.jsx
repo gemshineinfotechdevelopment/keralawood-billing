@@ -193,7 +193,10 @@ export default function Sidebar({
           <button
             type="button"
             className="sidebar-mobile-close-btn"
-            onClick={onCloseMobile || onClose}
+            onClick={() => {
+              if (onCloseMobile) onCloseMobile()
+              else if (onClose) onClose()
+            }}
             aria-label="Close sidebar menu"
             title="Close menu"
           >
@@ -280,7 +283,7 @@ export default function Sidebar({
         <button
           type="button"
           className={`sidebar-logout-btn ${isCollapsed ? 'compact' : ''}`}
-          onClick={onLogout || onClose}
+          onClick={onLogout}
           title={isCollapsed ? 'Logout' : undefined}
           aria-label="Logout"
         >
