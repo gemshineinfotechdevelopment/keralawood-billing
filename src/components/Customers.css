@@ -1,0 +1,912 @@
+/* ===================================================
+   Customers / Patron Directory Styles
+   Strict UI Preservation Mode
+   =================================================== */
+
+.customers-page-container {
+  max-width: 1080px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  color: #31190B;
+  padding-bottom: 36px;
+}
+
+/* Toast Message */
+.customers-toast {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  background-color: #31190B;
+  color: #FFFFFF;
+  padding: 10px 18px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(49, 25, 11, 0.25);
+  z-index: 1000;
+  animation: toastFadeIn 0.2s ease;
+}
+
+@keyframes toastFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Header */
+.customers-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.customers-title-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.customers-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.customers-category-pill {
+  background-color: #0B3B24;
+  color: #FFFFFF;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 3px 8px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.customers-reg-code {
+  color: #A06A3A;
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+.customers-main-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 26px;
+  font-weight: 600;
+  color: #31190B;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.customers-main-subtitle {
+  font-size: 11.5px;
+  color: #8C7B72;
+  margin-top: 4px;
+  margin-bottom: 0;
+}
+
+.customers-header-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.btn-architect-privilege {
+  background-color: #FAF1EE;
+  color: #734826;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 11px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.btn-architect-privilege:hover {
+  background-color: #F3E5DE;
+}
+
+.btn-export-ledger {
+  background-color: #FFFFFF;
+  border: 1px solid #EAE0D8;
+  color: #31190B;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 11px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(49, 25, 11, 0.02);
+  transition: background-color 0.15s ease;
+}
+
+.btn-export-ledger:hover {
+  background-color: #FAF1EE;
+}
+
+.btn-register-patron {
+  background-color: #4A2E18;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 16px;
+  font-size: 11.5px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(49, 25, 11, 0.15);
+  transition: background-color 0.15s ease;
+}
+
+.btn-register-patron:hover {
+  background-color: #31190B;
+}
+
+/* ===================================================
+   Row 1: 3 KPI Summary Cards
+   =================================================== */
+.customers-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.customers-kpi-card {
+  background-color: #FFFFFF;
+  border: 1px solid #F0E6DE;
+  border-radius: 10px;
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 1px 3px rgba(49, 25, 11, 0.02);
+}
+
+.kpi-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.kpi-tag {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #8C7B72;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.kpi-number {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: #31190B;
+  line-height: 1.1;
+  margin: 4px 0 2px 0;
+  letter-spacing: -0.01em;
+}
+
+.kpi-number.alert {
+  color: #C0392B;
+}
+
+.kpi-meta {
+  font-size: 10.5px;
+  color: #8C7B72;
+}
+
+.kpi-icon-box {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  background-color: #FAF1EE;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.kpi-icon-box.alert {
+  background-color: #FEECEC;
+}
+
+/* ===================================================
+   Row 2: Search & Filter Row
+   =================================================== */
+.customers-filter-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.customers-search-box {
+  background-color: #FAF1EE;
+  border: 1px solid #F0DFD7;
+  border-radius: 6px;
+  padding: 0 14px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 380px;
+}
+
+.customers-search-input {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 11.5px;
+  color: #31190B;
+  width: 100%;
+}
+
+.customers-search-input::placeholder {
+  color: #9E8E85;
+}
+
+.customers-filter-pills {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-pill {
+  background-color: #FAF1EE;
+  border: none;
+  border-radius: 16px;
+  padding: 5px 14px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #5C3A21;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.filter-pill:hover {
+  background-color: #F3E5DE;
+}
+
+.filter-pill.active {
+  background-color: #4A2E18;
+  color: #FFFFFF;
+}
+
+/* ===================================================
+   Main 2-Column Section: Table & Dossier
+   =================================================== */
+.customers-main-layout {
+  display: grid;
+  grid-template-columns: 1.45fr 0.85fr;
+  gap: 16px;
+  align-items: start;
+}
+
+/* Left Table Card */
+.patron-register-card {
+  background-color: #FFFFFF;
+  border: 1px solid #F0E6DE;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(49, 25, 11, 0.02);
+  display: flex;
+  flex-direction: column;
+}
+
+.register-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px;
+}
+
+.register-title-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.register-heading {
+  font-size: 13px;
+  font-weight: 700;
+  color: #31190B;
+  margin: 0;
+}
+
+.register-count-pill {
+  background-color: #EFE6E1;
+  color: #5C3A21;
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.register-sort-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sort-label {
+  font-size: 11px;
+  color: #8C7B72;
+}
+
+.sort-select {
+  border: 1px solid #EAE0D8;
+  border-radius: 4px;
+  background-color: #FFFFFF;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #31190B;
+  outline: none;
+  cursor: pointer;
+}
+
+.patron-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.patron-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.patron-table thead {
+  background-color: #FAF1EE;
+  border-top: 1px solid #F0E6DE;
+  border-bottom: 1px solid #F0E6DE;
+}
+
+.patron-table th {
+  padding: 9px 16px;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #7C695E;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.patron-table tbody tr {
+  border-bottom: 1px solid #F5EAE4;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+
+.patron-table tbody tr:hover {
+  background-color: #FEF9F7;
+}
+
+.patron-table tbody tr.selected-row {
+  background-color: #FFF6F2;
+}
+
+.patron-table td {
+  padding: 11px 16px;
+  vertical-align: middle;
+}
+
+.patron-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.patron-avatar-sq {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.patron-meta-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.patron-display-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #31190B;
+  line-height: 1.25;
+}
+
+.patron-type-sub {
+  font-size: 10.5px;
+  color: #8C7B72;
+  margin-top: 2px;
+}
+
+.contact-info-cell {
+  display: flex;
+  flex-direction: column;
+}
+
+.contact-phone {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #31190B;
+}
+
+.contact-loc {
+  font-size: 10.5px;
+  color: #8C7B72;
+  margin-top: 1px;
+}
+
+.total-orders-num {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #31190B;
+}
+
+.lifetime-val {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #31190B;
+}
+
+.btn-view-details {
+  background-color: #FAF1EE;
+  color: #5C3A21;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 10.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+
+.btn-view-details:hover {
+  background-color: #F3E5DE;
+}
+
+.no-patrons-cell {
+  text-align: center;
+  padding: 24px;
+  color: #8C7B72;
+  font-size: 12px;
+}
+
+/* Table Footer */
+.patron-table-footer {
+  background-color: #FAF1EE;
+  border-top: 1px solid #F0E6DE;
+  padding: 10px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.showing-records-text {
+  font-size: 11px;
+  color: #7C695E;
+}
+
+.showing-records-text strong {
+  color: #31190B;
+  font-weight: 700;
+}
+
+.patron-pagination {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pagination-arrow {
+  background-color: #FFFFFF;
+  border: 1px solid #EAE0D8;
+  border-radius: 4px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: #7C695E;
+  cursor: pointer;
+}
+
+.pagination-arrow:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pagination-num {
+  background: transparent;
+  border: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #7C695E;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pagination-num.active {
+  background-color: #4A2E18;
+  color: #FFFFFF;
+}
+
+.pagination-dots {
+  color: #8C7B72;
+  font-size: 11px;
+  padding: 0 4px;
+}
+
+/* ===================================================
+   Right: Active Patron Detail Dossier Card
+   =================================================== */
+.patron-dossier-card {
+  background-color: #FFFFFF;
+  border: 1px solid #F0E6DE;
+  border-radius: 10px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 1px 3px rgba(49, 25, 11, 0.02);
+}
+
+.dossier-profile-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dossier-avatar-large {
+  width: 44px;
+  height: 44px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 18px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.dossier-name-block {
+  display: flex;
+  flex-direction: column;
+}
+
+.dossier-person-name {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: #31190B;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.dossier-firm-name {
+  font-size: 11px;
+  color: #8C7B72;
+  margin-top: 2px;
+  margin-bottom: 0;
+}
+
+.dossier-divider {
+  border-top: 1px solid #F5EAE4;
+}
+
+.dossier-details-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dossier-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dossier-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #8C7B72;
+  letter-spacing: 0.06em;
+}
+
+.dossier-value {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #31190B;
+  text-align: right;
+}
+
+/* Credit & Balance Box */
+.dossier-credit-box {
+  background-color: #FAF1EE;
+  border-radius: 6px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.credit-row-top,
+.credit-row-mid {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.credit-label {
+  font-size: 9px;
+  font-weight: 700;
+  color: #8C7B72;
+  letter-spacing: 0.06em;
+}
+
+.credit-amount-red {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #C0392B;
+}
+
+.credit-limit-val {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #31190B;
+}
+
+.credit-progress-track {
+  width: 100%;
+  height: 5px;
+  background-color: #FCEEE9;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.credit-progress-fill {
+  height: 100%;
+  background-color: #9E6B28;
+  border-radius: 3px;
+}
+
+/* Create Invoice Action */
+.btn-create-patron-invoice {
+  background-color: #4A2E18;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 6px;
+  height: 38px;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(49, 25, 11, 0.15);
+  transition: background-color 0.15s ease;
+}
+
+.btn-create-patron-invoice:hover {
+  background-color: #31190B;
+}
+
+/* Recent Transactions */
+.dossier-recent-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.recent-section-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #8C7B72;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.recent-tx-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.recent-tx-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.recent-tx-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.tx-id {
+  font-size: 11px;
+  font-weight: 700;
+  color: #31190B;
+}
+
+.tx-desc {
+  font-size: 10px;
+  color: #8C7B72;
+  margin-top: 1px;
+}
+
+.tx-amount {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #31190B;
+}
+
+/* ===================================================
+   Register New Patron Modal
+   =================================================== */
+.customers-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(49, 25, 11, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(2px);
+}
+
+.customers-modal-content {
+  background-color: #FFFFFF;
+  border-radius: 10px;
+  width: 480px;
+  max-width: 90vw;
+  padding: 24px;
+  box-shadow: 0 10px 30px rgba(49, 25, 11, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.customers-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: #31190B;
+  margin: 0;
+}
+
+.modal-close-btn {
+  background: transparent;
+  border: none;
+  font-size: 14px;
+  color: #8C7B72;
+  cursor: pointer;
+}
+
+.customers-modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modal-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.modal-form-row {
+  display: flex;
+  gap: 12px;
+}
+
+.modal-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #5C3A21;
+}
+
+.modal-input {
+  border: 1px solid #EAE0D8;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 12px;
+  outline: none;
+  background-color: #FAF1EE;
+  color: #31190B;
+  font-family: inherit;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.modal-btn-cancel {
+  background-color: #FAF1EE;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #5C3A21;
+  cursor: pointer;
+}
+
+.modal-btn-submit {
+  background-color: #4A2E18;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 18px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #FFFFFF;
+  cursor: pointer;
+}
+
+/* Responsiveness */
+@media (max-width: 900px) {
+  .customers-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+  .customers-main-layout {
+    grid-template-columns: 1fr;
+  }
+  .customers-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .customers-header-actions {
+    align-items: flex-start;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+}

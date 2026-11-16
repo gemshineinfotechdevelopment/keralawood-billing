@@ -4,6 +4,10 @@ import Sidebar from './components/Sidebar'
 import Dashboard from './components/Dashboard'
 import StockManagement from './components/StockManagement'
 import AddProduct from './components/AddProduct'
+import Settings from './components/Settings'
+import ReportsAnalytics from './components/ReportsAnalytics'
+import BillingPOS from './components/BillingPOS'
+import Customers from './components/Customers'
 import './App.css'
 
 function App() {
@@ -40,6 +44,14 @@ function App() {
               onNavigateToNewBill={() => setActiveNav('Products')}
               onNavigateToNewInvoice={() => setActiveNav('Stock Management')}
             />
+          ) : activeNav === 'Settings' ? (
+            <Settings />
+          ) : activeNav === 'Reports & Analytics' ? (
+            <ReportsAnalytics />
+          ) : activeNav === 'Billing & POS' ? (
+            <BillingPOS />
+          ) : activeNav === 'Customers' ? (
+            <Customers />
           ) : (
             <div className="module-placeholder">
               <div className="placeholder-card">
