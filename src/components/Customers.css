@@ -328,11 +328,18 @@
   gap: 8px;
 }
 
+.register-heading-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .register-heading {
   font-size: 13px;
   font-weight: 700;
   color: #31190B;
   margin: 0;
+  white-space: nowrap;
 }
 
 .register-count-pill {
@@ -943,6 +950,49 @@
     justify-content: center;
     min-height: 40px;
     box-sizing: border-box;
+  }
+  .register-card-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 12px 14px;
+  }
+  .register-title-left {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 8px;
+  }
+  .register-heading-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+  .register-heading {
+    white-space: nowrap;
+    font-size: 13px;
+  }
+  .register-count-pill {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .register-sort-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    width: 100%;
+    gap: 8px;
+    border-top: 1px dashed #F0E6DE;
+    padding-top: 8px;
+  }
+  .sort-label {
+    white-space: nowrap;
+    font-size: 11px;
+  }
+  .sort-select {
+    font-size: 11.5px;
   }
   .patron-table-wrap {
     width: 100%;

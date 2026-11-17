@@ -282,11 +282,13 @@ export default function Customers({ onNavigateToBilling }) {
           {/* Card Header */}
           <div className="register-card-header">
             <div className="register-title-left">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5C3A21" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-              </svg>
-              <h2 className="register-heading">Live Patron Register</h2>
+              <div className="register-heading-wrap">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5C3A21" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                </svg>
+                <h2 className="register-heading">Live Patron Register</h2>
+              </div>
               <span className="register-count-pill">{filtered.length} Displayed</span>
             </div>
 

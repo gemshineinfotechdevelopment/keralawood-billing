@@ -445,6 +445,7 @@ export default function BillingPOS() {
                 <span className="pos-cart-heading">Active Invoice Cart</span>
                 <span className="pos-cart-count-pill">{totalItemsCount} Items</span>
               </div>
+              <span className="pos-cart-tax-inv">{currentBill.invoiceNumber || 'TAX-INV #2024-SK-982'}</span>
               <div className="pos-cart-header-actions">
                 <button
                   type="button"
@@ -467,7 +468,6 @@ export default function BillingPOS() {
                     Clear Cart
                   </button>
                 )}
-                <span className="pos-cart-tax-inv">{currentBill.invoiceNumber || 'TAX-INV #2024-SK-982'}</span>
               </div>
             </div>
 
