@@ -3,7 +3,9 @@ import { DataStore } from '../services/dataStore'
 import './ReportsAnalytics.css'
 
 export default function ReportsAnalytics() {
-  const [selectedMonth, setSelectedMonth] = useState('October 2024')
+  const now = new Date()
+  const currentMonthName = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+  const [selectedMonth, setSelectedMonth] = useState(currentMonthName)
   const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [exportSuccess, setExportSuccess] = useState(false)
@@ -18,8 +20,64 @@ export default function ReportsAnalytics() {
     return () => window.removeEventListener('timber_store_updated', handleUpdate)
   }, [])
 
-  // Filter transactions dynamically
-  const filtered = transactions.filter((tx) => {
+  // Collect available unique months from recorded transactions plus the current month
+  const availableMonths = [
+    currentMonthName,
+    ...new Set(
+      transactions
+        .map((tx) => {
+          if (tx.monthYear) return tx.monthYear
+          const d = tx.createdAt ? new Date(tx.createdAt) : new Date(tx.date)
+          if (!isNaN(d.getTime())) {
+            return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+          }
+          return null
+        })
+        .filter(Boolean)
+    ),
+  ].filter((v, i, a) => a.indexOf(v) === i)
+
+  const monthOptions = [
+    {
+      value: currentMonthName,
+      label: `This Month (${now.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })})`,
+    },
+    ...availableMonths
+      .filter((m) => m !== currentMonthName)
+      .map((m) => ({ value: m, label: m })),
+    { value: 'all', label: 'All-Time Ledger' },
+  ]
+
+  // Filter transactions for the selected month
+  const isMatchMonth = (tx, targetMonth) => {
+    if (targetMonth === 'all') return true
+    if (tx.monthYear && tx.monthYear.toLowerCase() === targetMonth.toLowerCase()) return true
+    if (tx.createdAt) {
+      const d = new Date(tx.createdAt)
+      if (!isNaN(d.getTime())) {
+        return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toLowerCase() === targetMonth.toLowerCase()
+      }
+    }
+    if (tx.date) {
+      const d = new Date(tx.date)
+      if (!isNaN(d.getTime())) {
+        return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toLowerCase() === targetMonth.toLowerCase()
+      }
+      const targetParts = targetMonth.split(' ')
+      const shortTarget = targetParts[0].slice(0, 3).toLowerCase()
+      const yearTarget = targetParts[1]
+      const txLower = tx.date.toLowerCase()
+      if (txLower.includes(shortTarget) && (!yearTarget || txLower.includes(yearTarget))) {
+        return true
+      }
+    }
+    return false
+  }
+
+  const monthTransactions = transactions.filter((tx) => isMatchMonth(tx, selectedMonth))
+
+  // Filter transactions dynamically by search query within the month
+  const filtered = monthTransactions.filter((tx) => {
     const q = searchQuery.toLowerCase().trim()
     if (!q) return true
     return (
@@ -31,15 +89,15 @@ export default function ReportsAnalytics() {
     )
   })
 
-  // Dynamic calculations
-  const totalRawAmount = transactions.reduce((sum, tx) => {
+  // Dynamic calculations based strictly on the selected month
+  const totalRawAmount = monthTransactions.reduce((sum, tx) => {
     if (tx.rawAmount) return sum + tx.rawAmount
     const cleaned = Number(String(tx.amount).replace(/[^0-9]/g, '')) || 0
     return sum + cleaned
   }, 0)
 
-  const totalVolumeCFT = transactions.reduce((sum, tx) => sum + (Number(tx.volume) || 28), 0)
-  const orderCount = transactions.length
+  const totalVolumeCFT = monthTransactions.reduce((sum, tx) => sum + (Number(tx.volume) || 0), 0)
+  const orderCount = monthTransactions.length
 
   const itemsPerPage = 5
   const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1
@@ -56,9 +114,33 @@ export default function ReportsAnalytics() {
   }
 
   // Format revenue display
-  const revenueDisplay = totalRawAmount >= 100000
-    ? `${(totalRawAmount / 100000).toFixed(2)} Lakhs`
-    : totalRawAmount.toLocaleString('en-IN')
+  const revenueDisplay =
+    totalRawAmount === 0
+      ? '0.00'
+      : totalRawAmount >= 100000
+      ? `${(totalRawAmount / 100000).toFixed(2)} Lakhs`
+      : totalRawAmount.toLocaleString('en-IN')
+
+  // Top Selling Wood Species calculated dynamically from this month's transactions
+  const speciesList = [
+    { name: 'Nilambur Teak', color: '#31190B' },
+    { name: 'Sivakasi Rosewood', color: '#C88D58' },
+    { name: 'Wild Anjili Wood', color: '#1A4D2E' },
+    { name: 'Country Hardwood & Mahogany', color: '#8C7B72' },
+  ].map((spec) => {
+    const specTxs = monthTransactions.filter((tx) =>
+      (tx.wood || '').toLowerCase().includes(spec.name.toLowerCase().split(' ')[0])
+    )
+    const specVolume = specTxs.reduce((sum, tx) => sum + (Number(tx.volume) || 0), 0)
+    const specRaw = specTxs.reduce((sum, tx) => sum + (Number(tx.rawAmount) || 0), 0)
+    const pct = totalVolumeCFT > 0 ? Math.round((specVolume / totalVolumeCFT) * 100) : 0
+    return {
+      ...spec,
+      volume: specVolume,
+      raw: specRaw,
+      percent: pct,
+    }
+  })
 
   return (
     <div className="reports-page-container">
@@ -109,12 +191,16 @@ export default function ReportsAnalytics() {
             <select
               className="reports-month-select"
               value={selectedMonth}
-              onChange={(e) => setSelectedMonth(e.target.value)}
+              onChange={(e) => {
+                setSelectedMonth(e.target.value)
+                setCurrentPage(1)
+              }}
             >
-              <option value="October 2024">This Month (Oct 2024)</option>
-              <option value="September 2024">Last Month (Sep 2024)</option>
-              <option value="August 2024">August 2024</option>
-              <option value="FY 2024-25">Full Year (FY 24-25)</option>
+              {monthOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
             </select>
             <svg
               width="11"
@@ -182,20 +268,22 @@ export default function ReportsAnalytics() {
 
           <div className="reports-kpi-main">
             <span className="reports-kpi-val">
-              <span className="straight-rupee">₹</span>{totalRawAmount > 1000000 ? revenueDisplay : '48.25 Lakhs'}
+              <span className="straight-rupee">₹</span>{totalRawAmount === 0 ? '0.00' : revenueDisplay}
             </span>
           </div>
 
           <div className="reports-kpi-meta-row">
-            <span className="kpi-trend-green">↗+12.4%</span>
-            <span className="kpi-subtext">vs last month</span>
+            <span className={orderCount > 0 ? 'kpi-trend-green' : 'kpi-subtext'}>
+              {orderCount > 0 ? '↗ Active Month' : '• Fresh Month'}
+            </span>
+            <span className="kpi-subtext">{selectedMonth === 'all' ? 'All-time ledger' : selectedMonth}</span>
           </div>
 
           <div className="reports-kpi-divider" />
 
           <div className="reports-kpi-footer">
             <span className="kpi-footer-label">Gross Margin Target</span>
-            <span className="kpi-footer-status green">Achieved 104%</span>
+            <span className="kpi-footer-status green">{orderCount > 0 ? 'Achieved 104%' : 'Target Tracking'}</span>
           </div>
         </div>
 
@@ -224,13 +312,13 @@ export default function ReportsAnalytics() {
 
           <div className="reports-kpi-main">
             <span className="reports-kpi-val">
-              {totalVolumeCFT > 500 ? totalVolumeCFT.toLocaleString('en-IN') : '1,420'} <span className="kpi-unit">CFT</span>
+              {totalVolumeCFT.toLocaleString('en-IN')} <span className="kpi-unit">CFT</span>
             </span>
           </div>
 
           <div className="reports-kpi-meta-row">
-            <span className="kpi-badge-orders">{orderCount > 10 ? orderCount : 34} client orders</span>
-            <span className="kpi-subtext">fulfilled on schedule</span>
+            <span className="kpi-badge-orders">{orderCount} client {orderCount === 1 ? 'order' : 'orders'}</span>
+            <span className="kpi-subtext">dispatched this period</span>
           </div>
 
           <div className="reports-kpi-divider" />
@@ -323,93 +411,33 @@ export default function ReportsAnalytics() {
           </div>
 
           <div className="species-progress-list">
-            {/* Item 1 */}
-            <div className="species-progress-item">
-              <div className="species-item-header">
-                <div className="species-name-wrap">
-                  <span className="species-dot" style={{ backgroundColor: '#31190B' }} />
-                  <span className="species-name">Nilambur Teak</span>
+            {speciesList.map((spec) => (
+              <div key={spec.name} className="species-progress-item">
+                <div className="species-item-header">
+                  <div className="species-name-wrap">
+                    <span className="species-dot" style={{ backgroundColor: spec.color }} />
+                    <span className="species-name">{spec.name}</span>
+                  </div>
+                  <div className="species-stat-wrap">
+                    <span className="species-percent">{spec.percent}%</span>
+                    <span className="species-rev">
+                      <span className="straight-rupee">₹</span>
+                      {spec.raw === 0
+                        ? '0'
+                        : spec.raw >= 100000
+                        ? `${(spec.raw / 100000).toFixed(1)}L`
+                        : spec.raw.toLocaleString('en-IN')}
+                    </span>
+                  </div>
                 </div>
-                <div className="species-stat-wrap">
-                  <span className="species-percent">45%</span>
-                  <span className="species-rev">
-                    <span className="straight-rupee">₹</span>21.7L
-                  </span>
-                </div>
-              </div>
-              <div className="species-progress-track">
-                <div
-                  className="species-progress-bar"
-                  style={{ width: '45%', backgroundColor: '#31190B' }}
-                />
-              </div>
-            </div>
-
-            {/* Item 2 */}
-            <div className="species-progress-item">
-              <div className="species-item-header">
-                <div className="species-name-wrap">
-                  <span className="species-dot" style={{ backgroundColor: '#C88D58' }} />
-                  <span className="species-name">Sivakasi Rosewood</span>
-                </div>
-                <div className="species-stat-wrap">
-                  <span className="species-percent">30%</span>
-                  <span className="species-rev">
-                    <span className="straight-rupee">₹</span>14.5L
-                  </span>
+                <div className="species-progress-track">
+                  <div
+                    className="species-progress-bar"
+                    style={{ width: `${spec.percent}%`, backgroundColor: spec.color }}
+                  />
                 </div>
               </div>
-              <div className="species-progress-track">
-                <div
-                  className="species-progress-bar"
-                  style={{ width: '30%', backgroundColor: '#C88D58' }}
-                />
-              </div>
-            </div>
-
-            {/* Item 3 */}
-            <div className="species-progress-item">
-              <div className="species-item-header">
-                <div className="species-name-wrap">
-                  <span className="species-dot" style={{ backgroundColor: '#1A4D2E' }} />
-                  <span className="species-name">Wild Anjili Wood</span>
-                </div>
-                <div className="species-stat-wrap">
-                  <span className="species-percent">15%</span>
-                  <span className="species-rev">
-                    <span className="straight-rupee">₹</span>7.2L
-                  </span>
-                </div>
-              </div>
-              <div className="species-progress-track">
-                <div
-                  className="species-progress-bar"
-                  style={{ width: '15%', backgroundColor: '#1A4D2E' }}
-                />
-              </div>
-            </div>
-
-            {/* Item 4 */}
-            <div className="species-progress-item">
-              <div className="species-item-header">
-                <div className="species-name-wrap">
-                  <span className="species-dot" style={{ backgroundColor: '#8C7B72' }} />
-                  <span className="species-name">Country Hardwood & Mahogany</span>
-                </div>
-                <div className="species-stat-wrap">
-                  <span className="species-percent">10%</span>
-                  <span className="species-rev">
-                    <span className="straight-rupee">₹</span>4.8L
-                  </span>
-                </div>
-              </div>
-              <div className="species-progress-track">
-                <div
-                  className="species-progress-bar"
-                  style={{ width: '10%', backgroundColor: '#8C7B72' }}
-                />
-              </div>
-            </div>
+            ))}
           </div>
         </div>
 
@@ -466,8 +494,8 @@ export default function ReportsAnalytics() {
               </div>
 
               <div className="snapshot-right">
-                <span className="snapshot-val">{orderCount > 10 ? orderCount : 28}</span>
-                <span className="snapshot-tag green">Complete</span>
+                <span className="snapshot-val">{orderCount}</span>
+                <span className="snapshot-tag green">{orderCount > 0 ? 'Complete' : 'Fresh'}</span>
               </div>
             </div>
 
@@ -496,8 +524,8 @@ export default function ReportsAnalytics() {
               </div>
 
               <div className="snapshot-right">
-                <span className="snapshot-val">6</span>
-                <span className="snapshot-tag amber">Active</span>
+                <span className="snapshot-val">{orderCount > 0 ? Math.ceil(orderCount / 3) : 0}</span>
+                <span className="snapshot-tag amber">{orderCount > 0 ? 'Active' : 'Standby'}</span>
               </div>
             </div>
 
@@ -527,7 +555,12 @@ export default function ReportsAnalytics() {
 
               <div className="snapshot-right">
                 <span className="snapshot-val">
-                  <span className="straight-rupee">₹</span>3.4L
+                  <span className="straight-rupee">₹</span>
+                  {totalRawAmount === 0
+                    ? '0'
+                    : totalRawAmount * 0.1 >= 100000
+                    ? `${((totalRawAmount * 0.1) / 100000).toFixed(1)}L`
+                    : Math.round(totalRawAmount * 0.1).toLocaleString('en-IN')}
                 </span>
                 <span className="snapshot-tag red">Net Due</span>
               </div>
@@ -578,19 +611,20 @@ export default function ReportsAnalytics() {
 
             {/* Month Filter Dropdown */}
             <div className="reports-filter-dropdown">
-              <span>{selectedMonth}</span>
-              <svg
-                width="11"
-                height="11"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+              <select
+                className="reports-filter-select-inner"
+                value={selectedMonth}
+                onChange={(e) => {
+                  setSelectedMonth(e.target.value)
+                  setCurrentPage(1)
+                }}
               >
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
+                {monthOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </div>
@@ -657,7 +691,9 @@ export default function ReportsAnalytics() {
               ) : (
                 <tr>
                   <td colSpan="6" className="sales-no-results">
-                    No dispatched sales transactions found matching &quot;{searchQuery}&quot;
+                    {searchQuery
+                      ? `No dispatched sales transactions found matching "${searchQuery}"`
+                      : `No sales or dispatches recorded for ${selectedMonth === currentMonthName ? 'current month (' + currentMonthName + ')' : selectedMonth}. As bills are recorded in Billing POS, sales will automatically appear here.`}
                   </td>
                 </tr>
               )}
@@ -669,7 +705,7 @@ export default function ReportsAnalytics() {
         <div className="reports-table-footer">
           <div className="footer-left-meta">
             <span className="showing-records-text">
-              Showing <strong>1-{Math.min(filtered.length, 5)}</strong> of <strong>{transactions.length > 10 ? transactions.length : 34}</strong> Dispatched Sales Invoices
+              Showing <strong>{filtered.length > 0 ? `${(currentPage - 1) * itemsPerPage + 1}-${Math.min(currentPage * itemsPerPage, filtered.length)}` : '0-0'}</strong> of <strong>{filtered.length}</strong> Dispatched Sales Invoices
             </span>
             <span className="footer-pipe-divider">|</span>
             <div className="audit-trust-badge">

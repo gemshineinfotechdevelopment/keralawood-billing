@@ -235,6 +235,7 @@ const INITIAL_TRANSACTIONS = [
   {
     id: 'INV-892',
     date: 'Oct 28, 2024',
+    monthYear: 'October 2024',
     customer: 'Kumarakom Lake Resort',
     project: 'Heritage Suites Wing B',
     wood: 'Nilambur Teak',
@@ -247,6 +248,7 @@ const INITIAL_TRANSACTIONS = [
   {
     id: 'INV-889',
     date: 'Oct 26, 2024',
+    monthYear: 'October 2024',
     customer: 'Dr. Ananya Verma',
     project: 'Private Residence, Sivakasi',
     wood: 'Rosewood Timber',
@@ -259,6 +261,7 @@ const INITIAL_TRANSACTIONS = [
   {
     id: 'INV-885',
     date: 'Oct 24, 2024',
+    monthYear: 'October 2024',
     customer: 'Malabar Heritage Club',
     project: 'Clubhouse Dining Hall',
     wood: 'Wild Anjili Dining',
@@ -271,6 +274,7 @@ const INITIAL_TRANSACTIONS = [
   {
     id: 'INV-881',
     date: 'Oct 21, 2024',
+    monthYear: 'October 2024',
     customer: 'Brunton Boatyard',
     project: 'Heritage Suite 204',
     wood: 'Teak Wardrobe',
@@ -283,6 +287,7 @@ const INITIAL_TRANSACTIONS = [
   {
     id: 'INV-878',
     date: 'Oct 18, 2024',
+    monthYear: 'October 2024',
     customer: 'The Leela Kovalam',
     project: 'Deck Renovation',
     wood: '12 Teak Sun Loungers',
@@ -591,6 +596,8 @@ export const DataStore = {
     const newTx = {
       id: bill.invoiceNumber.replace(/[^0-9]/g, '').slice(-3) ? `INV-${bill.invoiceNumber.replace(/[^0-9]/g, '').slice(-3)}` : `INV-${Date.now().toString().slice(-3)}`,
       date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      createdAt: new Date().toISOString(),
+      monthYear: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
       customer: bill.customer ? bill.customer.name : 'Walk-in Patron',
       project: bill.customer ? bill.customer.location || 'Sivakasi Yard Sale' : 'Sivakasi Yard Sale',
       wood: bill.items[0]?.name?.split(' ')[0] ? `${bill.items[0].name.split(' ')[0]} Artisan Wood` : 'Teak Wood',
