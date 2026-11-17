@@ -381,16 +381,16 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
 
         <div className="sales-table-wrapper">
           <table className="sales-table">
-          <thead>
-            <tr>
-              <th>INVOICE #</th>
-              <th>CUSTOMER</th>
-              <th>ITEMS ORDERED</th>
-              <th>AMOUNT</th>
-              <th>STATUS</th>
-            </tr>
-          </thead>
-          <tbody>
+            <thead>
+              <tr>
+                <th>INVOICE #</th>
+                <th>CUSTOMER</th>
+                <th>ITEMS ORDERED</th>
+                <th>AMOUNT</th>
+                <th>STATUS</th>
+              </tr>
+            </thead>
+            <tbody>
             {filteredSales.map((sale) => (
               <tr key={sale.invoice}>
                 <td className="invoice-col">{sale.invoice}</td>
