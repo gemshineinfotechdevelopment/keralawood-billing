@@ -361,7 +361,7 @@ export default function ReportsAnalytics() {
           </div>
 
           <div className="reports-kpi-main">
-            <span className="reports-kpi-val">36.8%</span>
+            <span className="reports-kpi-val">{orderCount > 0 ? '36.8%' : '0.0%'}</span>
           </div>
 
           <div className="reports-kpi-meta-row">
@@ -378,16 +378,16 @@ export default function ReportsAnalytics() {
               >
                 <polyline points="20 6 9 17 4 12" />
               </svg>
-              <span>Optimal</span>
+              <span>{orderCount > 0 ? 'Optimal' : 'Standby'}</span>
             </span>
-            <span className="kpi-subtext">Healthy artisan furniture markup</span>
+            <span className="kpi-subtext">{orderCount > 0 ? 'Healthy artisan furniture markup' : 'No sales recorded yet'}</span>
           </div>
 
           <div className="reports-kpi-divider" />
 
           <div className="reports-kpi-footer">
             <span className="kpi-footer-label">Craft Benchmark</span>
-            <span className="kpi-footer-status amber">Exceeds 32% Plan</span>
+            <span className="kpi-footer-status amber">{orderCount > 0 ? 'Exceeds 32% Plan' : 'Tracking'}</span>
           </div>
         </div>
       </div>

@@ -659,6 +659,7 @@ export default function BillingPOS({ onNavigateToProducts }) {
                             className="pos-input pos-item-qty-input"
                             value={item.quantity}
                             onChange={(e) => handleItemChange(index, 'quantity', Math.max(1, Number(e.target.value) || 1))}
+                            placeholder="Qty"
                           />
                         </div>
 
@@ -672,6 +673,7 @@ export default function BillingPOS({ onNavigateToProducts }) {
                               className="pos-input pos-item-price-input"
                               value={item.price}
                               onChange={(e) => handleItemChange(index, 'price', Math.max(0, Number(e.target.value) || 0))}
+                              placeholder="Price"
                             />
                           </div>
                         </div>

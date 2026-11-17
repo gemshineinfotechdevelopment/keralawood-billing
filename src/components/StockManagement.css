@@ -54,9 +54,9 @@
 
 .stock-header-actions {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: center;
   gap: 10px;
-  align-items: flex-end;
 }
 
 .btn-quick-stock {
@@ -576,17 +576,19 @@
     gap: 12px;
   }
   .stock-header-actions {
-    flex-direction: column;
-    align-items: stretch;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
     width: 100%;
-    gap: 8px;
+    gap: 10px;
   }
   .btn-quick-stock,
   .btn-add-product {
-    width: 100%;
+    flex: 1;
     justify-content: center;
     min-height: 42px;
     box-sizing: border-box;
+    white-space: nowrap;
   }
   .stock-kpi-grid {
     grid-template-columns: 1fr;

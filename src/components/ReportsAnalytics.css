@@ -62,9 +62,9 @@
 
 .reports-header-actions {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 8px;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
   flex-shrink: 0;
 }
 
@@ -828,24 +828,19 @@
     gap: 12px;
   }
   .reports-header-actions {
-    align-items: stretch;
-    flex-direction: column;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
     width: 100%;
-    gap: 8px;
+    gap: 10px;
   }
-  .reports-month-select-wrap {
-    width: 100%;
-    box-sizing: border-box;
-    justify-content: space-between;
-  }
-  .reports-month-select {
-    width: 100%;
-  }
+  .reports-month-select-wrap,
   .btn-export-report {
-    width: 100%;
+    flex: 1;
     justify-content: center;
     min-height: 40px;
     box-sizing: border-box;
+    white-space: nowrap;
   }
   .reports-table-header {
     flex-direction: column;

@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { DataStore } from '../services/dataStore'
 import './Sidebar.css'
 
 export default function Sidebar({
@@ -12,7 +13,14 @@ export default function Sidebar({
   onLogout,
 }) {
   const [localActive, setLocalActive] = useState(activeItem)
+  const [settings, setSettings] = useState(() => DataStore.getSettings())
   const current = activeItem !== undefined ? activeItem : localActive
+
+  useEffect(() => {
+    const handleUpdate = () => setSettings(DataStore.getSettings())
+    window.addEventListener('timber_store_updated', handleUpdate)
+    return () => window.removeEventListener('timber_store_updated', handleUpdate)
+  }, [])
 
   const handleSelect = (name) => {
     setLocalActive(name)
@@ -246,7 +254,7 @@ export default function Sidebar({
       <div className="sidebar-footer">
         <div className={`sidebar-user-card ${isCollapsed ? 'compact' : ''}`}>
           <div className="sidebar-user-top">
-            <div className="sidebar-user-avatar" title="Rajesh Sivan • Store Manager">
+            <div className="sidebar-user-avatar" title={`${settings.signatoryName || 'Rajesh Sivan'} • ${settings.signatoryDesignation || 'Store Manager'}`}>
               <svg
                 width="16"
                 height="16"
@@ -263,8 +271,8 @@ export default function Sidebar({
             </div>
             {!isCollapsed && (
               <div className="sidebar-user-info">
-                <span className="sidebar-user-name">Rajesh Sivan</span>
-                <span className="sidebar-user-role">Store Manager</span>
+                <span className="sidebar-user-name">{settings.signatoryName || 'Rajesh Sivan'}</span>
+                <span className="sidebar-user-role">{settings.signatoryDesignation || 'Store Manager'}</span>
               </div>
             )}
           </div>
@@ -272,7 +280,7 @@ export default function Sidebar({
             <>
               <div className="depot-divider"></div>
               <div className="depot-status-row">
-                <span className="depot-ext-text">Sivakasi Branch</span>
+                <span className="depot-ext-text">{settings.depotName ? (settings.depotName.split('-')[1]?.trim() || settings.depotName) : 'Sivakasi Branch'}</span>
               </div>
             </>
           )}

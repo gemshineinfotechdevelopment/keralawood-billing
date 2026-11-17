@@ -607,18 +607,14 @@ app.get('/api/dashboard', async (req, res) => {
     res.json({
       success: true,
       stats: {
-        todaySales: '₹' + (totalSalesAmt > 0 ? totalSalesAmt.toLocaleString('en-IN') : '1,84,500'),
-        ordersToday: `${sales.length > 0 ? sales.length : 18} orders processed today`,
-        totalStock: totalStock > 0 ? totalStock.toLocaleString('en-IN') : '3,892',
-        stockLocationNote: 'Across Nilambur & Sivakasi depots',
+        todaySales: '₹' + totalSalesAmt.toLocaleString('en-IN'),
+        ordersToday: `${sales.length} orders processed today`,
+        totalStock: totalStock.toLocaleString('en-IN'),
+        stockLocationNote: 'Across Sivakasi master timber yards',
         lowStockCount: `${lowStockItems.length} items`,
       },
-      lowStockItems: lowStockItems.length > 0 ? lowStockItems : [
-        { name: 'Nilambur Teak 6-Seater', category: 'Dining Table', count: '2 left' },
-        { name: 'Solid Rosewood King Bed', category: 'Hand-Carved Headboard', count: '1 left' },
-        { name: 'Teakwood Ergonomic Armchair', category: 'Cane Weave Seating', count: '3 left' },
-      ],
-      recentSales: formattedSales.length > 0 ? formattedSales : [],
+      lowStockItems: lowStockItems,
+      recentSales: formattedSales,
     });
   } catch (err) {
     console.error('[API] /api/dashboard error:', err);

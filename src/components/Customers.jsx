@@ -2,6 +2,16 @@ import { useState, useEffect } from 'react'
 import { DataStore } from '../services/dataStore'
 import './Customers.css'
 
+const getInitials = (patron) => {
+  if (patron?.initials) return patron.initials
+  const name = patron?.personName || patron?.name || 'PT'
+  const parts = name.trim().split(/\s+/)
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[1][0]).toUpperCase()
+  }
+  return name.slice(0, 2).toUpperCase()
+}
+
 export default function Customers({ onNavigateToBilling }) {
   const [patronsList, setPatronsList] = useState(() => DataStore.getCustomers())
   const [searchQuery, setSearchQuery] = useState('')
@@ -32,6 +42,7 @@ export default function Customers({ onNavigateToBilling }) {
         if (data?.success && Array.isArray(data.customers) && data.customers.length >= 20) {
           const formatted = data.customers.map((c) => ({
             id: c._id || c.id,
+            initials: c.initials || getInitials(c),
             name: c.name,
             personName: c.personName || c.name,
             phone: c.phone || '',
@@ -187,6 +198,19 @@ export default function Customers({ onNavigateToBilling }) {
 
   // Calculate live statistics
   const totalCustomersCount = patronsList.length
+  const activeAccountsCount = patronsList.filter((p) => Number(p.totalOrders) > 0).length
+  const totalPendingReceivables = patronsList.reduce((sum, p) => {
+    const val = Number(String(p.outstandingBalance || 0).replace(/[^0-9]/g, '')) || 0
+    return sum + val
+  }, 0)
+  const pendingAccountsCount = patronsList.filter((p) => {
+    const val = Number(String(p.outstandingBalance || 0).replace(/[^0-9]/g, '')) || 0
+    return val > 0
+  }).length
+
+  const pendingReceivablesFormatted = totalPendingReceivables >= 100000
+    ? `${(totalPendingReceivables / 100000).toFixed(2)}L`
+    : totalPendingReceivables.toLocaleString('en-IN')
 
   return (
     <div className="customers-page-container">
@@ -243,7 +267,7 @@ export default function Customers({ onNavigateToBilling }) {
         <div className="customers-kpi-card">
           <div className="kpi-left">
             <span className="kpi-tag">TOTAL CUSTOMERS</span>
-            <div className="kpi-number">{totalCustomersCount > 10 ? totalCustomersCount : '1,280'}</div>
+            <div className="kpi-number">{totalCustomersCount}</div>
             <span className="kpi-meta">All customer profiles</span>
           </div>
           <div className="kpi-icon-box">
@@ -260,7 +284,7 @@ export default function Customers({ onNavigateToBilling }) {
         <div className="customers-kpi-card">
           <div className="kpi-left">
             <span className="kpi-tag">ACTIVE ACCOUNTS</span>
-            <div className="kpi-number">{totalCustomersCount > 10 ? totalCustomersCount : '46'}</div>
+            <div className="kpi-number">{activeAccountsCount}</div>
             <span className="kpi-meta">Active purchasing accounts</span>
           </div>
           <div className="kpi-icon-box">
@@ -277,9 +301,9 @@ export default function Customers({ onNavigateToBilling }) {
           <div className="kpi-left">
             <span className="kpi-tag">PENDING RECEIVABLES</span>
             <div className="kpi-number alert">
-              <span className="straight-rupee">₹</span>4.18L
+              <span className="straight-rupee">₹</span>{pendingReceivablesFormatted}
             </div>
-            <span className="kpi-meta">12 consignments awaiting settlement</span>
+            <span className="kpi-meta">{pendingAccountsCount} customer account{pendingAccountsCount === 1 ? '' : 's'} awaiting settlement</span>
           </div>
           <div className="kpi-icon-box alert">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C0392B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -359,7 +383,7 @@ export default function Customers({ onNavigateToBilling }) {
                       <td>
                         <div className="patron-name-cell">
                           <div className="patron-avatar-sq">
-                            {patron.initials}
+                            {getInitials(patron)}
                           </div>
                           <div className="patron-meta-wrap">
                             <span className="patron-display-name">{patron.name}</span>
@@ -493,7 +517,7 @@ export default function Customers({ onNavigateToBilling }) {
               {/* Profile Header Identity */}
               <div className="dossier-profile-header">
                 <div className="dossier-avatar-large">
-                  {currentPatron.initials || 'PT'}
+                  {getInitials(currentPatron)}
                 </div>
                 <div className="dossier-name-block">
                   <h3 className="dossier-person-name">{currentPatron.personName || currentPatron.name}</h3>

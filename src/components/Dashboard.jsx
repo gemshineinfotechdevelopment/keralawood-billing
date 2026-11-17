@@ -30,17 +30,13 @@ const DEFAULT_SALES = [
 ]
 
 export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice, onNavigate }) {
-  const [recentSales, setRecentSales] = useState(DEFAULT_SALES)
+  const [recentSales, setRecentSales] = useState(() => {
+    const txs = DataStore.getTransactions()
+    return Array.isArray(txs) && txs.length > 0 ? txs : DEFAULT_SALES
+  })
   const [products, setProducts] = useState(() => DataStore.getProducts())
   const [reorderedMap, setReorderedMap] = useState({})
   const [toastMessage, setToastMessage] = useState('')
-  const [stats, setStats] = useState({
-    todaySales: '₹1,84,500',
-    ordersToday: '18 orders processed today',
-    totalStock: '3,892',
-    stockLocationNote: 'Across Sivakasi master timber yards',
-    lowStockCount: '3 items',
-  })
   const [salesSearch, setSalesSearch] = useState('')
   const [salesPage, setSalesPage] = useState(1)
   const salesPerPage = 20
@@ -48,10 +44,24 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
   useEffect(() => {
     const handleStoreUpdate = () => {
       setProducts(DataStore.getProducts())
+      const txs = DataStore.getTransactions()
+      if (Array.isArray(txs) && txs.length > 0) {
+        setRecentSales(txs)
+      }
     }
     window.addEventListener('timber_store_updated', handleStoreUpdate)
     return () => window.removeEventListener('timber_store_updated', handleStoreUpdate)
   }, [])
+
+  // Dynamic calculations from live data
+  const totalSalesSum = recentSales.reduce((acc, s) => {
+    const raw = typeof s.amount === 'number'
+      ? s.amount
+      : Number(String(s.amount || '').replace(/[^0-9]/g, '')) || 0
+    return acc + raw
+  }, 0)
+
+  const totalStockCount = products.reduce((acc, p) => acc + (Number(p.stockQuantity) || 0), 0)
 
   // Dynamic low stock items (Requirement 3)
   const dynamicLowStock = products.filter(
@@ -102,9 +112,6 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
         if (data?.success) {
           if (Array.isArray(data.recentSales) && data.recentSales.length > 0) {
             setRecentSales(data.recentSales)
-          }
-          if (data.stats) {
-            setStats(data.stats)
           }
         }
       })
@@ -180,14 +187,14 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
       <div className="kpi-cards-grid">
         <div className="kpi-card">
           <span className="kpi-label">TODAY'S SALES</span>
-          <div className="kpi-value">{stats.todaySales || '₹1,84,500'}</div>
-          <span className="kpi-subtext">{stats.ordersToday || '18 orders processed today'}</span>
+          <div className="kpi-value">₹{totalSalesSum.toLocaleString('en-IN')}</div>
+          <span className="kpi-subtext">{recentSales.length} orders processed today</span>
         </div>
 
         <div className="kpi-card">
           <span className="kpi-label">TOTAL ITEMS IN STOCK</span>
-          <div className="kpi-value">{stats.totalStock || '3,892'}</div>
-          <span className="kpi-subtext">{stats.stockLocationNote || 'In active inventory'}</span>
+          <div className="kpi-value">{totalStockCount.toLocaleString('en-IN')}</div>
+          <span className="kpi-subtext">Across Sivakasi master timber yards</span>
         </div>
 
         <div className="kpi-card">

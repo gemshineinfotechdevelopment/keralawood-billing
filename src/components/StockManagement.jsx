@@ -32,13 +32,22 @@ const DEFAULT_PRODUCTS = [
 export default function StockManagement({ onAddNewProduct }) {
   const [activeTab, setActiveTab] = useState('All')
   const [searchQuery, setSearchQuery] = useState('')
-  const [products, setProducts] = useState(DEFAULT_PRODUCTS)
-  const [metrics, setMetrics] = useState({
-    totalStock: '3,892',
-    totalValuationFormatted: '₹1.42 Cr',
-    lowStockCount: '6 SKUs',
-    categoryCounts: { All: 24, Dining: 3, Beds: 4, Chairs: 4, Storage: 5, Tables: 3, Living: 5 },
+  const [products, setProducts] = useState(() => {
+    const stored = DataStore.getProducts()
+    return Array.isArray(stored) && stored.length > 0 ? stored : DEFAULT_PRODUCTS
   })
+
+  // Listen to store updates
+  useEffect(() => {
+    const handleStoreUpdate = () => {
+      const stored = DataStore.getProducts()
+      if (Array.isArray(stored) && stored.length > 0) {
+        setProducts(stored)
+      }
+    }
+    window.addEventListener('timber_store_updated', handleStoreUpdate)
+    return () => window.removeEventListener('timber_store_updated', handleStoreUpdate)
+  }, [])
 
   // Dynamic Pagination states: Minimum 20 products per page
   const [itemsPerPage, setItemsPerPage] = useState(20)
@@ -251,6 +260,30 @@ export default function StockManagement({ onAddNewProduct }) {
       })
   }, [])
 
+  // Dynamic metrics computed directly from live products list
+  const totalStockCount = products.reduce((acc, p) => {
+    const qty = p.stockQuantity !== undefined ? Number(p.stockQuantity) : (parseInt(p.stock) || 0)
+    return acc + (isNaN(qty) ? 0 : qty)
+  }, 0)
+
+  const totalValuation = products.reduce((acc, p) => {
+    const qty = p.stockQuantity !== undefined ? Number(p.stockQuantity) : (parseInt(p.stock) || 0)
+    const price = Number(String(p.sellingPrice || p.price || p.unitPrice || 0).replace(/[^0-9]/g, '')) || 0
+    return acc + (qty * price)
+  }, 0)
+
+  const totalValuationFormatted = totalValuation >= 10000000
+    ? `₹${(totalValuation / 10000000).toFixed(2)} Cr`
+    : totalValuation >= 100000
+    ? `₹${(totalValuation / 100000).toFixed(2)} Lakhs`
+    : `₹${totalValuation.toLocaleString('en-IN')}`
+
+  const lowStockCount = products.filter((p) => {
+    const qty = p.stockQuantity !== undefined ? Number(p.stockQuantity) : (parseInt(p.stock) || 0)
+    const threshold = Number(p.lowStockThreshold || 2)
+    return qty <= threshold
+  }).length
+
   const dynamicCategories = Array.from(
     new Set([
       'Dining',
@@ -262,7 +295,7 @@ export default function StockManagement({ onAddNewProduct }) {
   )
 
   const tabs = [
-    { label: `All (${metrics.categoryCounts?.All || products.length || 148})`, value: 'All' },
+    { label: `All (${products.length})`, value: 'All' },
     ...dynamicCategories.map((cat) => ({
       label: cat,
       value: cat,
@@ -383,7 +416,7 @@ export default function StockManagement({ onAddNewProduct }) {
             </span>
           </div>
           <div className="kpi-metric-wrap">
-            <span className="kpi-big-num">{metrics.totalValuationFormatted || '₹1.42 Cr'}</span>
+            <span className="kpi-big-num">{totalValuationFormatted}</span>
             <span className="kpi-change-green">↗+6.4%</span>
           </div>
           <span className="kpi-footer-sub">Updated today across all depots</span>
@@ -412,7 +445,7 @@ export default function StockManagement({ onAddNewProduct }) {
             </span>
           </div>
           <div className="kpi-metric-wrap">
-            <span className="kpi-big-num">{metrics.totalStock || '3,892'}</span>
+            <span className="kpi-big-num">{totalStockCount.toLocaleString('en-IN')}</span>
             <span className="kpi-suffix-gray">Pcs in inventory</span>
           </div>
           <span className="kpi-footer-sub">Active across 3 warehouses</span>
@@ -440,7 +473,7 @@ export default function StockManagement({ onAddNewProduct }) {
             </span>
           </div>
           <div className="kpi-metric-wrap">
-            <span className="kpi-big-num alert">{metrics.lowStockCount || '6 SKUs'}</span>
+            <span className="kpi-big-num alert">{lowStockCount} SKUs</span>
             <span className="kpi-threshold-red">Below threshold</span>
           </div>
           <a
