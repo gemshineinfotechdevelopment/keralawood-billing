@@ -537,19 +537,14 @@ export default function BillingPOS({ onNavigateToProducts }) {
                 <button
                   type="button"
                   className="btn-add-furniture-cart"
-                  onClick={() => {
-                    if (onNavigateToProducts) {
-                      onNavigateToProducts()
-                    } else {
-                      setProductPickerOpen(true)
-                    }
-                  }}
+                  onClick={() => setProductPickerOpen(true)}
+                  title="Browse artisanal furniture catalog to add to bill"
                 >
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <line x1="12" y1="5" x2="12" y2="19" />
                     <line x1="5" y1="12" x2="19" y2="12" />
                   </svg>
-                  <span>Add Furniture</span>
+                  <span>Browse Furniture</span>
                 </button>
                 {cartItems.length > 0 && (
                   <button
@@ -784,10 +779,25 @@ export default function BillingPOS({ onNavigateToProducts }) {
           <div className="pos-modal-card catalog-picker-card" onClick={(e) => e.stopPropagation()}>
             <div className="pos-modal-header">
               <div>
-                <h3 className="pos-modal-title">Artisanal Timber Catalog</h3>
+                <h3 className="pos-modal-title">Artisanal Furniture Catalog</h3>
                 <span className="picker-sub">Category: <strong>{activeCategory}</strong> • Click any line to add to current bill</span>
               </div>
-              <button type="button" className="pos-modal-close" onClick={() => setProductPickerOpen(false)}>✕</button>
+              <div className="catalog-header-actions-wrap">
+                {onNavigateToProducts && (
+                  <button
+                    type="button"
+                    className="btn-modal-add-product"
+                    onClick={() => {
+                      setProductPickerOpen(false)
+                      onNavigateToProducts()
+                    }}
+                    title="Open Add Product form to create brand new item"
+                  >
+                    + Create New Product
+                  </button>
+                )}
+                <button type="button" className="pos-modal-close" onClick={() => setProductPickerOpen(false)}>✕</button>
+              </div>
             </div>
 
             <div className="catalog-category-tabs">
