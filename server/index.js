@@ -18,28 +18,53 @@ dotenv.config({ path: path.resolve(__dirname, '.env') });
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+const FRONTEND_URL = process.env.FRONTEND_URL || 'https://keralawood-billing.vercel.app,http://localhost:5173';
 const MONGODB_URI = process.env.MONGODB_URI;
 
 // Allowed CORS origins (supports comma-separated URLs and wildcards)
 const allowedOrigins = FRONTEND_URL.split(',').map((u) => u.trim().replace(/\/$/, ''));
 
-// Middleware
+// 1. Explicit Custom CORS & Preflight Middleware (guarantees headers on all requests & OPTIONS preflight)
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  } else {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+  }
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+  res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  next();
+});
+
+// 2. Standard CORS Middleware with dynamic origin reflection
 app.use(cors({
   origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps, curl, or server-to-server)
     if (!origin) return callback(null, true);
     const cleanOrigin = origin.replace(/\/$/, '');
     if (
       allowedOrigins.includes('*') ||
       allowedOrigins.includes(cleanOrigin) ||
+      cleanOrigin.includes('vercel.app') ||
+      cleanOrigin.includes('localhost') ||
       process.env.NODE_ENV !== 'production'
     ) {
       return callback(null, true);
     }
-    return callback(null, true); // Allow configured frontend or fallback
+    // Reflect origin to prevent cross-origin blockage
+    return callback(null, true);
   },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'],
 }));
+
 app.use(express.json());
 
 // MongoDB connection
