@@ -302,6 +302,57 @@ app.post('/api/products', async (req, res) => {
   }
 });
 
+// Sales: List all
+app.get('/api/sales', async (req, res) => {
+  try {
+    const sales = await Sale.find().sort({ createdAt: -1 });
+    res.json({ success: true, count: sales.length, sales });
+  } catch (err) {
+    console.error('[API] /api/sales GET error:', err);
+    res.status(500).json({ success: false, message: 'Failed to fetch sales', error: err.message });
+  }
+});
+
+// Sales: Record new sale / invoice in MongoDB
+app.post('/api/sales', async (req, res) => {
+  try {
+    const data = req.body;
+    const invNo = data.invoice || data.id || `TAX-INV #${Date.now()}`;
+    const rawAmt = typeof data.amount === 'number'
+      ? data.amount
+      : Number(String(data.amount || data.rawAmount || 0).replace(/[^0-9.]/g, '')) || 0;
+
+    // Upsert or create new sale record
+    const existing = await Sale.findOne({ invoice: invNo });
+    if (existing) {
+      existing.customer = data.customer || existing.customer;
+      existing.items = data.items || data.item || existing.items;
+      existing.amount = rawAmt || existing.amount;
+      existing.status = data.status || existing.status;
+      const updated = await existing.save();
+      console.log('[MongoDB] Updated existing invoice:', invNo);
+      return res.json({ success: true, sale: updated });
+    }
+
+    const newSale = new Sale({
+      invoice: invNo,
+      customer: data.customer || 'Walk-in Patron',
+      location: data.location || data.project || 'Sivakasi Yard Sale',
+      items: data.items || data.item || 'Timber Furniture Order',
+      amount: rawAmt,
+      status: data.status || 'Paid',
+      date: data.date ? new Date(data.date) : new Date(),
+    });
+
+    const saved = await newSale.save();
+    console.log('[MongoDB] Stored new sale record:', saved.invoice, 'Amount: ₹' + saved.amount);
+    res.status(201).json({ success: true, sale: saved });
+  } catch (err) {
+    console.error('[API] /api/sales POST error:', err);
+    res.status(500).json({ success: false, message: 'Failed to record sale in MongoDB', error: err.message });
+  }
+});
+
 // Dashboard: Aggregated stats, Low Stock, Recent Sales
 app.get('/api/dashboard', async (req, res) => {
   try {

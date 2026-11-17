@@ -671,6 +671,40 @@ export const DataStore = {
     })
     this.saveProducts(products)
 
+    // Sync sale and stock deduction to MongoDB Backend
+    try {
+      const apiUrl = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) || 'http://localhost:5000'
+      fetch(`${apiUrl}/api/sales`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          invoice: bill.invoiceNumber || newTx.id,
+          customer: newTx.customer,
+          location: newTx.project,
+          items: newTx.item,
+          amount: grandTotal,
+          status: 'Paid',
+          date: new Date().toISOString(),
+        }),
+      }).catch((err) => {
+        console.warn('[dataStore] Backend /api/sales offline, preserved in local store:', err.message)
+      })
+
+      // Sync updated stock to MongoDB
+      billItems.forEach((item) => {
+        const matchingProd = products.find((prod) => prod.sku === item.sku || prod.name === item.name)
+        if (matchingProd) {
+          fetch(`${apiUrl}/api/products/${encodeURIComponent(matchingProd.sku || matchingProd.name)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              stockQuantity: matchingProd.stockQuantity,
+            }),
+          }).catch(() => {})
+        }
+      })
+    } catch (_) {}
+
     // Update customer stats
     if (bill.customer) {
       const customers = this.getCustomers()
