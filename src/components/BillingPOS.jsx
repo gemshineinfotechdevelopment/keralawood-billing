@@ -16,6 +16,7 @@ export default function BillingPOS() {
   const [invoiceModalOpen, setInvoiceModalOpen] = useState(false)
   const [activeInvoiceTab, setActiveInvoiceTab] = useState('preview') // 'preview' | 'edit'
   const [holdSuccess, setHoldSuccess] = useState(false)
+  const [stockAlertModal, setStockAlertModal] = useState(null) // Insufficient Stock Alert Dossier
 
   // Edit Invoice Bill states (Requirement 2 & 3)
   const [editInvNumber, setEditInvNumber] = useState('')
@@ -80,36 +81,20 @@ export default function BillingPOS() {
     setTimeout(() => setHoldSuccess(false), 2200)
   }
 
-  // Update Cart Quantity
-  const handleUpdateQuantity = (itemId, delta) => {
-    const updatedItems = cartItems
-      .map((item) => {
-        if (item.id === itemId) {
-          const newQty = Math.max(item.quantity + delta, 0)
-          return { ...item, quantity: newQty }
-        }
-        return item
-      })
-      .filter((item) => item.quantity > 0)
-
+  // Helper to commit cart update
+  const commitCartUpdate = (updatedItems) => {
     DataStore.updateBill(currentBill.id, { items: updatedItems })
     setBills(DataStore.getBills())
+    setSearchQuery('')
   }
 
-  // Remove Item
-  const handleRemoveItem = (itemId) => {
-    const updatedItems = cartItems.filter((item) => item.id !== itemId)
-    DataStore.updateBill(currentBill.id, { items: updatedItems })
-    setBills(DataStore.getBills())
-  }
-
-  // Add Product to Cart
-  const handleAddProductToCart = (prod) => {
+  // Helper to directly add or set quantity in cart
+  const commitAddToCart = (prod, targetQty) => {
     const existing = cartItems.find((item) => item.sku === prod.sku)
     let updatedItems
     if (existing) {
       updatedItems = cartItems.map((item) =>
-        item.sku === prod.sku ? { ...item, quantity: item.quantity + 1 } : item
+        item.sku === prod.sku ? { ...item, quantity: targetQty } : item
       )
     } else {
       updatedItems = [
@@ -120,14 +105,84 @@ export default function BillingPOS() {
           name: prod.name,
           finish: prod.finish,
           unitPrice: prod.unitPrice,
-          quantity: 1,
+          quantity: targetQty,
           category: prod.category,
         },
       ]
     }
-    DataStore.updateBill(currentBill.id, { items: updatedItems })
-    setBills(DataStore.getBills())
-    setSearchQuery('')
+    commitCartUpdate(updatedItems)
+  }
+
+  // Update Cart Quantity with Insufficient Stock Check
+  const handleUpdateQuantity = (itemId, delta) => {
+    const targetItem = cartItems.find((item) => item.id === itemId)
+    if (!targetItem) return
+
+    const newQty = targetItem.quantity + delta
+    if (newQty <= 0) {
+      handleRemoveItem(itemId)
+      return
+    }
+
+    // If increasing quantity, check available stock
+    if (delta > 0) {
+      const liveProd = products.find((p) => p.sku === targetItem.sku || p.name === targetItem.name)
+      const availableStock = liveProd?.stockQuantity !== undefined ? liveProd.stockQuantity : 999
+      if (newQty > availableStock) {
+        setStockAlertModal({
+          product: liveProd || { name: targetItem.name, sku: targetItem.sku },
+          requestedQty: newQty,
+          availableStock,
+          onConfirm: () => {
+            const updatedItems = cartItems.map((item) =>
+              item.id === itemId ? { ...item, quantity: newQty } : item
+            )
+            commitCartUpdate(updatedItems)
+            setStockAlertModal(null)
+          },
+        })
+        return
+      }
+    }
+
+    const updatedItems = cartItems
+      .map((item) => {
+        if (item.id === itemId) {
+          return { ...item, quantity: newQty }
+        }
+        return item
+      })
+      .filter((item) => item.quantity > 0)
+
+    commitCartUpdate(updatedItems)
+  }
+
+  // Remove Item
+  const handleRemoveItem = (itemId) => {
+    const updatedItems = cartItems.filter((item) => item.id !== itemId)
+    commitCartUpdate(updatedItems)
+  }
+
+  // Add Product to Cart with Insufficient Stock Check
+  const handleAddProductToCart = (prod) => {
+    const existing = cartItems.find((item) => item.sku === prod.sku)
+    const targetQty = existing ? existing.quantity + 1 : 1
+    const availableStock = prod.stockQuantity !== undefined ? prod.stockQuantity : 999
+
+    if (targetQty > availableStock) {
+      setStockAlertModal({
+        product: prod,
+        requestedQty: targetQty,
+        availableStock,
+        onConfirm: () => {
+          commitAddToCart(prod, targetQty)
+          setStockAlertModal(null)
+        },
+      })
+      return
+    }
+
+    commitAddToCart(prod, targetQty)
   }
 
   // Live customer field updater for billing page
@@ -210,6 +265,7 @@ export default function BillingPOS() {
   // Close Invoice and Proceed to Next Draft
   const handleNextBill = () => {
     setInvoiceModalOpen(false)
+    DataStore.recordSaleFromBill(currentBill)
     const nextBill = DataStore.removeBill(currentBill.id)
     setBills(DataStore.getBills())
     if (nextBill) {
@@ -451,11 +507,13 @@ export default function BillingPOS() {
           {/* Active Invoice Cart */}
           <div className="pos-cart-card">
             <div className="pos-cart-header">
-              <div className="pos-cart-title-wrap">
-                <span className="pos-cart-heading">Active Invoice Cart</span>
-                <span className="pos-cart-count-pill">{totalItemsCount} Items</span>
+              <div className="pos-cart-header-top">
+                <div className="pos-cart-title-wrap">
+                  <span className="pos-cart-heading">Active Invoice Cart</span>
+                  <span className="pos-cart-count-pill">{totalItemsCount} Items</span>
+                </div>
+                <span className="pos-cart-tax-inv">{currentBill.invoiceNumber || 'TAX-INV #2024-SK-982'}</span>
               </div>
-              <span className="pos-cart-tax-inv">{currentBill.invoiceNumber || 'TAX-INV #2024-SK-982'}</span>
               <div className="pos-cart-header-actions">
                 <button
                   type="button"
@@ -486,64 +544,68 @@ export default function BillingPOS() {
               {cartItems.length > 0 ? (
                 cartItems.map((item) => (
                   <div key={item.id} className="pos-cart-item-row">
-                    <div className="pos-item-icon-box">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5C3A21" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M3 8h18M5 8v11M19 8v11M8 8v4M16 8v4" />
-                      </svg>
-                    </div>
+                    <div className="pos-item-header-part">
+                      <div className="pos-item-icon-box">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5C3A21" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M3 8h18M5 8v11M19 8v11M8 8v4M16 8v4" />
+                        </svg>
+                      </div>
 
-                    <div className="pos-item-details">
-                      <h3 className="pos-item-name">{item.name}</h3>
-                      <div className="pos-item-meta-line">
-                        <span className="pos-item-sku">{item.sku}</span>
-                        <span className="pos-item-dot">▪</span>
-                        <span className="pos-item-finish">{item.finish}</span>
+                      <div className="pos-item-details">
+                        <h3 className="pos-item-name">{item.name}</h3>
+                        <div className="pos-item-meta-line">
+                          <span className="pos-item-sku">{item.sku}</span>
+                          <span className="pos-item-dot">▪</span>
+                          <span className="pos-item-finish">{item.finish}</span>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Stepper */}
-                    <div className="pos-item-stepper">
+                    <div className="pos-item-controls-part">
+                      {/* Stepper */}
+                      <div className="pos-item-stepper">
+                        <button
+                          type="button"
+                          className="stepper-btn"
+                          onClick={() => handleUpdateQuantity(item.id, -1)}
+                        >
+                          –
+                        </button>
+                        <span className="stepper-val">{item.quantity}</span>
+                        <button
+                          type="button"
+                          className="stepper-btn"
+                          onClick={() => handleUpdateQuantity(item.id, 1)}
+                        >
+                          +
+                        </button>
+                      </div>
+
+                      {/* Price Block */}
+                      <div className="pos-item-price-block">
+                        <span className="pos-item-total-price">
+                          <span className="straight-rupee">₹</span>
+                          {formatRupees(item.unitPrice * item.quantity)}
+                        </span>
+                        <span className="pos-item-unit-rate">
+                          <span className="straight-rupee">₹</span>
+                          {formatRupees(item.unitPrice)} / unit
+                        </span>
+                      </div>
+
+                      {/* Trash Delete Action */}
                       <button
                         type="button"
-                        className="stepper-btn"
-                        onClick={() => handleUpdateQuantity(item.id, -1)}
+                        className="btn-delete-item"
+                        onClick={() => handleRemoveItem(item.id)}
+                        aria-label="Remove item"
                       >
-                        –
-                      </button>
-                      <span className="stepper-val">{item.quantity}</span>
-                      <button
-                        type="button"
-                        className="stepper-btn"
-                        onClick={() => handleUpdateQuantity(item.id, 1)}
-                      >
-                        +
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="3 6 5 6 21 6" />
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                        </svg>
                       </button>
                     </div>
-
-                    {/* Price Block */}
-                    <div className="pos-item-price-block">
-                      <span className="pos-item-total-price">
-                        <span className="straight-rupee">₹</span>
-                        {formatRupees(item.unitPrice * item.quantity)}
-                      </span>
-                      <span className="pos-item-unit-rate">
-                        <span className="straight-rupee">₹</span>
-                        {formatRupees(item.unitPrice)} / unit
-                      </span>
-                    </div>
-
-                    {/* Trash Delete Action */}
-                    <button
-                      type="button"
-                      className="btn-delete-item"
-                      onClick={() => handleRemoveItem(item.id)}
-                      aria-label="Remove item"
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="3 6 5 6 21 6" />
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                      </svg>
-                    </button>
                   </div>
                 ))
               ) : (

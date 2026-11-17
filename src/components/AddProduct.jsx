@@ -55,75 +55,7 @@ export default function AddProduct({ onProductSaved }) {
   const [tradeDiscount, setTradeDiscount] = useState('Architect / Builder Tier 1 (12% Off)')
   const [isSaving, setIsSaving] = useState(false)
   const [savedSuccess, setSavedSuccess] = useState(false)
-  const [draftSaved, setDraftSaved] = useState(false)
   const [toastMsg, setToastMsg] = useState('')
-
-  // Restore saved draft on mount
-  useEffect(() => {
-    try {
-      const savedDraft = localStorage.getItem('kwf_product_draft')
-      if (savedDraft) {
-        const d = JSON.parse(savedDraft)
-        if (d.name) setName(d.name)
-        if (d.sku) setSku(d.sku)
-        if (d.category) setCategory(d.category)
-        if (d.woodType) setWoodType(d.woodType)
-        if (d.description) setDescription(d.description)
-        if (d.length) setLength(d.length)
-        if (d.width) setWidth(d.width)
-        if (d.height) setHeight(d.height)
-        if (d.weight) setWeight(d.weight)
-        if (d.woodGrade) setWoodGrade(d.woodGrade)
-        if (d.surfacePolish) setSurfacePolish(d.surfacePolish)
-        if (d.joineryTechnique) setJoineryTechnique(d.joineryTechnique)
-        if (d.warranty) setWarranty(d.warranty)
-        if (d.stockQuantity) setStockQuantity(d.stockQuantity)
-        if (d.lowStockThreshold) setLowStockThreshold(d.lowStockThreshold)
-        if (d.depotLocation) setDepotLocation(d.depotLocation)
-        if (d.packagingType) setPackagingType(d.packagingType)
-        if (d.shippingClass) setShippingClass(d.shippingClass)
-        if (d.unitPrice) setUnitPrice(d.unitPrice)
-        if (d.tradeDiscount) setTradeDiscount(d.tradeDiscount)
-        setToastMsg('Restored saved product draft')
-        setTimeout(() => setToastMsg(''), 2500)
-      }
-    } catch (e) {
-      console.warn('Failed to parse saved product draft:', e)
-    }
-  }, [])
-
-  const handleSaveDraft = () => {
-    const draftData = {
-      name,
-      sku,
-      category,
-      woodType,
-      description,
-      length,
-      width,
-      height,
-      weight,
-      woodGrade,
-      surfacePolish,
-      joineryTechnique,
-      warranty,
-      stockQuantity,
-      lowStockThreshold,
-      depotLocation,
-      packagingType,
-      shippingClass,
-      unitPrice,
-      tradeDiscount,
-      savedAt: new Date().toISOString(),
-    }
-    localStorage.setItem('kwf_product_draft', JSON.stringify(draftData))
-    setDraftSaved(true)
-    setToastMsg('✓ Product draft saved locally!')
-    setTimeout(() => {
-      setDraftSaved(false)
-      setTimeout(() => setToastMsg(''), 2000)
-    }, 1500)
-  }
 
   // Sync settings when modified
   useEffect(() => {
@@ -281,26 +213,6 @@ export default function AddProduct({ onProductSaved }) {
         </div>
 
         <div className="product-header-actions">
-          <button
-            type="button"
-            className={`btn-save-draft ${draftSaved ? 'draft-saved' : ''}`}
-            onClick={handleSaveDraft}
-          >
-            <svg
-              width="13"
-              height="13"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
-            </svg>
-            <span>{draftSaved ? '✓ Draft Saved!' : 'Save Draft'}</span>
-          </button>
-
           <button
             type="button"
             className="btn-save-product"

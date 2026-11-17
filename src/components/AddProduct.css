@@ -64,32 +64,7 @@
   gap: 12px;
 }
 
-.btn-save-draft {
-  background-color: #FFFFFF;
-  border: 1px solid #E2CEBE;
-  border-radius: 6px;
-  padding: 8px 16px;
-  font-size: 11.5px;
-  font-weight: 700;
-  color: #31190B;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: all 0.18s ease;
-  box-shadow: 0 1px 2px rgba(49, 25, 11, 0.04);
-}
 
-.btn-save-draft:hover {
-  background-color: #FEF1ED;
-  border-color: #D3B9A5;
-}
-
-.btn-save-draft.draft-saved {
-  background-color: #E8F5E9;
-  border-color: #81C784;
-  color: #1B5E20;
-}
 
 .product-toast-banner {
   background-color: #31190B;
@@ -458,9 +433,8 @@
     display: flex;
     gap: 10px;
   }
-  .btn-save-draft,
   .btn-save-product {
-    flex: 1;
+    width: 100%;
     justify-content: center;
     min-height: 42px;
     font-size: 12px;
