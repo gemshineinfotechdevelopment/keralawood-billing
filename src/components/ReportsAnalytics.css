@@ -10,7 +10,7 @@
   display: flex;
   flex-direction: column;
   gap: 18px;
-  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  font-family: inherit;
   color: #31190B;
   padding-bottom: 36px;
 }
@@ -44,7 +44,7 @@
 }
 
 .reports-main-title {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-family: inherit;
   font-size: 26px;
   font-weight: 600;
   color: #31190B;
@@ -171,7 +171,7 @@
 }
 
 .reports-kpi-val {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-family: inherit;
   font-size: 28px;
   font-weight: 700;
   color: #31190B;
@@ -180,7 +180,7 @@
 }
 
 .reports-kpi-val .kpi-unit {
-  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-family: inherit;
   font-size: 18px;
   font-weight: 500;
   color: #5C4537;
@@ -285,7 +285,7 @@
 }
 
 .panel-card-title {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-family: inherit;
   font-size: 16.5px;
   font-weight: 600;
   color: #31190B;
@@ -489,7 +489,7 @@
 }
 
 .snapshot-val {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-family: inherit;
   font-size: 22px;
   font-weight: 700;
   line-height: 1.1;
@@ -546,7 +546,7 @@
 }
 
 .reports-table-title {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-family: inherit;
   font-size: 17.5px;
   font-weight: 600;
   color: #31190B;
@@ -702,7 +702,7 @@
 }
 
 .sales-amount {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-family: inherit;
   font-size: 14.5px;
   font-weight: 700;
   color: #31190B;

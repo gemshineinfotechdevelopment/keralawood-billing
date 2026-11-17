@@ -151,10 +151,9 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
       {/* Page Title & New Invoice Button */}
       <div className="dashboard-page-header">
         <div>
-          <span className="dashboard-category-pill">DASHBOARD OVERVIEW</span>
-          <h1 className="depot-main-title">Sivakasi Central Depot</h1>
+          <h1 className="depot-main-title">Dashboard</h1>
           <p className="depot-main-subtitle">
-            Overview of daily sales, inventory levels, and stock replenishment alerts.
+            Overview of sales, inventory, and recent orders.
           </p>
         </div>
         <button type="button" className="btn-new-invoice" onClick={onNavigateToNewInvoice}>
@@ -188,7 +187,7 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
         <div className="kpi-card">
           <span className="kpi-label">TOTAL ITEMS IN STOCK</span>
           <div className="kpi-value">{stats.totalStock || '3,892'}</div>
-          <span className="kpi-subtext">{stats.stockLocationNote || 'Across Sivakasi master timber yards'}</span>
+          <span className="kpi-subtext">{stats.stockLocationNote || 'In active inventory'}</span>
         </div>
 
         <div className="kpi-card">
@@ -219,8 +218,8 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
         {/* Simple Depot Quick Actions (Requirement 2) */}
         <div className="actions-card">
           <div className="card-top-row">
-            <span className="card-heading">Depot Quick Actions</span>
-            <span className="card-hint">Direct operational shortcuts</span>
+            <span className="card-heading">Quick Actions</span>
+            <span className="card-hint">Common tasks</span>
           </div>
 
           <div className="quick-actions-grid">
@@ -250,7 +249,7 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
                 </svg>
               </span>
               <span className="action-title">Create New Bill</span>
-              <span className="action-sub">Open counter POS</span>
+              <span className="action-sub">New customer invoice</span>
             </div>
 
             <div
@@ -323,7 +322,7 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
               <line x1="12" y1="16" x2="12" y2="12" />
               <line x1="12" y1="8" x2="12.01" y2="8" />
             </svg>
-            <span>Direct shortcuts for Sivakasi timber depot and store operations.</span>
+            <span>Quick shortcuts for billing and inventory management.</span>
           </div>
         </div>
 
@@ -361,9 +360,9 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
       <div className="recent-sales-card">
         <div className="table-header-bar">
           <div>
-            <h2 className="table-title">Recent Sales & Dispatches</h2>
+            <h2 className="table-title">Recent Sales</h2>
             <p className="table-subtitle">
-              Completed sales and cleared passes from Sivakasi Depot
+              Completed customer orders and invoices
             </p>
           </div>
 

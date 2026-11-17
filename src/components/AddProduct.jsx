@@ -222,9 +222,9 @@ export default function AddProduct({ onProductSaved }) {
 
       {/* Top Breadcrumb */}
       <nav className="product-breadcrumb">
-        <span>PRODUCTS</span>
+        <span>Products</span>
         <span className="breadcrumb-slash">/</span>
-        <span className="breadcrumb-active">ADD PRODUCT</span>
+        <span className="breadcrumb-active">Add Product</span>
       </nav>
 
       {/* Page Header */}
@@ -232,8 +232,7 @@ export default function AddProduct({ onProductSaved }) {
         <div className="product-title-wrap">
           <h1 className="product-page-title">Add New Product</h1>
           <p className="product-page-subtitle">
-            Enter core artisan timber details, craft specifications, warehouse logistics, and
-            statutory pricing.
+            Enter product details, pricing, and initial stock.
           </p>
         </div>
 
@@ -307,7 +306,6 @@ export default function AddProduct({ onProductSaved }) {
               </span>
               <h2 className="card-section-title">General Information</h2>
             </div>
-            <span className="section-badge-tan">Catalog Master</span>
           </div>
 
           <div className="form-field-group">
@@ -408,9 +406,8 @@ export default function AddProduct({ onProductSaved }) {
                   <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
                 </svg>
               </span>
-              <h2 className="card-section-title">Craft & Timber Specifications</h2>
+              <h2 className="card-section-title">Specifications</h2>
             </div>
-            <span className="section-badge-dark">FSC Certified Timber</span>
           </div>
 
           <div className="form-row-4col">
@@ -521,9 +518,8 @@ export default function AddProduct({ onProductSaved }) {
                   <polyline points="9 22 9 12 15 12 15 22" />
                 </svg>
               </span>
-              <h2 className="card-section-title">Inventory, Logistics & Packaging</h2>
+              <h2 className="card-section-title">Inventory & Stock</h2>
             </div>
-            <span className="section-badge-tan">Bay C-04 Active</span>
           </div>
 
           <div className="form-row-2col">
@@ -610,9 +606,8 @@ export default function AddProduct({ onProductSaved }) {
                   <line x1="9" y1="21" x2="9" y2="9" />
                 </svg>
               </span>
-              <h2 className="card-section-title">Pricing, Margins & Statutory GST</h2>
+              <h2 className="card-section-title">Pricing & GST</h2>
             </div>
-            <span className="section-badge-green">Tax Compliant</span>
           </div>
 
           <div className="form-field-group">
@@ -666,10 +661,10 @@ export default function AddProduct({ onProductSaved }) {
           >
             <div className="quick-modal-header">
               <div className="quick-header-left">
-                <span className="drawer-badge-tag">CATALOG MANAGEMENT</span>
+                <span className="drawer-badge-tag">CATEGORY SETUP</span>
                 <h3 className="quick-modal-title">Add New Product Category</h3>
                 <p className="quick-modal-subtitle">
-                  Define a new artisanal timber furniture line or department
+                  Define a new product category
                 </p>
               </div>
               <button

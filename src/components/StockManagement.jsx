@@ -339,11 +339,9 @@ export default function StockManagement({ onAddNewProduct }) {
       {/* Page Header */}
       <div className="stock-page-header">
         <div className="stock-title-wrap">
-          <span className="stock-category-pill">STOCK MANAGEMENT</span>
-          <h1 className="stock-main-title">Artisanal Stock & Timber Reserves</h1>
+          <h1 className="stock-main-title">Stock Management</h1>
           <p className="stock-main-subtitle">
-            Manage indigenous hardwood stock, kiln seasoning logs, warehouse allocations,
-            and unit pricing across Sivakasi's master artisan yards and coastal mill hubs.
+            Manage products, current inventory levels, and warehouse pricing.
           </p>
         </div>
 
@@ -600,7 +598,7 @@ export default function StockManagement({ onAddNewProduct }) {
         <div className="stock-pagination-bar">
           <div className="stock-pagination-info">
             <span>
-              Showing {totalItems === 0 ? 0 : startIndex + 1} to {endIndex} of {totalItems} artisanal furniture SKUs
+              Showing {totalItems === 0 ? 0 : startIndex + 1} to {endIndex} of {totalItems} products
             </span>
             <span>•</span>
             <select
@@ -611,9 +609,9 @@ export default function StockManagement({ onAddNewProduct }) {
                 setCurrentPage(1)
               }}
             >
-              <option value={6}>6 per ledger</option>
-              <option value={12}>12 per ledger</option>
-              <option value={24}>24 per ledger</option>
+              <option value={6}>6 per page</option>
+              <option value={12}>12 per page</option>
+              <option value={24}>24 per page</option>
             </select>
           </div>
 
@@ -698,7 +696,7 @@ export default function StockManagement({ onAddNewProduct }) {
             {/* Drawer Header */}
             <div className="drawer-header">
               <div className="drawer-header-left">
-                <span className="drawer-badge-tag">STOCK REALLOCATION DOSSIER</span>
+                <span className="drawer-badge-tag">EDIT STOCK & PRICING</span>
                 <h3 className="drawer-product-title">{editingProduct.name}</h3>
                 <span className="drawer-sku-label">{editingProduct.sku}</span>
               </div>
@@ -706,7 +704,7 @@ export default function StockManagement({ onAddNewProduct }) {
                 type="button"
                 className="drawer-close-btn"
                 onClick={handleCloseDrawer}
-                aria-label="Close dossier"
+                aria-label="Close drawer"
               >
                 ✕
               </button>

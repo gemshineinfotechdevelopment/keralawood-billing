@@ -1019,7 +1019,7 @@ export default function BillingPOS({ onNavigateToProducts }) {
               <div className="pos-print-customer-box">
                 <div className="pos-print-col">
                   <h4>Billed To:</h4>
-                  <p className="pos-print-cust-name">{customer.name || 'Walk-in Patron'}</p>
+                  <p className="pos-print-cust-name">{customer.name || 'Walk-in Customer'}</p>
                   <p>{customer.address || 'Sivakasi Yard Destination'}</p>
                   <p>Phone: {customer.phone || 'N/A'}</p>
                   <p>GSTIN: {customer.gstin || 'Unregistered / Personal'}</p>

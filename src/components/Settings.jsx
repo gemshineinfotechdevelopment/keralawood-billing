@@ -122,10 +122,9 @@ export default function Settings() {
       {/* Page Header */}
       <div className="settings-header">
         <div className="settings-title-wrap">
-          <span className="settings-category-pill">SYSTEM SETTINGS</span>
-          <h1 className="settings-main-title">System Settings</h1>
+          <h1 className="settings-main-title">Settings</h1>
           <p className="settings-main-subtitle">
-            Manage depot info, GST & statutory details, inventory alert thresholds, and printing preferences.
+            Manage store information, GST details, inventory alerts, and printing preferences.
           </p>
         </div>
 
@@ -480,9 +479,9 @@ export default function Settings() {
             </svg>
           </div>
           <div>
-            <h2 className="settings-section-title">System Time & POS Billing Clock</h2>
+            <h2 className="settings-section-title">System Time & Billing Clock</h2>
             <p className="settings-section-subtitle">
-              Set the system time and date mentioned on patron invoices, print receipts, and transaction records.
+              Set the system time and date mentioned on customer invoices, print receipts, and transaction records.
             </p>
           </div>
         </div>
@@ -516,7 +515,7 @@ export default function Settings() {
               placeholder="e.g. 10:30 AM or 04:15 PM"
             />
             <span className="settings-hint">
-              This exact time will be printed on patron tax invoices and sales ledger entries.
+              This exact time will be printed on customer tax invoices and sales records.
             </span>
           </div>
 

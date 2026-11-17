@@ -105,7 +105,7 @@ export default function Customers({ onNavigateToBilling }) {
     setNewPhone('')
     setNewGstin('')
     setNewAddress('')
-    showToast(`Registered patron: ${added.name}`)
+    showToast(`Added customer: ${added.name}`)
   }
 
   // Real CSV Ledger Export (Requirement 3)
@@ -139,13 +139,13 @@ export default function Customers({ onNavigateToBilling }) {
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.setAttribute('download', `Kerala_Wood_Furniture_Patrons_${new Date().toISOString().slice(0, 10)}.csv`)
+    link.setAttribute('download', `Kerala_Wood_Customers_${new Date().toISOString().slice(0, 10)}.csv`)
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
 
-    showToast('Patron Ledger CSV exported successfully!')
+    showToast('Customer list exported to CSV successfully!')
   }
 
   // Handle Create Invoice from Dossier (Requirement 1)
@@ -174,37 +174,14 @@ export default function Customers({ onNavigateToBilling }) {
       {/* Header */}
       <div className="customers-header">
         <div className="customers-title-wrap">
-          <div className="customers-badge-row">
-            <span className="customers-category-pill">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                <polyline points="9 12 11 14 15 10" />
-              </svg>
-              <span>ARTISANAL PATRON & CLIENT DIRECTORY</span>
-            </span>
-            <span className="customers-reg-code">REC-LGR-2024</span>
-          </div>
-
-          <h1 className="customers-main-title">Artisanal Customer & Architect Directory</h1>
+          <h1 className="customers-main-title">Customers</h1>
           <p className="customers-main-subtitle">
-            Manage patron profiles, commercial interior contracts, past woodcraft commissions, and GST billing ledgers with certified Sivakasi provenance records.
+            Manage customer profiles, contact details, and order history.
           </p>
         </div>
 
         {/* Top Right Action Buttons Stack */}
         <div className="customers-header-actions">
-          <button
-            type="button"
-            className="btn-architect-privilege"
-            onClick={() => showToast('Architect Privilege Program details opened.')}
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#734826" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="8" r="6" />
-              <path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11" />
-            </svg>
-            <span>Architect Privilege Program</span>
-          </button>
-
           <button
             type="button"
             className="btn-export-ledger"
@@ -215,7 +192,7 @@ export default function Customers({ onNavigateToBilling }) {
               <polyline points="7 10 12 15 17 10" />
               <line x1="12" y1="15" x2="12" y2="3" />
             </svg>
-            <span>Export Ledger (CSV)</span>
+            <span>Export CSV</span>
           </button>
 
           <button
@@ -229,7 +206,7 @@ export default function Customers({ onNavigateToBilling }) {
               <line x1="20" y1="8" x2="20" y2="14" />
               <line x1="23" y1="11" x2="17" y2="11" />
             </svg>
-            <span>+ Register New Patron</span>
+            <span>+ Add Customer</span>
           </button>
         </div>
       </div>
@@ -241,7 +218,7 @@ export default function Customers({ onNavigateToBilling }) {
           <div className="kpi-left">
             <span className="kpi-tag">TOTAL CUSTOMERS</span>
             <div className="kpi-number">{totalCustomersCount > 10 ? totalCustomersCount : '1,280'}</div>
-            <span className="kpi-meta">All registered patron profiles</span>
+            <span className="kpi-meta">All customer profiles</span>
           </div>
           <div className="kpi-icon-box">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5C3A21" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -253,12 +230,12 @@ export default function Customers({ onNavigateToBilling }) {
           </div>
         </div>
 
-        {/* Card 2: Active Patron Accounts */}
+        {/* Card 2: Active Accounts */}
         <div className="customers-kpi-card">
           <div className="kpi-left">
-            <span className="kpi-tag">ACTIVE PATRON ACCOUNTS</span>
+            <span className="kpi-tag">ACTIVE ACCOUNTS</span>
             <div className="kpi-number">{totalCustomersCount > 10 ? totalCustomersCount : '46'}</div>
-            <span className="kpi-meta">Verified patrons & studios</span>
+            <span className="kpi-meta">Active purchasing accounts</span>
           </div>
           <div className="kpi-icon-box">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5C3A21" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -307,7 +284,7 @@ export default function Customers({ onNavigateToBilling }) {
 
       {/* Main 2-Column Content: Left Table & Right Dossier */}
       <div className="customers-main-layout">
-        {/* Left: Live Patron Register Table Card */}
+        {/* Left: Customer Directory Table Card */}
         <div className="patron-register-card">
           {/* Card Header */}
           <div className="register-card-header">
@@ -317,9 +294,9 @@ export default function Customers({ onNavigateToBilling }) {
                   <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
                   <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
                 </svg>
-                <h2 className="register-heading">Live Patron Register</h2>
+                <h2 className="register-heading">Customer Directory</h2>
               </div>
-              <span className="register-count-pill">{filtered.length} Displayed</span>
+              <span className="register-count-pill">{filtered.length} Customers</span>
             </div>
 
             <div className="register-sort-wrap">
@@ -340,7 +317,7 @@ export default function Customers({ onNavigateToBilling }) {
                   <th>CUSTOMER NAME</th>
                   <th>CONTACT INFO</th>
                   <th>TOTAL ORDERS</th>
-                  <th>LIFETIME VALUE</th>
+                  <th>TOTAL BILLED</th>
                   <th>ACTION</th>
                 </tr>
               </thead>
@@ -377,7 +354,7 @@ export default function Customers({ onNavigateToBilling }) {
                         <span className="total-orders-num">{patron.totalOrders}</span>
                       </td>
 
-                      {/* Lifetime Value */}
+                      {/* Total Billed */}
                       <td>
                         <span className="lifetime-val">
                           <span className="straight-rupee">₹</span>
@@ -403,7 +380,7 @@ export default function Customers({ onNavigateToBilling }) {
                 ) : (
                   <tr>
                     <td colSpan="5" className="no-patrons-cell">
-                      No patrons found matching &quot;{searchQuery}&quot;
+                      No customers found matching &quot;{searchQuery}&quot;
                     </td>
                   </tr>
                 )}
@@ -414,7 +391,7 @@ export default function Customers({ onNavigateToBilling }) {
           {/* Table Footer */}
           <div className="patron-table-footer">
             <span className="showing-records-text">
-              Showing <strong>{filtered.length > 0 ? (safePage - 1) * itemsPerPage + 1 : 0}-{Math.min(safePage * itemsPerPage, filtered.length)}</strong> of {filtered.length} patrons
+              Showing <strong>{filtered.length > 0 ? (safePage - 1) * itemsPerPage + 1 : 0}-{Math.min(safePage * itemsPerPage, filtered.length)}</strong> of {filtered.length} customers
             </span>
 
             <div className="patron-pagination">
@@ -545,12 +522,12 @@ export default function Customers({ onNavigateToBilling }) {
         </div>
       </div>
 
-      {/* Register New Patron Modal */}
+      {/* Register New Customer Modal */}
       {registerModalOpen && (
         <div className="customers-modal-overlay" onClick={() => setRegisterModalOpen(false)}>
           <div className="customers-modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="customers-modal-header">
-              <h3 className="modal-title">Register New Patron</h3>
+              <h3 className="modal-title">Add New Customer</h3>
               <button
                 type="button"
                 className="modal-close-btn"
@@ -562,11 +539,11 @@ export default function Customers({ onNavigateToBilling }) {
 
             <form className="customers-modal-form" onSubmit={handleRegisterSubmit}>
               <div className="modal-form-group">
-                <label className="modal-label">Patron / Studio Name</label>
+                <label className="modal-label">Customer / Company Name</label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Sivakasi Artisan Guild Interiors"
+                  placeholder="e.g. Suresh Kumar / Sri Amman Stores"
                   className="modal-input"
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
@@ -589,7 +566,7 @@ export default function Customers({ onNavigateToBilling }) {
                 <label className="modal-label">GSTIN (Optional)</label>
                 <input
                   type="text"
-                  placeholder="32XXXXX1234X1ZX"
+                  placeholder="33XXXXX1234X1ZX"
                   className="modal-input"
                   value={newGstin}
                   onChange={(e) => setNewGstin(e.target.value)}
@@ -597,10 +574,10 @@ export default function Customers({ onNavigateToBilling }) {
               </div>
 
               <div className="modal-form-group">
-                <label className="modal-label">Delivery & Billing Address</label>
+                <label className="modal-label">Address</label>
                 <textarea
                   rows="2"
-                  placeholder="Street, City, Sivakasi"
+                  placeholder="Street, Area, City"
                   className="modal-input"
                   value={newAddress}
                   onChange={(e) => setNewAddress(e.target.value)}
@@ -616,7 +593,7 @@ export default function Customers({ onNavigateToBilling }) {
                   Cancel
                 </button>
                 <button type="submit" className="modal-btn-submit">
-                  Save & Register
+                  Save Customer
                 </button>
               </div>
             </form>

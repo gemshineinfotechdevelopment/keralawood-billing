@@ -35,7 +35,7 @@
 }
 
 .brand-title {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-family: inherit;
   font-size: 15px;
   font-weight: 600;
   color: #41210F;
@@ -44,11 +44,11 @@
 }
 
 .brand-subtitle {
-  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-  font-size: 7.5px;
-  font-weight: 700;
+  font-family: inherit;
+  font-size: 8px;
+  font-weight: 600;
   color: #A08748;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   margin-top: 1px;
 }
@@ -88,7 +88,6 @@
   font-weight: 600;
   color: #422210;
   letter-spacing: 0.06em;
-  font-family: 'Plus Jakarta Sans', system-ui, monospace;
 }
 
 /* Main Content */
@@ -120,7 +119,7 @@
 }
 
 .card-brand-title {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-family: inherit;
   font-size: 15.5px;
   font-weight: 600;
   color: #41210F;
@@ -128,18 +127,18 @@
 }
 
 .card-brand-subtitle {
-  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-  font-size: 7.5px;
-  font-weight: 700;
+  font-family: inherit;
+  font-size: 8px;
+  font-weight: 600;
   color: #A08748;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
 .card-welcome-title {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  font-size: 26px;
-  font-weight: 400;
+  font-family: inherit;
+  font-size: 24px;
+  font-weight: 600;
   color: #381E10;
   margin: 15px 0 5px 0;
   letter-spacing: -0.01em;

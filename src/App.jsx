@@ -135,14 +135,14 @@ function App() {
           <img src={treeLogo} alt="Kerala Wood Furniture" className="header-logo" />
           <div className="brand-text">
             <span className="brand-title">Kerala Wood Furniture</span>
-            <span className="brand-subtitle">HERITAGE ARTISAN TIMBER • SIVAKASI</span>
+            <span className="brand-subtitle">Sivakasi</span>
           </div>
         </div>
 
         <div className="header-meta">
           <div className="node-pill">
             <span className="status-dot-green"></span>
-            <span>NODE 01 • SIVAKASI GUILD</span>
+            <span>Sivakasi Branch</span>
           </div>
           <div className="erp-secure">
             <svg
@@ -158,7 +158,7 @@ function App() {
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
               <path d="m9 12 2 2 4-4" />
             </svg>
-            <span>ERP v4.12 SECURE</span>
+            <span>Secure Portal</span>
           </div>
         </div>
       </header>
@@ -166,13 +166,13 @@ function App() {
       {/* Main Login Card */}
       <main className="login-main">
         <div className="login-card">
-          <img src={treeLogo} alt="Kerala Wood Furniture Emblem" className="card-logo" />
+          <img src={treeLogo} alt="Kerala Wood Furniture" className="card-logo" />
           <h2 className="card-brand-title">Kerala Wood Furniture</h2>
-          <div className="card-brand-subtitle">HERITAGE ARTISAN TIMBER • SIVAKASI</div>
+          <div className="card-brand-subtitle">Billing & Inventory</div>
 
           <h1 className="card-welcome-title">Welcome back</h1>
           <p className="card-description">
-            Enter your credentials to access the Kerala Wood Furniture ERP
+            Sign in to your account
           </p>
 
           <form className="login-form" onSubmit={handleSubmit}>
@@ -353,7 +353,7 @@ function App() {
             className="help-link"
             onClick={(e) => e.preventDefault()}
           >
-            Contact Guild IT Support
+            Contact Support
           </a>
         </p>
       </main>
@@ -361,7 +361,7 @@ function App() {
       {/* Footer */}
       <footer className="login-footer">
         <span className="footer-copyright">
-          © 2024 Kerala Wood Furniture. All rights reserved.
+          © {new Date().getFullYear()} Kerala Wood Furniture. All rights reserved.
         </span>
         <div className="footer-links">
           <a href="#privacy" className="footer-link" onClick={(e) => e.preventDefault()}>

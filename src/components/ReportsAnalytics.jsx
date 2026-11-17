@@ -78,7 +78,7 @@ export default function ReportsAnalytics() {
     ...availableYears
       .filter((y) => y !== currentYear)
       .map((y) => ({ value: y, label: `Year ${y}` })),
-    { value: 'all', label: 'All-Time Annual Ledger' },
+    { value: 'all', label: 'All-Time' },
   ]
 
   // Filter transactions for the selected year (strictly excluding any legacy 2024 data)
@@ -172,25 +172,9 @@ export default function ReportsAnalytics() {
       {/* Page Header */}
       <div className="reports-header">
         <div className="reports-title-wrap">
-          <div className="reports-breadcrumb-pill">
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-            </svg>
-            <span>REPORTS & ANALYTICS</span>
-          </div>
-
-          <h1 className="reports-main-title">Business & Sales Summary</h1>
+          <h1 className="reports-main-title">Reports & Analytics</h1>
           <p className="reports-main-subtitle">
-            Annual overview of revenue, timber volume dispatched, and sales performance by year.
+            Annual sales summary, revenue metrics, and orders.
           </p>
         </div>
 
@@ -299,7 +283,7 @@ export default function ReportsAnalytics() {
 
           <div className="reports-kpi-meta-row">
             <span className={orderCount > 0 ? 'kpi-trend-green' : 'kpi-subtext'}>
-              {orderCount > 0 ? '↗ Active Annual Ledger' : '• Year Starting (Fresh)'}
+              {orderCount > 0 ? '↗ Active Sales' : '• Year Starting (Fresh)'}
             </span>
             <span className="kpi-subtext">{selectedYear === 'all' ? 'All recorded years' : `Year ${selectedYear}`}</span>
           </div>
@@ -307,7 +291,7 @@ export default function ReportsAnalytics() {
           <div className="reports-kpi-divider" />
 
           <div className="reports-kpi-footer">
-            <span className="kpi-footer-label">Gross Margin Target</span>
+            <span className="kpi-footer-label">Gross Margin</span>
             <span className="kpi-footer-status green">{orderCount > 0 ? 'Achieved 104%' : 'Target Tracking'}</span>
           </div>
         </div>
@@ -342,15 +326,15 @@ export default function ReportsAnalytics() {
           </div>
 
           <div className="reports-kpi-meta-row">
-            <span className="kpi-badge-orders">{orderCount} client {orderCount === 1 ? 'order' : 'orders'}</span>
-            <span className="kpi-subtext">fulfilled in {selectedYear === 'all' ? 'all-time ledger' : selectedYear}</span>
+            <span className="kpi-badge-orders">{orderCount} {orderCount === 1 ? 'order' : 'orders'}</span>
+            <span className="kpi-subtext">fulfilled in {selectedYear === 'all' ? 'all-time' : selectedYear}</span>
           </div>
 
           <div className="reports-kpi-divider" />
 
           <div className="reports-kpi-footer">
-            <span className="kpi-footer-label">Depot Yard Stock</span>
-            <span className="kpi-footer-status amber">Sivakasi Central Yard</span>
+            <span className="kpi-footer-label">Yard Location</span>
+            <span className="kpi-footer-status amber">Sivakasi Yard</span>
           </div>
         </div>
 

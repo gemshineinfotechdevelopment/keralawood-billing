@@ -159,10 +159,10 @@ export default function Sidebar({
         {!isCollapsed ? (
           <div className="sidebar-brand">
             <span className="sidebar-brand-title">Kerala Wood Furniture</span>
-            <span className="sidebar-brand-subtitle">Heritage Artisan Timber • Sivakasi</span>
+            <span className="sidebar-brand-subtitle">Sivakasi Branch</span>
           </div>
         ) : (
-          <div className="sidebar-brand-mini" title="Kerala Wood Furniture • Sivakasi">
+          <div className="sidebar-brand-mini" title="Kerala Wood Furniture">
             <span className="mini-emblem-text">KWF</span>
           </div>
         )}
@@ -220,7 +220,7 @@ export default function Sidebar({
       {/* Navigation Items */}
       <div className="sidebar-nav-section">
         {!isCollapsed && (
-          <span className="sidebar-section-label">OPERATIONS & LEDGER</span>
+          <span className="sidebar-section-label">MENU</span>
         )}
         <ul className="sidebar-menu">
           {navItems.map((item) => {
@@ -246,7 +246,7 @@ export default function Sidebar({
       <div className="sidebar-footer">
         <div className={`sidebar-user-card ${isCollapsed ? 'compact' : ''}`}>
           <div className="sidebar-user-top">
-            <div className="sidebar-user-avatar" title="Rajesh Sivan • Depot Lead & Store Manager">
+            <div className="sidebar-user-avatar" title="Rajesh Sivan • Store Manager">
               <svg
                 width="16"
                 height="16"
@@ -264,7 +264,7 @@ export default function Sidebar({
             {!isCollapsed && (
               <div className="sidebar-user-info">
                 <span className="sidebar-user-name">Rajesh Sivan</span>
-                <span className="sidebar-user-role">Depot Lead & Store Manager</span>
+                <span className="sidebar-user-role">Store Manager</span>
               </div>
             )}
           </div>
@@ -272,8 +272,7 @@ export default function Sidebar({
             <>
               <div className="depot-divider"></div>
               <div className="depot-status-row">
-                <span className="depot-ext-text">IT Ext. 104 • Sivakasi</span>
-                <span className="depot-pulse-dot" title="Online"></span>
+                <span className="depot-ext-text">Sivakasi Branch</span>
               </div>
             </>
           )}
