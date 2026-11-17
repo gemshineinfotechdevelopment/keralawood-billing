@@ -36,6 +36,9 @@ const INITIAL_SETTINGS = {
   signatoryName: 'Rajesh Sivan',
   signatoryDesignation: 'Depot Lead & Store Manager',
   disclaimer: 'Natural variations in teak & rosewood grain are organic characteristics. Claims accepted within 7 days of yard delivery.',
+  // System Date & Time (POS Billing Clock)
+  systemTime: '10:30 AM',
+  systemDate: '',
 }
 
 // Products Catalog
@@ -234,8 +237,9 @@ const INITIAL_CUSTOMERS = [
 const INITIAL_TRANSACTIONS = [
   {
     id: 'INV-892',
-    date: 'Oct 28, 2024',
+    date: 'Oct 28, 2024, 04:30 PM',
     monthYear: 'October 2024',
+    year: '2024',
     customer: 'Kumarakom Lake Resort',
     project: 'Heritage Suites Wing B',
     wood: 'Nilambur Teak',
@@ -247,8 +251,9 @@ const INITIAL_TRANSACTIONS = [
   },
   {
     id: 'INV-889',
-    date: 'Oct 26, 2024',
+    date: 'Oct 26, 2024, 02:15 PM',
     monthYear: 'October 2024',
+    year: '2024',
     customer: 'Dr. Ananya Verma',
     project: 'Private Residence, Sivakasi',
     wood: 'Rosewood Timber',
@@ -260,8 +265,9 @@ const INITIAL_TRANSACTIONS = [
   },
   {
     id: 'INV-885',
-    date: 'Oct 24, 2024',
+    date: 'Oct 24, 2024, 11:45 AM',
     monthYear: 'October 2024',
+    year: '2024',
     customer: 'Malabar Heritage Club',
     project: 'Clubhouse Dining Hall',
     wood: 'Wild Anjili Dining',
@@ -273,8 +279,9 @@ const INITIAL_TRANSACTIONS = [
   },
   {
     id: 'INV-881',
-    date: 'Oct 21, 2024',
+    date: 'Oct 21, 2024, 05:10 PM',
     monthYear: 'October 2024',
+    year: '2024',
     customer: 'Brunton Boatyard',
     project: 'Heritage Suite 204',
     wood: 'Teak Wardrobe',
@@ -286,8 +293,9 @@ const INITIAL_TRANSACTIONS = [
   },
   {
     id: 'INV-878',
-    date: 'Oct 18, 2024',
+    date: 'Oct 18, 2024, 10:20 AM',
     monthYear: 'October 2024',
+    year: '2024',
     customer: 'The Leela Kovalam',
     project: 'Deck Renovation',
     wood: '12 Teak Sun Loungers',
@@ -593,9 +601,28 @@ export const DataStore = {
     const grandTotal = subtotal + gst
     const totalVolume = (bill.items || []).reduce((sum, item) => sum + (item.quantity * 12), 0)
 
+    let txDateStr
+    let txYear
+    if (settings.systemDate) {
+      const d = new Date(settings.systemDate)
+      txDateStr = !isNaN(d.getTime())
+        ? d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+        : new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      txYear = !isNaN(d.getTime()) ? d.getFullYear().toString() : new Date().getFullYear().toString()
+    } else {
+      const d = new Date()
+      txDateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      txYear = d.getFullYear().toString()
+    }
+
+    const txTimeStr = settings.systemTime?.trim()
+      ? settings.systemTime.trim()
+      : new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
+
     const newTx = {
       id: bill.invoiceNumber.replace(/[^0-9]/g, '').slice(-3) ? `INV-${bill.invoiceNumber.replace(/[^0-9]/g, '').slice(-3)}` : `INV-${Date.now().toString().slice(-3)}`,
-      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      date: `${txDateStr}, ${txTimeStr}`,
+      year: txYear,
       createdAt: new Date().toISOString(),
       monthYear: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
       customer: bill.customer ? bill.customer.name : 'Walk-in Patron',

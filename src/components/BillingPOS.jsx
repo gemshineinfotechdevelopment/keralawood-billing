@@ -67,6 +67,25 @@ export default function BillingPOS({ onNavigateToProducts }) {
     }
   }
 
+  // Formatted date and time from system settings or live clock
+  const getInvoiceDateTimeDisplay = () => {
+    let dateStr
+    if (settings.systemDate) {
+      const d = new Date(settings.systemDate)
+      dateStr = !isNaN(d.getTime())
+        ? d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+        : new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    } else {
+      dateStr = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    }
+
+    const timeStr = settings.systemTime?.trim()
+      ? settings.systemTime.trim()
+      : new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
+
+    return `${dateStr} • ${timeStr} • Sivakasi Standard Time`
+  }
+
   // Clear Cart Items (Requirement 5)
   const handleClearCart = () => {
     DataStore.updateBill(currentBill.id, { items: [] })
@@ -910,7 +929,7 @@ export default function BillingPOS({ onNavigateToProducts }) {
                     </div>
                     <div className="inv-info-row">
                       <span>Date & Time:</span>
-                      <span>{new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} • Sivakasi Standard Time</span>
+                      <strong>{getInvoiceDateTimeDisplay()}</strong>
                     </div>
                     <div className="inv-info-row">
                       <span>Place of Supply:</span>

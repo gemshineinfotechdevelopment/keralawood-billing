@@ -3,9 +3,13 @@ import { DataStore } from '../services/dataStore'
 import './ReportsAnalytics.css'
 
 export default function ReportsAnalytics() {
+  const settings = DataStore.getSettings()
   const now = new Date()
-  const currentMonthName = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-  const [selectedMonth, setSelectedMonth] = useState(currentMonthName)
+  const currentYear = settings.systemDate
+    ? (new Date(settings.systemDate).getFullYear() || now.getFullYear()).toString()
+    : now.getFullYear().toString()
+
+  const [selectedYear, setSelectedYear] = useState(currentYear)
   const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [exportSuccess, setExportSuccess] = useState(false)
@@ -20,64 +24,58 @@ export default function ReportsAnalytics() {
     return () => window.removeEventListener('timber_store_updated', handleUpdate)
   }, [])
 
-  // Collect available unique months from recorded transactions plus the current month
-  const availableMonths = [
-    currentMonthName,
-    ...new Set(
-      transactions
-        .map((tx) => {
-          if (tx.monthYear) return tx.monthYear
-          const d = tx.createdAt ? new Date(tx.createdAt) : new Date(tx.date)
-          if (!isNaN(d.getTime())) {
-            return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-          }
-          return null
-        })
-        .filter(Boolean)
-    ),
-  ].filter((v, i, a) => a.indexOf(v) === i)
+  // Collect all unique years dynamically from transactions and system clock
+  const txYears = transactions
+    .map((tx) => {
+      if (tx.year) return String(tx.year)
+      if (tx.createdAt) {
+        const d = new Date(tx.createdAt)
+        if (!isNaN(d.getTime())) return d.getFullYear().toString()
+      }
+      if (tx.date) {
+        const m = String(tx.date).match(/\b(20\d\d)\b/)
+        if (m) return m[1]
+      }
+      return null
+    })
+    .filter(Boolean)
 
-  const monthOptions = [
+  const availableYears = Array.from(new Set([currentYear, ...txYears])).sort(
+    (a, b) => Number(b) - Number(a)
+  )
+
+  const yearOptions = [
     {
-      value: currentMonthName,
-      label: `This Month (${now.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })})`,
+      value: currentYear,
+      label: `This Year (${currentYear})`,
     },
-    ...availableMonths
-      .filter((m) => m !== currentMonthName)
-      .map((m) => ({ value: m, label: m })),
-    { value: 'all', label: 'All-Time Ledger' },
+    ...availableYears
+      .filter((y) => y !== currentYear)
+      .map((y) => ({ value: y, label: `Year ${y}` })),
+    { value: 'all', label: 'All-Time Annual Ledger' },
   ]
 
-  // Filter transactions for the selected month
-  const isMatchMonth = (tx, targetMonth) => {
-    if (targetMonth === 'all') return true
-    if (tx.monthYear && tx.monthYear.toLowerCase() === targetMonth.toLowerCase()) return true
+  // Filter transactions for the selected year
+  const isMatchYear = (tx, targetYear) => {
+    if (targetYear === 'all') return true
+    if (tx.year && String(tx.year) === String(targetYear)) return true
     if (tx.createdAt) {
       const d = new Date(tx.createdAt)
-      if (!isNaN(d.getTime())) {
-        return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toLowerCase() === targetMonth.toLowerCase()
+      if (!isNaN(d.getTime()) && d.getFullYear().toString() === String(targetYear)) {
+        return true
       }
     }
     if (tx.date) {
-      const d = new Date(tx.date)
-      if (!isNaN(d.getTime())) {
-        return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toLowerCase() === targetMonth.toLowerCase()
-      }
-      const targetParts = targetMonth.split(' ')
-      const shortTarget = targetParts[0].slice(0, 3).toLowerCase()
-      const yearTarget = targetParts[1]
-      const txLower = tx.date.toLowerCase()
-      if (txLower.includes(shortTarget) && (!yearTarget || txLower.includes(yearTarget))) {
-        return true
-      }
+      const m = String(tx.date).match(/\b(20\d\d)\b/)
+      if (m && m[1] === String(targetYear)) return true
     }
     return false
   }
 
-  const monthTransactions = transactions.filter((tx) => isMatchMonth(tx, selectedMonth))
+  const yearTransactions = transactions.filter((tx) => isMatchYear(tx, selectedYear))
 
-  // Filter transactions dynamically by search query within the month
-  const filtered = monthTransactions.filter((tx) => {
+  // Filter transactions dynamically by search query within the selected year
+  const filtered = yearTransactions.filter((tx) => {
     const q = searchQuery.toLowerCase().trim()
     if (!q) return true
     return (
@@ -89,15 +87,15 @@ export default function ReportsAnalytics() {
     )
   })
 
-  // Dynamic calculations based strictly on the selected month
-  const totalRawAmount = monthTransactions.reduce((sum, tx) => {
+  // Dynamic calculations based strictly on the selected year
+  const totalRawAmount = yearTransactions.reduce((sum, tx) => {
     if (tx.rawAmount) return sum + tx.rawAmount
     const cleaned = Number(String(tx.amount).replace(/[^0-9]/g, '')) || 0
     return sum + cleaned
   }, 0)
 
-  const totalVolumeCFT = monthTransactions.reduce((sum, tx) => sum + (Number(tx.volume) || 0), 0)
-  const orderCount = monthTransactions.length
+  const totalVolumeCFT = yearTransactions.reduce((sum, tx) => sum + (Number(tx.volume) || 0), 0)
+  const orderCount = yearTransactions.length
 
   const itemsPerPage = 5
   const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1
@@ -121,14 +119,14 @@ export default function ReportsAnalytics() {
       ? `${(totalRawAmount / 100000).toFixed(2)} Lakhs`
       : totalRawAmount.toLocaleString('en-IN')
 
-  // Top Selling Wood Species calculated dynamically from this month's transactions
+  // Top Selling Wood Species calculated dynamically from this year's transactions
   const speciesList = [
     { name: 'Nilambur Teak', color: '#31190B' },
     { name: 'Sivakasi Rosewood', color: '#C88D58' },
     { name: 'Wild Anjili Wood', color: '#1A4D2E' },
     { name: 'Country Hardwood & Mahogany', color: '#8C7B72' },
   ].map((spec) => {
-    const specTxs = monthTransactions.filter((tx) =>
+    const specTxs = yearTransactions.filter((tx) =>
       (tx.wood || '').toLowerCase().includes(spec.name.toLowerCase().split(' ')[0])
     )
     const specVolume = specTxs.reduce((sum, tx) => sum + (Number(tx.volume) || 0), 0)
@@ -165,12 +163,12 @@ export default function ReportsAnalytics() {
 
           <h1 className="reports-main-title">Business & Sales Summary</h1>
           <p className="reports-main-subtitle">
-            Overview of revenue, timber volume dispatched, and monthly sales performance.
+            Annual overview of revenue, timber volume dispatched, and sales performance by year.
           </p>
         </div>
 
         <div className="reports-header-actions">
-          {/* Month Selector Dropdown */}
+          {/* Year Selector Dropdown */}
           <div className="reports-month-select-wrap">
             <svg
               width="13"
@@ -190,13 +188,13 @@ export default function ReportsAnalytics() {
             </svg>
             <select
               className="reports-month-select"
-              value={selectedMonth}
+              value={selectedYear}
               onChange={(e) => {
-                setSelectedMonth(e.target.value)
+                setSelectedYear(e.target.value)
                 setCurrentPage(1)
               }}
             >
-              {monthOptions.map((opt) => (
+              {yearOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>
                   {opt.label}
                 </option>
@@ -244,10 +242,10 @@ export default function ReportsAnalytics() {
 
       {/* Row 1: 3 KPI Summary Cards */}
       <div className="reports-kpi-grid">
-        {/* Card 1: Total Monthly Revenue */}
+        {/* Card 1: Total Annual Revenue */}
         <div className="reports-kpi-card">
           <div className="reports-kpi-top">
-            <span className="reports-kpi-label">TOTAL MONTHLY REVENUE</span>
+            <span className="reports-kpi-label">TOTAL ANNUAL REVENUE</span>
             <div className="reports-kpi-icon">
               <svg
                 width="16"
@@ -274,9 +272,9 @@ export default function ReportsAnalytics() {
 
           <div className="reports-kpi-meta-row">
             <span className={orderCount > 0 ? 'kpi-trend-green' : 'kpi-subtext'}>
-              {orderCount > 0 ? '↗ Active Month' : '• Fresh Month'}
+              {orderCount > 0 ? '↗ Active Annual Ledger' : '• Year Starting (Fresh)'}
             </span>
-            <span className="kpi-subtext">{selectedMonth === 'all' ? 'All-time ledger' : selectedMonth}</span>
+            <span className="kpi-subtext">{selectedYear === 'all' ? 'All recorded years' : `Year ${selectedYear}`}</span>
           </div>
 
           <div className="reports-kpi-divider" />
@@ -318,7 +316,7 @@ export default function ReportsAnalytics() {
 
           <div className="reports-kpi-meta-row">
             <span className="kpi-badge-orders">{orderCount} client {orderCount === 1 ? 'order' : 'orders'}</span>
-            <span className="kpi-subtext">dispatched this period</span>
+            <span className="kpi-subtext">fulfilled in {selectedYear === 'all' ? 'all-time ledger' : selectedYear}</span>
           </div>
 
           <div className="reports-kpi-divider" />
@@ -390,7 +388,7 @@ export default function ReportsAnalytics() {
             <div>
               <h2 className="panel-card-title">Top Selling Wood Species</h2>
               <p className="panel-card-subtitle">
-                Volume share and gross realization by species.
+                Volume share and gross realization by species ({selectedYear === 'all' ? 'All-Time' : `Year ${selectedYear}`}).
               </p>
             </div>
             <div className="panel-card-icon">
@@ -441,13 +439,13 @@ export default function ReportsAnalytics() {
           </div>
         </div>
 
-        {/* Card Right: Monthly Performance Snapshot */}
+        {/* Card Right: Annual Performance Snapshot */}
         <div className="reports-panel-card">
           <div className="panel-card-header">
             <div>
-              <h2 className="panel-card-title">Monthly Performance Snapshot</h2>
+              <h2 className="panel-card-title">Annual Performance Snapshot</h2>
               <p className="panel-card-subtitle">
-                Current order pipeline and billing settlement health.
+                Order pipeline and billing settlement health ({selectedYear === 'all' ? 'All-Time' : `Year ${selectedYear}`}).
               </p>
             </div>
             <div className="panel-card-icon">
@@ -609,17 +607,17 @@ export default function ReportsAnalytics() {
               />
             </div>
 
-            {/* Month Filter Dropdown */}
+            {/* Year Filter Dropdown */}
             <div className="reports-filter-dropdown">
               <select
                 className="reports-filter-select-inner"
-                value={selectedMonth}
+                value={selectedYear}
                 onChange={(e) => {
-                  setSelectedMonth(e.target.value)
+                  setSelectedYear(e.target.value)
                   setCurrentPage(1)
                 }}
               >
-                {monthOptions.map((opt) => (
+                {yearOptions.map((opt) => (
                   <option key={opt.value} value={opt.value}>
                     {opt.label}
                   </option>
@@ -693,7 +691,7 @@ export default function ReportsAnalytics() {
                   <td colSpan="6" className="sales-no-results">
                     {searchQuery
                       ? `No dispatched sales transactions found matching "${searchQuery}"`
-                      : `No sales or dispatches recorded for ${selectedMonth === currentMonthName ? 'current month (' + currentMonthName + ')' : selectedMonth}. As bills are recorded in Billing POS, sales will automatically appear here.`}
+                      : `No sales or dispatches recorded for Year ${selectedYear === currentYear ? `${currentYear} (This Year)` : selectedYear}. When each year starts, reports reset to 0; as bills are created in Billing POS, annual sales will appear here automatically.`}
                   </td>
                 </tr>
               )}
@@ -705,7 +703,7 @@ export default function ReportsAnalytics() {
         <div className="reports-table-footer">
           <div className="footer-left-meta">
             <span className="showing-records-text">
-              Showing <strong>{filtered.length > 0 ? `${(currentPage - 1) * itemsPerPage + 1}-${Math.min(currentPage * itemsPerPage, filtered.length)}` : '0-0'}</strong> of <strong>{filtered.length}</strong> Dispatched Sales Invoices
+              Showing <strong>{filtered.length > 0 ? `${(currentPage - 1) * itemsPerPage + 1}-${Math.min(currentPage * itemsPerPage, filtered.length)}` : '0-0'}</strong> of <strong>{filtered.length}</strong> Dispatched Sales Invoices for {selectedYear === 'all' ? 'All Years' : `Year ${selectedYear}`}
             </span>
             <span className="footer-pipe-divider">|</span>
             <div className="audit-trust-badge">

@@ -39,6 +39,12 @@ export default function Settings() {
     initial.disclaimer || 'Natural variations in teak & rosewood grain are organic characteristics. Claims accepted within 7 days of yard delivery.'
   )
 
+  // System Date & Time (POS Billing Clock)
+  const [systemTime, setSystemTime] = useState(
+    initial.systemTime || new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
+  )
+  const [systemDate, setSystemDate] = useState(initial.systemDate || '')
+
   const [savedSuccess, setSavedSuccess] = useState(false)
 
   const handleSaveSettings = () => {
@@ -67,6 +73,8 @@ export default function Settings() {
       signatoryName,
       signatoryDesignation,
       disclaimer,
+      systemTime,
+      systemDate,
     })
     setSavedSuccess(true)
     setTimeout(() => {
@@ -418,7 +426,132 @@ export default function Settings() {
         </div>
       </section>
 
-      {/* Card 4: Invoice, Printing & Legal Terms */}
+      {/* Card 4: System Date, Time & POS Billing Clock */}
+      <section className="settings-card">
+        <div className="settings-card-header">
+          <div className="settings-icon-box">
+            <svg
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#5C4537"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+          </div>
+          <div>
+            <h2 className="settings-section-title">System Time & POS Billing Clock</h2>
+            <p className="settings-section-subtitle">
+              Set the system time and date mentioned on patron invoices, print receipts, and transaction records.
+            </p>
+          </div>
+        </div>
+
+        <div className="settings-form-row-2col">
+          <div className="settings-input-group">
+            <div className="settings-label-with-btn">
+              <label className="settings-label">SYSTEM BILLING TIME *</label>
+              <button
+                type="button"
+                className="btn-sync-time"
+                onClick={() => {
+                  const now = new Date()
+                  setSystemTime(
+                    now.toLocaleTimeString('en-US', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      hour12: true,
+                    })
+                  )
+                }}
+              >
+                Sync Device Time
+              </button>
+            </div>
+            <input
+              type="text"
+              className="settings-text-input"
+              value={systemTime}
+              onChange={(e) => setSystemTime(e.target.value)}
+              placeholder="e.g. 10:30 AM or 04:15 PM"
+            />
+            <span className="settings-hint">
+              This exact time will be printed on patron tax invoices and sales ledger entries.
+            </span>
+          </div>
+
+          <div className="settings-input-group">
+            <div className="settings-label-with-btn">
+              <label className="settings-label">SYSTEM BILLING DATE</label>
+              <button
+                type="button"
+                className="btn-sync-time"
+                onClick={() => {
+                  const now = new Date()
+                  const y = now.getFullYear()
+                  const m = String(now.getMonth() + 1).padStart(2, '0')
+                  const d = String(now.getDate()).padStart(2, '0')
+                  setSystemDate(`${y}-${m}-${d}`)
+                }}
+              >
+                Set Today
+              </button>
+            </div>
+            <input
+              type="date"
+              className="settings-text-input"
+              value={systemDate}
+              onChange={(e) => setSystemDate(e.target.value)}
+            />
+            <span className="settings-hint">
+              Leave blank to automatically use the live calendar date.
+            </span>
+          </div>
+        </div>
+
+        {/* Live Preview Box */}
+        <div className="system-time-preview-box">
+          <div className="preview-clock-icon">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#8C5E35"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+          </div>
+          <div className="preview-meta">
+            <span className="preview-label">INVOICE TIME & DATE PREVIEW:</span>
+            <strong className="preview-time-val">
+              {systemDate
+                ? new Date(systemDate).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })
+                : new Date().toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })}{' '}
+              • {systemTime || '10:30 AM'} • Sivakasi Standard Time
+            </strong>
+          </div>
+        </div>
+      </section>
+
+      {/* Card 5: Invoice, Printing & Legal Terms */}
       <section className="settings-card">
         <div className="settings-card-header">
           <div className="settings-icon-box">
