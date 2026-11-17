@@ -29,7 +29,7 @@ export default function Customers({ onNavigateToBilling }) {
     fetch('/api/customers')
       .then((res) => res.json())
       .then((data) => {
-        if (data?.success && Array.isArray(data.customers) && data.customers.length > 0) {
+        if (data?.success && Array.isArray(data.customers) && data.customers.length >= 20) {
           const formatted = data.customers.map((c) => ({
             id: c._id || c.id,
             name: c.name,
@@ -57,9 +57,33 @@ export default function Customers({ onNavigateToBilling }) {
     return () => window.removeEventListener('timber_store_updated', handleUpdate)
   }, [])
 
-  // Filtered patrons
+  // Filtered patrons & pagination
   const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 5
+  const [itemsPerPage, setItemsPerPage] = useState(20)
+
+  // Customer Dossier Drawer state
+  const [dossierOpen, setDossierOpen] = useState(false)
+
+  // Close drawer / modals on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setDossierOpen(false)
+        setRegisterModalOpen(false)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
+  const handleOpenDossier = (patron) => {
+    setSelectedCustomerId(patron.id)
+    setDossierOpen(true)
+  }
+
+  const handleCloseDossier = () => {
+    setDossierOpen(false)
+  }
 
   const filtered = patronsList.filter((p) => {
     const q = searchQuery.toLowerCase().trim()
@@ -101,6 +125,7 @@ export default function Customers({ onNavigateToBilling }) {
     setPatronsList(DataStore.getCustomers())
     setSelectedCustomerId(added.id)
     setRegisterModalOpen(false)
+    setDossierOpen(true)
     setNewName('')
     setNewPhone('')
     setNewGstin('')
@@ -154,6 +179,7 @@ export default function Customers({ onNavigateToBilling }) {
     const newDraft = DataStore.createNewDraft(currentPatron)
     DataStore.setActiveBillId(newDraft.id)
     showToast(`Draft bill created for ${currentPatron.name}. Opening billing...`)
+    setDossierOpen(false)
     if (onNavigateToBilling) {
       onNavigateToBilling()
     }
@@ -326,8 +352,8 @@ export default function Customers({ onNavigateToBilling }) {
                   paginatedPatrons.map((patron) => (
                     <tr
                       key={patron.id}
-                      className={selectedCustomerId === patron.id ? 'selected-row' : ''}
-                      onClick={() => setSelectedCustomerId(patron.id)}
+                      className={selectedCustomerId === patron.id && dossierOpen ? 'selected-row' : ''}
+                      onClick={() => handleOpenDossier(patron)}
                     >
                       {/* Name & Avatar */}
                       <td>
@@ -369,7 +395,7 @@ export default function Customers({ onNavigateToBilling }) {
                           className="btn-view-details"
                           onClick={(e) => {
                             e.stopPropagation()
-                            setSelectedCustomerId(patron.id)
+                            handleOpenDossier(patron)
                           }}
                         >
                           View Details
@@ -390,9 +416,26 @@ export default function Customers({ onNavigateToBilling }) {
 
           {/* Table Footer */}
           <div className="patron-table-footer">
-            <span className="showing-records-text">
-              Showing <strong>{filtered.length > 0 ? (safePage - 1) * itemsPerPage + 1 : 0}-{Math.min(safePage * itemsPerPage, filtered.length)}</strong> of {filtered.length} customers
-            </span>
+            <div className="patron-footer-left">
+              <span className="showing-records-text">
+                Showing <strong>{filtered.length > 0 ? (safePage - 1) * itemsPerPage + 1 : 0}-{Math.min(safePage * itemsPerPage, filtered.length)}</strong> of {filtered.length} customers
+              </span>
+              <div className="patron-per-page-wrap">
+                <span className="patron-per-page-label">Show:</span>
+                <select
+                  className="patron-per-page-select"
+                  value={itemsPerPage}
+                  onChange={(e) => {
+                    setItemsPerPage(Number(e.target.value))
+                    setCurrentPage(1)
+                  }}
+                >
+                  <option value={10}>10 per page</option>
+                  <option value={20}>20 per page</option>
+                  <option value={50}>50 per page</option>
+                </select>
+              </div>
+            </div>
 
             <div className="patron-pagination">
               <button
@@ -424,103 +467,125 @@ export default function Customers({ onNavigateToBilling }) {
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Right: Active Patron Detail Dossier Card */}
-        <div className="patron-dossier-card">
-          {/* Header Profile Identity */}
-          <div className="dossier-profile-header">
-            <div className="dossier-avatar-large">
-              {currentPatron.initials || 'PT'}
-            </div>
-            <div className="dossier-name-block">
-              <h3 className="dossier-person-name">{currentPatron.personName || currentPatron.name}</h3>
-              <p className="dossier-firm-name">{currentPatron.name}</p>
-            </div>
-          </div>
-
-          {/* Divider */}
-          <div className="dossier-divider" />
-
-          {/* Contact Details List */}
-          <div className="dossier-details-list">
-            <div className="dossier-detail-row">
-              <span className="dossier-label">PHONE</span>
-              <span className="dossier-value">{currentPatron.phone}</span>
-            </div>
-            <div className="dossier-detail-row">
-              <span className="dossier-label">GSTIN</span>
-              <span className="dossier-value">{currentPatron.gstin}</span>
-            </div>
-            <div className="dossier-detail-row">
-              <span className="dossier-label">ADDRESS</span>
-              <span className="dossier-value">{currentPatron.address}</span>
-            </div>
-          </div>
-
-          {/* Credit & Balance Box */}
-          <div className="dossier-credit-box">
-            <div className="credit-row-top">
-              <span className="credit-label">OUTSTANDING BALANCE</span>
-              <span className="credit-amount-red">
-                <span className="straight-rupee">₹</span>
-                {currentPatron.outstandingBalance || '0'}
-              </span>
-            </div>
-
-            <div className="credit-row-mid">
-              <span className="credit-label">CREDIT LIMIT</span>
-              <span className="credit-limit-val">
-                <span className="straight-rupee">₹</span>
-                {currentPatron.creditUsed || '0'} / <span className="straight-rupee">₹</span>
-                {currentPatron.creditTotal || '2,00,000'}
-              </span>
-            </div>
-
-            <div className="credit-progress-track">
-              <div
-                className="credit-progress-fill"
-                style={{ width: `${currentPatron.creditProgress || 0}%` }}
-              />
-            </div>
-          </div>
-
-          {/* Create Invoice Button */}
-          <button
-            type="button"
-            className="btn-create-patron-invoice"
-            onClick={handleCreateInvoiceForPatron}
-          >
-            + Create Invoice
-          </button>
-
-          {/* Recent Transactions List */}
-          <div className="dossier-recent-section">
-            <span className="recent-section-label">RECENT TRANSACTIONS</span>
-            <div className="recent-tx-list">
-              {currentPatron.recentTx && currentPatron.recentTx.length > 0 ? (
-                currentPatron.recentTx.map((tx, idx) => (
-                  <div key={tx.id || idx} className="recent-tx-item">
-                    <div className="recent-tx-left">
-                      <span className="tx-id">{tx.id}</span>
-                      <span className="tx-desc">{tx.dateItem}</span>
-                    </div>
-                    <div className="recent-tx-right">
-                      <span className="tx-amount">
-                        <span className="straight-rupee">₹</span>
-                        {tx.amount}
-                      </span>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="recent-tx-item">
-                  <span className="tx-desc">No prior transactions on record</span>
+      {/* Customer Dossier Drawer (Slide-Over Panel) */}
+      {dossierOpen && (
+        <div className="dossier-drawer-backdrop" onClick={handleCloseDossier}>
+          <div className="dossier-drawer-panel" onClick={(e) => e.stopPropagation()}>
+            {/* Drawer Header */}
+            <div className="dossier-drawer-header">
+              <div className="dossier-drawer-header-top">
+                <div className="dossier-badge-wrap">
+                  <span className="dossier-eyebrow">CUSTOMER DOSSIER</span>
+                  <span className="dossier-badge-pill">{currentPatron.type || 'Client'}</span>
                 </div>
-              )}
+                <button
+                  type="button"
+                  className="dossier-close-btn"
+                  onClick={handleCloseDossier}
+                  aria-label="Close dossier"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Profile Header Identity */}
+              <div className="dossier-profile-header">
+                <div className="dossier-avatar-large">
+                  {currentPatron.initials || 'PT'}
+                </div>
+                <div className="dossier-name-block">
+                  <h3 className="dossier-person-name">{currentPatron.personName || currentPatron.name}</h3>
+                  <p className="dossier-firm-name">{currentPatron.name}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Scrollable Drawer Body */}
+            <div className="dossier-drawer-body">
+              {/* Contact Details List */}
+              <div className="dossier-details-list">
+                <div className="dossier-detail-row">
+                  <span className="dossier-label">PHONE</span>
+                  <span className="dossier-value">{currentPatron.phone || 'N/A'}</span>
+                </div>
+                <div className="dossier-detail-row">
+                  <span className="dossier-label">GSTIN</span>
+                  <span className="dossier-value">{currentPatron.gstin || 'Unregistered / Personal'}</span>
+                </div>
+                <div className="dossier-detail-row">
+                  <span className="dossier-label">ADDRESS</span>
+                  <span className="dossier-value">{currentPatron.address || currentPatron.location || 'Sivakasi, Tamil Nadu'}</span>
+                </div>
+              </div>
+
+              {/* Credit & Balance Box */}
+              <div className="dossier-credit-box">
+                <div className="credit-row-top">
+                  <span className="credit-label">OUTSTANDING BALANCE</span>
+                  <span className="credit-amount-red">
+                    <span className="straight-rupee">₹</span>
+                    {currentPatron.outstandingBalance || '0'}
+                  </span>
+                </div>
+
+                <div className="credit-row-mid">
+                  <span className="credit-label">CREDIT LIMIT</span>
+                  <span className="credit-limit-val">
+                    <span className="straight-rupee">₹</span>
+                    {currentPatron.creditUsed || '0'} / <span className="straight-rupee">₹</span>
+                    {currentPatron.creditTotal || '2,00,000'}
+                  </span>
+                </div>
+
+                <div className="credit-progress-track">
+                  <div
+                    className="credit-progress-fill"
+                    style={{ width: `${currentPatron.creditProgress || 0}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Create Invoice Button */}
+              <button
+                type="button"
+                className="btn-create-patron-invoice"
+                onClick={handleCreateInvoiceForPatron}
+              >
+                + Create Invoice
+              </button>
+
+              {/* Recent Transactions List */}
+              <div className="dossier-recent-section">
+                <span className="recent-section-label">RECENT TRANSACTIONS</span>
+                <div className="recent-tx-list">
+                  {currentPatron.recentTx && currentPatron.recentTx.length > 0 ? (
+                    currentPatron.recentTx.map((tx, idx) => (
+                      <div key={tx.id || idx} className="recent-tx-item">
+                        <div className="recent-tx-left">
+                          <span className="tx-id">{tx.id}</span>
+                          <span className="tx-desc">{tx.dateItem}</span>
+                        </div>
+                        <div className="recent-tx-right">
+                          <span className="tx-amount">
+                            <span className="straight-rupee">₹</span>
+                            {tx.amount}
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="recent-tx-item">
+                      <span className="tx-desc">No prior transactions on record</span>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Register New Customer Modal */}
       {registerModalOpen && (

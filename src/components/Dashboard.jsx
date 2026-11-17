@@ -3,38 +3,30 @@ import { DataStore } from '../services/dataStore'
 import './Dashboard.css'
 
 const DEFAULT_SALES = [
-  {
-    invoice: '#KWF-0891',
-    customer: 'Anoop Menon',
-    location: 'Panampilly Nagar, Kochi',
-    items: '1x Solid Rosewood Royal King Bed, 2x Nightstands',
-    amount: '₹78,400',
-    status: 'Dispatched',
-  },
-  {
-    invoice: '#KWF-0890',
-    customer: 'Lakshmi Nair',
-    location: 'Thottakkattukara, Aluva',
-    items: '1x Nilambur Teak Dining Table, 6x Artisan Chairs',
-    amount: '₹52,000',
-    status: 'Dispatched',
-  },
-  {
-    invoice: '#KWF-0889',
-    customer: 'Dr. Thomas Varghese',
-    location: 'Kumaranalloor, Kottayam',
-    items: '2x Teakwood Ergonomic Armchairs, 1x Coffee Table',
-    amount: '₹31,500',
-    status: 'Dispatched',
-  },
-  {
-    invoice: '#KWF-0888',
-    customer: 'Deepak Kurian & Architects',
-    location: 'Fort Kochi Heritage Zone',
-    items: '1x Handcrafted Cane Bookcase, 1x Side Table',
-    amount: '₹22,600',
-    status: 'Dispatched',
-  },
+  { invoice: 'INV-1024', customer: 'Suresh Kumar & Sons', location: 'Sivakasi Town', items: '1x Teak Dining Table, 6x Chairs', amount: '₹60,500', status: 'Dispatched' },
+  { invoice: 'INV-1023', customer: 'Dr. Thomas Varghese', location: 'Sivakasi Division', items: '1x Solid Rosewood King Bed, 2x Nightstands', amount: '₹85,200', status: 'Dispatched' },
+  { invoice: 'INV-1022', customer: 'Priya Lakshmi Textiles', location: 'Kamaraj Road, Sivakasi', items: '1x Teakwood 3-Seater Sofa, 1x Coffee Table', amount: '₹58,500', status: 'Dispatched' },
+  { invoice: 'INV-1021', customer: 'Deepak Kurian & Architects', location: 'Sivakasi Guild', items: '1x Jackfruit Live-Edge Boardroom Desk', amount: '₹95,000', status: 'Dispatched' },
+  { invoice: 'INV-1020', customer: 'Rajeshwari Ammal', location: 'Main Bazaar, Sivakasi', items: '1x Kerala Traditional Mandapam Pooja Unit', amount: '₹34,000', status: 'Dispatched' },
+  { invoice: 'INV-1019', customer: 'Anoop Menon', location: 'Sivakasi Colony', items: '1x Teakwood Queen Hydraulic Storage Bed', amount: '₹62,000', status: 'Dispatched' },
+  { invoice: 'INV-1018', customer: 'Sri Meenakshi Printers', location: 'Industrial Area, Sivakasi', items: '1x Rosewood 3-Door Master Wardrobe', amount: '₹68,000', status: 'Dispatched' },
+  { invoice: 'INV-1017', customer: 'Murugan Modern Furnishings', location: 'Bypass Road, Sivakasi', items: '4x High-Back Ergonomic Teak Study Chairs', amount: '₹34,000', status: 'Dispatched' },
+  { invoice: 'INV-1016', customer: 'Senthil Nathan', location: 'Police Station Rd, Sivakasi', items: '1x Handcrafted Wooden Oonjal Swing', amount: '₹48,000', status: 'Dispatched' },
+  { invoice: 'INV-1015', customer: 'Dr. K. Radhakrishnan', location: 'Gandhi Nagar, Sivakasi', items: '1x Solid Rosewood Dressing Table with Mirror', amount: '₹29,500', status: 'Dispatched' },
+  { invoice: 'INV-1014', customer: 'Anandha Bhavan Residency', location: 'Station Rd, Sivakasi', items: '1x Teakwood 4-Seater Dining Set', amount: '₹36,000', status: 'Dispatched' },
+  { invoice: 'INV-1013', customer: 'Vignesh Construction Co.', location: 'Ring Road, Sivakasi', items: '1x Mahogany 6-Shelf Library Display Rack', amount: '₹21,000', status: 'Dispatched' },
+  { invoice: 'INV-1012', customer: 'Karthik Raja', location: 'Teachers Colony, Sivakasi', items: '1x Teakwood TV Media Entertainment Console', amount: '₹26,500', status: 'Dispatched' },
+  { invoice: 'INV-1011', customer: 'Selvi Thirumalai', location: 'Sankarankovil Rd, Sivakasi', items: '1x Traditional Hand-Carved Rocking Chair', amount: '₹12,800', status: 'Dispatched' },
+  { invoice: 'INV-1010', customer: 'Vijayalakshmi Sweets', location: 'South Car Street, Sivakasi', items: '2x Teak Ergonomic Armchairs', amount: '₹29,000', status: 'Dispatched' },
+  { invoice: 'INV-1009', customer: 'Jayaram Brothers', location: 'Thirutangal Rd, Sivakasi', items: '1x Handcrafted Cane Bookcase', amount: '₹18,500', status: 'Dispatched' },
+  { invoice: 'INV-1008', customer: 'Dr. N. Soundararajan', location: 'Hospital Road, Sivakasi', items: '1x Anjili Heritage Brass Chest', amount: '₹22,500', status: 'Dispatched' },
+  { invoice: 'INV-1007', customer: 'Malarvizhi Interiors', location: 'North Car Street, Sivakasi', items: '1x Live-Edge Teak Entryway Console Table', amount: '₹19,800', status: 'Dispatched' },
+  { invoice: 'INV-1006', customer: 'Balaji Agency', location: 'Sattur Road, Sivakasi', items: '1x Solid Wood 3-Tier Louvered Shoe Rack', amount: '₹9,500', status: 'Dispatched' },
+  { invoice: 'INV-1005', customer: 'Manickam & Sons Traders', location: 'Market Yard, Sivakasi', items: '1x Vintage 5-Drawer Wooden Chest', amount: '₹31,000', status: 'Dispatched' },
+  { invoice: 'INV-1004', customer: 'Sree Saravana Match Works', location: 'Sivakasi Depot', items: '2x Teakwood Solid Dining Benches', amount: '₹23,000', status: 'Dispatched' },
+  { invoice: 'INV-1003', customer: 'K. Vasanth Kumar', location: 'Velayutham Colony, Sivakasi', items: '2x Wooden Bar Stools with Swivel Top', amount: '₹13,600', status: 'Dispatched' },
+  { invoice: 'INV-1002', customer: 'Gowri Shankar Mills', location: 'Vembakottai Rd, Sivakasi', items: '1x Solid Teak Side Server Credenza', amount: '₹24,000', status: 'Dispatched' },
+  { invoice: 'INV-1001', customer: 'Shanmuga Priya', location: 'Alagappan Nagar, Sivakasi', items: '2x Rosewood Dual-Drawer Bedside Nightstands', amount: '₹14,400', status: 'Dispatched' },
 ]
 
 export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice, onNavigate }) {
@@ -50,6 +42,8 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
     lowStockCount: '3 items',
   })
   const [salesSearch, setSalesSearch] = useState('')
+  const [salesPage, setSalesPage] = useState(1)
+  const salesPerPage = 20
 
   useEffect(() => {
     const handleStoreUpdate = () => {
@@ -133,11 +127,17 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
   const filteredSales = recentSales.filter((sale) => {
     const q = salesSearch.toLowerCase()
     return (
-      sale.customer.toLowerCase().includes(q) ||
-      sale.invoice.toLowerCase().includes(q) ||
-      sale.items.toLowerCase().includes(q)
+      (sale.customer || '').toLowerCase().includes(q) ||
+      (sale.invoice || '').toLowerCase().includes(q) ||
+      (sale.items || '').toLowerCase().includes(q)
     )
   })
+
+  const totalSalesPages = Math.ceil(filteredSales.length / salesPerPage) || 1
+  const displayedSales = filteredSales.slice(
+    (salesPage - 1) * salesPerPage,
+    salesPage * salesPerPage
+  )
 
   return (
     <div className="dashboard-container">
@@ -291,7 +291,7 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
               </tr>
             </thead>
             <tbody>
-            {filteredSales.map((sale) => (
+            {displayedSales.map((sale) => (
               <tr key={sale.invoice}>
                 <td className="invoice-col">{sale.invoice}</td>
                 <td className="customer-col">
@@ -323,23 +323,37 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
         </table>
       </div>
 
-        {/* Pagination Bar */}
+        {/* Pagination Bar: 20 per page */}
         <div className="pagination-bar">
-          <span className="pagination-info">Showing 1 - {filteredSales.length} of {recentSales.length || 18} transactions</span>
+          <span className="pagination-info">
+            Showing {filteredSales.length > 0 ? (salesPage - 1) * salesPerPage + 1 : 0} -{' '}
+            {Math.min(salesPage * salesPerPage, filteredSales.length)} of {filteredSales.length} transactions
+          </span>
           <div className="pagination-controls">
-            <button type="button" className="page-btn arrow">
+            <button
+              type="button"
+              className="page-btn arrow"
+              disabled={salesPage <= 1}
+              onClick={() => setSalesPage((p) => Math.max(1, p - 1))}
+            >
               ‹
             </button>
-            <button type="button" className="page-btn active">
-              1
-            </button>
-            <button type="button" className="page-btn">
-              2
-            </button>
-            <button type="button" className="page-btn">
-              3
-            </button>
-            <button type="button" className="page-btn arrow">
+            {Array.from({ length: totalSalesPages }, (_, idx) => idx + 1).map((num) => (
+              <button
+                key={num}
+                type="button"
+                className={`page-btn ${salesPage === num ? 'active' : ''}`}
+                onClick={() => setSalesPage(num)}
+              >
+                {num}
+              </button>
+            ))}
+            <button
+              type="button"
+              className="page-btn arrow"
+              disabled={salesPage >= totalSalesPages}
+              onClick={() => setSalesPage((p) => Math.min(totalSalesPages, p + 1))}
+            >
               ›
             </button>
           </div>

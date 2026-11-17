@@ -298,10 +298,8 @@
    Main 2-Column Section: Table & Dossier
    =================================================== */
 .customers-main-layout {
-  display: grid;
-  grid-template-columns: 1.45fr 0.85fr;
-  gap: 16px;
-  align-items: start;
+  display: block;
+  width: 100%;
 }
 
 /* Left Table Card */
@@ -536,6 +534,39 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.patron-footer-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.patron-per-page-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.patron-per-page-label {
+  font-size: 11px;
+  color: #7C695E;
+  font-weight: 600;
+}
+
+.patron-per-page-select {
+  background-color: #FFFFFF;
+  border: 1px solid #D6C7BC;
+  border-radius: 4px;
+  padding: 3px 8px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #31190B;
+  cursor: pointer;
+  outline: none;
 }
 
 .showing-records-text {
@@ -600,8 +631,111 @@
 }
 
 /* ===================================================
-   Right: Active Patron Detail Dossier Card
+   Customer Dossier Drawer (Slide-Over Panel)
    =================================================== */
+.dossier-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(34, 28, 24, 0.45);
+  backdrop-filter: blur(2px);
+  z-index: 1000;
+  display: flex;
+  justify-content: flex-end;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.dossier-drawer-panel {
+  width: 440px;
+  max-width: 95vw;
+  height: 100vh;
+  background-color: #FFFDFB;
+  box-shadow: -8px 0 32px rgba(49, 25, 11, 0.16);
+  border-left: 1px solid #EAE0D8;
+  display: flex;
+  flex-direction: column;
+  animation: slideInRight 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.dossier-drawer-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid #F1E7E0;
+  background-color: #FFF9F5;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.dossier-drawer-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dossier-badge-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dossier-eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #B07D4F;
+  text-transform: uppercase;
+}
+
+.dossier-badge-pill {
+  font-size: 10.5px;
+  font-weight: 600;
+  background-color: #F3E6DC;
+  color: #5C3A21;
+  padding: 2px 8px;
+  border-radius: 12px;
+  border: 1px solid rgba(200, 141, 88, 0.25);
+}
+
+.dossier-close-btn {
+  background: transparent;
+  border: none;
+  font-size: 16px;
+  color: #8C7B72;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.dossier-close-btn:hover {
+  background-color: #EFE4DC;
+  color: #31190B;
+}
+
+.dossier-drawer-body {
+  padding: 22px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+  flex: 1;
+}
+
 .patron-dossier-card {
   background-color: #FFFFFF;
   border: 1px solid #F0E6DE;
@@ -1023,9 +1157,9 @@
     text-align: center;
     padding: 14px 10px;
   }
-  .patron-dossier-card {
-    width: 100%;
-    box-sizing: border-box;
+  .dossier-drawer-panel {
+    width: 100vw;
+    max-width: 100vw;
   }
   .dossier-detail-row {
     flex-wrap: wrap;

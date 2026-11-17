@@ -527,57 +527,40 @@ export async function seedInitialData() {
       console.log('[Seed] Seeded settings successfully.');
     }
 
-    // 4. Sales / Invoices
+    // 4. Sales / Invoices (24 transactions to support 20-per-page)
     const saleCount = await Sale.countDocuments();
-    if (saleCount === 0) {
-      console.log('[Seed] Seeding initial sales transactions...');
+    if (saleCount < 20) {
+      if (saleCount > 0) {
+        await Sale.deleteMany({});
+      }
+      console.log('[Seed] Seeding 24 sales transactions for Year 2026...');
       await Sale.insertMany([
-        {
-          invoice: '#KWF-0891',
-          customer: 'Anoop Menon',
-          location: 'Panampilly Nagar, Kochi',
-          items: '1x Solid Rosewood Royal King Bed, 2x Nightstands',
-          amount: 78400,
-          paymentStatus: 'Paid',
-          status: 'Dispatched',
-          year: '2026',
-          monthYear: 'November 2026',
-        },
-        {
-          invoice: '#KWF-0890',
-          customer: 'Lakshmi Nair',
-          location: 'Thottakkattukara, Aluva',
-          items: '1x Nilambur Teak Dining Table, 6x Artisan Chairs',
-          amount: 52000,
-          paymentStatus: 'Paid',
-          status: 'Dispatched',
-          year: '2026',
-          monthYear: 'November 2026',
-        },
-        {
-          invoice: '#KWF-0889',
-          customer: 'Dr. Thomas Varghese',
-          location: 'Kumaranalloor, Kottayam',
-          items: '2x Teakwood Ergonomic Armchairs, 1x Coffee Table',
-          amount: 31500,
-          paymentStatus: 'Paid',
-          status: 'Dispatched',
-          year: '2026',
-          monthYear: 'November 2026',
-        },
-        {
-          invoice: '#KWF-0888',
-          customer: 'Deepak Kurian & Architects',
-          location: 'Fort Kochi Heritage Zone',
-          items: '1x Handcrafted Cane Bookcase, 1x Side Table',
-          amount: 22600,
-          paymentStatus: 'Paid',
-          status: 'Dispatched',
-          year: '2026',
-          monthYear: 'November 2026',
-        },
+        { invoice: 'INV-1024', customer: 'Suresh Kumar & Sons', location: 'Sivakasi Town', items: '1x Teak Dining Table, 6x Chairs', amount: 60500, paymentStatus: 'Paid', status: 'Dispatched', year: '2026', monthYear: 'November 2026' },
+        { invoice: 'INV-1023', customer: 'Dr. Thomas Varghese', location: 'Sivakasi Division', items: '1x Solid Rosewood King Bed, 2x Nightstands', amount: 85200, paymentStatus: 'Paid', status: 'Dispatched', year: '2026', monthYear: 'November 2026' },
+        { invoice: 'INV-1022', customer: 'Priya Lakshmi Textiles', location: 'Kamaraj Road, Sivakasi', items: '1x Teakwood 3-Seater Sofa, 1x Coffee Table', amount: 58500, paymentStatus: 'Paid', status: 'Dispatched', year: '2026', monthYear: 'November 2026' },
+        { invoice: 'INV-1021', customer: 'Deepak Kurian & Architects', location: 'Sivakasi Guild', items: '1x Jackfruit Live-Edge Boardroom Desk', amount: 95000, paymentStatus: 'Paid', status: 'Dispatched', year: '2026', monthYear: 'November 2026' },
+        { invoice: 'INV-1020', customer: 'Rajeshwari Ammal', location: 'Main Bazaar, Sivakasi', items: '1x Kerala Traditional Mandapam Pooja Unit', amount: 34000, paymentStatus: 'Paid', status: 'Dispatched', year: '2026', monthYear: 'November 2026' },
+        { invoice: 'INV-1019', customer: 'Anoop Menon', location: 'Sivakasi Colony', items: '1x Teakwood Queen Hydraulic Storage Bed', amount: 62000, paymentStatus: 'Paid', status: 'Dispatched', year: '2026', monthYear: 'November 2026' },
+        { invoice: 'INV-1018', customer: 'Sri Meenakshi Printers', location: 'Industrial Area, Sivakasi', items: '1x Rosewood 3-Door Master Wardrobe', amount: 68000, paymentStatus: 'Paid', status: 'Dispatched', year: '2026', monthYear: 'November 2026' },
+        { invoice: 'INV-1017', customer: 'Murugan Modern Furnishings', location: 'Bypass Road, Sivakasi', items: '4x High-Back Ergonomic Teak Study Chairs', amount: 34000, paymentStatus: 'Paid', status: 'Dispatched', year: '2026', monthYear: 'November 2026' },
+        { invoice: 'INV-1016', customer: 'Senthil Nathan', location: 'Police Station Rd, Sivakasi', items: '1x Handcrafted Wooden Oonjal Swing', amount: 48000, paymentStatus: 'Paid', status: 'Dispatched', year: '2026', monthYear: 'November 2026' },
+        { invoice: 'INV-1015', customer: 'Dr. K. Radhakrishnan', location: 'Gandhi Nagar, Sivakasi', items: '1x Solid Rosewood Dressing Table with Mirror', amount: 29500, paymentStatus: 'Paid', status: 'Dispatched', year: '2026', monthYear: 'November 2026' },
+        { invoice: 'INV-1014', customer: 'Anandha Bhavan Residency', location: 'Station Rd, Sivakasi', items: '1x Teakwood 4-Seater Dining Set', amount: 36000, paymentStatus: 'Paid', status: 'Dispatched', year: '2026', monthYear: 'November 2026' },
+        { invoice: 'INV-1013', customer: 'Vignesh Construction Co.', location: 'Ring Road, Sivakasi', items: '1x Mahogany 6-Shelf Library Display Rack', amount: 21000, paymentStatus: 'Paid', status: 'Dispatched', year: '2026', monthYear: 'November 2026' },
+        { invoice: 'INV-1012', customer: 'Karthik Raja', location: 'Teachers Colony, Sivakasi', items: '1x Teakwood TV Media Entertainment Console', amount: 26500, paymentStatus: 'Paid', status: 'Dispatched', year: '2026', monthYear: 'November 2026' },
+        { invoice: 'INV-1011', customer: 'Selvi Thirumalai', location: 'Sankarankovil Rd, Sivakasi', items: '1x Traditional Hand-Carved Rocking Chair', amount: 12800, paymentStatus: 'Paid', status: 'Dispatched', year: '2026', monthYear: 'November 2026' },
+        { invoice: 'INV-1010', customer: 'Vijayalakshmi Sweets', location: 'South Car Street, Sivakasi', items: '2x Teak Ergonomic Armchairs', amount: 29000, paymentStatus: 'Paid', status: 'Dispatched', year: '2026', monthYear: 'November 2026' },
+        { invoice: 'INV-1009', customer: 'Jayaram Brothers', location: 'Thirutangal Rd, Sivakasi', items: '1x Handcrafted Cane Bookcase', amount: 18500, paymentStatus: 'Paid', status: 'Dispatched', year: '2026', monthYear: 'November 2026' },
+        { invoice: 'INV-1008', customer: 'Dr. N. Soundararajan', location: 'Hospital Road, Sivakasi', items: '1x Anjili Heritage Brass Chest', amount: 22500, paymentStatus: 'Paid', status: 'Dispatched', year: '2026', monthYear: 'November 2026' },
+        { invoice: 'INV-1007', customer: 'Malarvizhi Interiors', location: 'North Car Street, Sivakasi', items: '1x Live-Edge Teak Entryway Console Table', amount: 19800, paymentStatus: 'Paid', status: 'Dispatched', year: '2026', monthYear: 'November 2026' },
+        { invoice: 'INV-1006', customer: 'Balaji Agency', location: 'Sattur Road, Sivakasi', items: '1x Solid Wood 3-Tier Louvered Shoe Rack', amount: 9500, paymentStatus: 'Paid', status: 'Dispatched', year: '2026', monthYear: 'November 2026' },
+        { invoice: 'INV-1005', customer: 'Manickam & Sons Traders', location: 'Market Yard, Sivakasi', items: '1x Vintage 5-Drawer Wooden Chest', amount: 31000, paymentStatus: 'Paid', status: 'Dispatched', year: '2026', monthYear: 'November 2026' },
+        { invoice: 'INV-1004', customer: 'Sree Saravana Match Works', location: 'Sivakasi Depot', items: '2x Teakwood Solid Dining Benches', amount: 23000, paymentStatus: 'Paid', status: 'Dispatched', year: '2026', monthYear: 'November 2026' },
+        { invoice: 'INV-1003', customer: 'K. Vasanth Kumar', location: 'Velayutham Colony, Sivakasi', items: '2x Wooden Bar Stools with Swivel Top', amount: 13600, paymentStatus: 'Paid', status: 'Dispatched', year: '2026', monthYear: 'November 2026' },
+        { invoice: 'INV-1002', customer: 'Gowri Shankar Mills', location: 'Vembakottai Rd, Sivakasi', items: '1x Solid Teak Side Server Credenza', amount: 24000, paymentStatus: 'Paid', status: 'Dispatched', year: '2026', monthYear: 'November 2026' },
+        { invoice: 'INV-1001', customer: 'Shanmuga Priya', location: 'Alagappan Nagar, Sivakasi', items: '2x Rosewood Dual-Drawer Bedside Nightstands', amount: 14400, paymentStatus: 'Paid', status: 'Dispatched', year: '2026', monthYear: 'November 2026' },
       ]);
-      console.log('[Seed] Seeded 4 sales transactions successfully.');
+      console.log('[Seed] Seeded 24 sales transactions successfully.');
     }
 
     // 5. Categories

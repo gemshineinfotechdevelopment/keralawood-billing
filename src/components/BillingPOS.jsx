@@ -621,7 +621,6 @@ export default function BillingPOS({ onNavigateToProducts }) {
                 <div className="pos-col-idx">#</div>
                 <div className="pos-col-desc">ITEM DESCRIPTION</div>
                 <div className="pos-col-qty">QUANTITY</div>
-                <div className="pos-col-unit">UNIT</div>
                 <div className="pos-col-rate">PRICE / RATE (₹)</div>
                 <div className="pos-col-total">TOTAL & ACTIONS</div>
               </div>
@@ -661,23 +660,6 @@ export default function BillingPOS({ onNavigateToProducts }) {
                             value={item.quantity}
                             onChange={(e) => handleItemChange(index, 'quantity', Math.max(1, Number(e.target.value) || 1))}
                           />
-                        </div>
-
-                        {/* Unit */}
-                        <div className="pos-col-unit">
-                          <select
-                            className="pos-select pos-item-unit-select"
-                            value={item.unit || 'Pieces (Nos)'}
-                            onChange={(e) => handleItemChange(index, 'unit', e.target.value)}
-                          >
-                            <option value="Pieces (Nos)">Pieces (Nos)</option>
-                            <option value="Sets">Sets</option>
-                            <option value="Kilograms (kg)">Kilograms (kg)</option>
-                            <option value="CFT (Cubic Feet)">CFT (Cubic Feet)</option>
-                            <option value="Sq.Ft (Square Feet)">Sq.Ft (Square Feet)</option>
-                            <option value="Meters (m)">Meters (m)</option>
-                            <option value="Tons">Tons (MT)</option>
-                          </select>
                         </div>
 
                         {/* Price / Rate (₹) */}
@@ -1074,7 +1056,6 @@ export default function BillingPOS({ onNavigateToProducts }) {
                   <tr>
                     <th>#</th>
                     <th>Item Description</th>
-                    <th>Unit</th>
                     <th>Qty</th>
                     <th>Price (₹)</th>
                     <th>GST</th>
@@ -1096,7 +1077,6 @@ export default function BillingPOS({ onNavigateToProducts }) {
                             </span>
                           )}
                         </td>
-                        <td>{it.unit || 'Pieces'}</td>
                         <td>{it.quantity}</td>
                         <td>₹{Number(it.price).toLocaleString('en-IN')}</td>
                         <td>{it.gstRate || 0}%</td>

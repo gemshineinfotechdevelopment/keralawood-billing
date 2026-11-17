@@ -124,7 +124,8 @@ export default function ReportsAnalytics() {
   const totalVolumeCFT = yearTransactions.reduce((sum, tx) => sum + (Number(tx.volume) || 0), 0)
   const orderCount = yearTransactions.length
 
-  const itemsPerPage = 5
+  // Pagination states: minimum 20 transactions per page
+  const [itemsPerPage, setItemsPerPage] = useState(20)
   const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1
   const displayed = filtered.slice(
     (currentPage - 1) * itemsPerPage,
@@ -657,8 +658,30 @@ export default function ReportsAnalytics() {
         <div className="reports-table-footer">
           <div className="footer-left-meta">
             <span className="showing-records-text">
-              Showing <strong>{filtered.length > 0 ? `${(currentPage - 1) * itemsPerPage + 1}-${Math.min(currentPage * itemsPerPage, filtered.length)}` : '0-0'}</strong> of <strong>{filtered.length}</strong> Dispatched Sales Invoices for {selectedYear === 'all' ? 'All Years' : `Year ${selectedYear}`}
+              Showing <strong>{filtered.length > 0 ? `${(currentPage - 1) * itemsPerPage + 1}-${Math.min(currentPage * itemsPerPage, filtered.length)}` : '0-0'}</strong> of <strong>{filtered.length}</strong> Transactions for {selectedYear === 'all' ? 'All Years' : `Year ${selectedYear}`}
             </span>
+            <span className="footer-pipe-divider">•</span>
+            <select
+              className="per-ledger-dropdown"
+              value={itemsPerPage}
+              onChange={(e) => {
+                setItemsPerPage(Number(e.target.value))
+                setCurrentPage(1)
+              }}
+              style={{
+                padding: '3px 8px',
+                fontSize: '11px',
+                borderRadius: '5px',
+                border: '1px solid #E2CEBE',
+                backgroundColor: '#FFFFFF',
+                color: '#31190B',
+                cursor: 'pointer',
+              }}
+            >
+              <option value={20}>20 per page</option>
+              <option value={50}>50 per page</option>
+              <option value={100}>100 per page</option>
+            </select>
             <span className="footer-pipe-divider">|</span>
             <div className="audit-trust-badge">
               <svg
@@ -674,7 +697,7 @@ export default function ReportsAnalytics() {
                 <circle cx="12" cy="12" r="10" />
                 <polyline points="9 12 12 15 16 10" />
               </svg>
-              <span>All invoices audited & GST compliant</span>
+              <span>All transactions audited & GST compliant</span>
             </div>
           </div>
 
