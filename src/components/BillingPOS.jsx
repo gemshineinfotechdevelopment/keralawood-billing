@@ -17,6 +17,7 @@ export default function BillingPOS({ onNavigateToProducts }) {
   const [activeInvoiceTab, setActiveInvoiceTab] = useState('preview') // 'preview' | 'edit'
   const [holdSuccess, setHoldSuccess] = useState(false)
   const [stockAlertModal, setStockAlertModal] = useState(null) // Insufficient Stock Alert Dossier
+  const [selectedDropdownSku, setSelectedDropdownSku] = useState('')
 
   // Edit Invoice Bill states (Requirement 2 & 3)
   const [editInvNumber, setEditInvNumber] = useState('')
@@ -564,6 +565,43 @@ export default function BillingPOS({ onNavigateToProducts }) {
               </div>
             </div>
 
+            {/* Quick Product Dropdown Bar */}
+            <div className="pos-cart-product-dropdown-bar">
+              <div className="cart-dropdown-label-wrap">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5C3A21" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <path d="M16 10a4 4 0 0 1-8 0" />
+                </svg>
+                <span>Add Product to Cart:</span>
+              </div>
+              <div className="cart-dropdown-control-wrap">
+                <select
+                  className="pos-cart-product-select"
+                  value={selectedDropdownSku}
+                  onChange={(e) => {
+                    const sku = e.target.value
+                    if (!sku) return
+                    const prod = products.find((p) => p.sku === sku)
+                    if (prod) {
+                      handleAddProductToCart(prod)
+                    }
+                    setSelectedDropdownSku('')
+                  }}
+                >
+                  <option value="">-- Choose Product from List ({products.length} Items Available) --</option>
+                  {products.map((p) => (
+                    <option key={p.id || p.sku} value={p.sku}>
+                      {p.name} — ₹{formatRupees(p.unitPrice)} ({p.category || 'Timber'} • {p.stock || `${p.stockQuantity} in stock`})
+                    </option>
+                  ))}
+                </select>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="cart-dropdown-chevron">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </div>
+            </div>
+
             {/* Cart Items List */}
             <div className="pos-cart-items-list">
               {cartItems.length > 0 ? (
@@ -644,14 +682,38 @@ export default function BillingPOS({ onNavigateToProducts }) {
                   </div>
                   <h4 className="empty-cart-title">Cart is currently empty</h4>
                   <p className="empty-cart-subtitle">
-                    Click any <strong>Artisan Timber Line</strong> or search SKU above to add timber furniture to this bill.
+                    Select any timber furniture from the dropdown below to immediately add it to this bill:
                   </p>
+
+                  <div className="empty-cart-dropdown-box">
+                    <select
+                      className="empty-cart-select-input"
+                      value={selectedDropdownSku}
+                      onChange={(e) => {
+                        const sku = e.target.value
+                        if (!sku) return
+                        const prod = products.find((p) => p.sku === sku)
+                        if (prod) {
+                          handleAddProductToCart(prod)
+                        }
+                        setSelectedDropdownSku('')
+                      }}
+                    >
+                      <option value="">▼ Select Product to Add to Bill ({products.length} Products)</option>
+                      {products.map((p) => (
+                        <option key={p.id || p.sku} value={p.sku}>
+                          {p.name} — ₹{formatRupees(p.unitPrice)} [{p.stock || `${p.stockQuantity} in stock`}]
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
                   <button
                     type="button"
                     className="btn-browse-timber-cta"
                     onClick={() => setProductPickerOpen(true)}
                   >
-                    + Browse Timber Catalog
+                    + Or Browse Visual Catalog
                   </button>
                 </div>
               )}

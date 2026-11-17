@@ -573,6 +573,65 @@
   white-space: nowrap;
 }
 
+/* Quick Product Selector Dropdown Bar */
+.pos-cart-product-dropdown-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: #FAF4EE;
+  border: 1px solid #EAE0D8;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 2px rgba(49, 25, 11, 0.02);
+}
+
+.cart-dropdown-label-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #5C3A21;
+  white-space: nowrap;
+}
+
+.cart-dropdown-control-wrap {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.pos-cart-product-select {
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: #FFFFFF;
+  border: 1px solid #D6C2B4;
+  border-radius: 6px;
+  padding: 8px 32px 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #31190B;
+  cursor: pointer;
+  outline: none;
+  box-shadow: 0 1px 2px rgba(49, 25, 11, 0.03);
+  transition: all 0.15s ease;
+}
+
+.pos-cart-product-select:focus {
+  border-color: #C88D58;
+  box-shadow: 0 0 0 2px rgba(200, 141, 88, 0.18);
+}
+
+.cart-dropdown-chevron {
+  position: absolute;
+  right: 10px;
+  pointer-events: none;
+  color: #8C7B72;
+}
+
 /* Cart items */
 .pos-cart-items-list {
   display: flex;
@@ -1119,6 +1178,38 @@
   max-width: 360px;
   margin: 0 0 6px 0;
   line-height: 1.4;
+}
+
+.empty-cart-dropdown-box {
+  width: 100%;
+  max-width: 440px;
+  margin: 4px 0 10px 0;
+  position: relative;
+}
+
+.empty-cart-select-input {
+  width: 100%;
+  background-color: #FFFFFF;
+  border: 2px solid #C88D58;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #31190B;
+  cursor: pointer;
+  outline: none;
+  box-shadow: 0 2px 6px rgba(200, 141, 88, 0.12);
+  transition: all 0.18s ease;
+}
+
+.empty-cart-select-input:hover {
+  background-color: #FEFBF8;
+  border-color: #A06A3A;
+}
+
+.empty-cart-select-input:focus {
+  border-color: #5C3A21;
+  box-shadow: 0 0 0 3px rgba(92, 58, 33, 0.2);
 }
 
 .btn-browse-timber-cta {
@@ -2045,6 +2136,13 @@
     flex-direction: column;
     align-items: stretch;
     gap: 10px;
+  }
+
+  .pos-cart-product-dropdown-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 10px;
   }
 
   .btn-change-customer {
