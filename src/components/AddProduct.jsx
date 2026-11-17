@@ -14,15 +14,13 @@ export default function AddProduct({ onProductSaved }) {
   // Settings sync (for dynamic GST and Depot defaults)
   const [settings, setSettings] = useState(() => DataStore.getSettings())
 
-  // General Info states
-  const [productName, setProductName] = useState('Nilambur Teak Dining Table')
+  // General Info states (Initialized empty for clean data entry)
+  const [productName, setProductName] = useState('')
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES)
-  const [category, setCategory] = useState('Dining Sets & Tables')
-  const [skuCode, setSkuCode] = useState('KWF-NT-101')
-  const [woodSpecies, setWoodSpecies] = useState('Nilambur Teak')
-  const [description, setDescription] = useState(
-    'Seasoned solid Nilambur teak dining table crafted with traditional mortise and tenon joinery. Finished in natural protective organic beeswax with antique brass corner brackets.'
-  )
+  const [category, setCategory] = useState(DEFAULT_CATEGORIES[0] || 'Dining Sets & Tables')
+  const [skuCode, setSkuCode] = useState('')
+  const [woodSpecies, setWoodSpecies] = useState('')
+  const [description, setDescription] = useState('')
 
   // Category Modal states
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false)
@@ -32,30 +30,57 @@ export default function AddProduct({ onProductSaved }) {
   const [catError, setCatError] = useState('')
 
   // Craft Specs states
-  const [length, setLength] = useState('210')
-  const [width, setWidth] = useState('100')
-  const [height, setHeight] = useState('76')
-  const [weight, setWeight] = useState('68')
-  const [woodGrade, setWoodGrade] = useState('Grade A - Nilambur Heartwood')
-  const [surfacePolish, setSurfacePolish] = useState('Natural Protective Organic-Beeswax')
-  const [joineryTechnique, setJoineryTechnique] = useState('Mortise & Tenon with Rosewood Dowels')
-  const [warranty, setWarranty] = useState('5-Yr Termite & Woodcraft Guarantee')
+  const [length, setLength] = useState('')
+  const [width, setWidth] = useState('')
+  const [height, setHeight] = useState('')
+  const [weight, setWeight] = useState('')
+  const [woodGrade, setWoodGrade] = useState('')
+  const [surfacePolish, setSurfacePolish] = useState('')
+  const [joineryTechnique, setJoineryTechnique] = useState('')
+  const [warranty, setWarranty] = useState('')
 
   // Inventory & Logistics states
-  const [stockQuantity, setStockQuantity] = useState('4')
-  const [lowStockThreshold, setLowStockThreshold] = useState('2')
+  const [stockQuantity, setStockQuantity] = useState('')
+  const [lowStockThreshold, setLowStockThreshold] = useState('')
   const [depotLocation, setDepotLocation] = useState('Sivakasi Central Depot')
-  const [packagingType, setPackagingType] = useState('Corrugated Multi-layer Wood Wrap')
+  const [packagingType, setPackagingType] = useState('')
   const [shippingClass, setShippingClass] = useState(
     'Class 3 - Heavy Solid Furniture (Direct Depot Truck)'
   )
 
-  // Pricing & Statutory GST (Single Price & Settings-derived GST)
-  const [unitPrice, setUnitPrice] = useState('₹ 78,500')
-  const [tradeDiscount, setTradeDiscount] = useState('Architect / Builder Tier 1 (12% Off)')
+  // Pricing & Statutory GST
+  const [unitPrice, setUnitPrice] = useState('')
+  const [tradeDiscount, setTradeDiscount] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [savedSuccess, setSavedSuccess] = useState(false)
   const [toastMsg, setToastMsg] = useState('')
+
+  // Reset / Clear form for fresh new product entry
+  const handleAddNewProductForm = () => {
+    setProductName('')
+    setCategory(categories[0] || 'Dining Sets & Tables')
+    setSkuCode('')
+    setWoodSpecies('')
+    setDescription('')
+    setLength('')
+    setWidth('')
+    setHeight('')
+    setWeight('')
+    setWoodGrade('')
+    setSurfacePolish('')
+    setJoineryTechnique('')
+    setWarranty('')
+    setStockQuantity('')
+    setLowStockThreshold('')
+    setDepotLocation('Sivakasi Central Depot')
+    setPackagingType('')
+    setShippingClass('Class 3 - Heavy Solid Furniture (Direct Depot Truck)')
+    setUnitPrice('')
+    setTradeDiscount('')
+    setSavedSuccess(false)
+    setToastMsg('Form cleared for new product entry')
+    setTimeout(() => setToastMsg(''), 2200)
+  }
 
   // Sync settings when modified
   useEffect(() => {
@@ -215,6 +240,28 @@ export default function AddProduct({ onProductSaved }) {
         <div className="product-header-actions">
           <button
             type="button"
+            className="btn-add-new-product"
+            onClick={handleAddNewProductForm}
+            title="Clear all fields and start entering another new product"
+          >
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            <span>+ Add New Product</span>
+          </button>
+
+          <button
+            type="button"
             className="btn-save-product"
             onClick={handleSaveProduct}
             disabled={isSaving}
@@ -268,6 +315,7 @@ export default function AddProduct({ onProductSaved }) {
             <input
               type="text"
               className="input-styled"
+              placeholder="e.g. Nilambur Teak Dining Table"
               value={productName}
               onChange={(e) => setProductName(e.target.value)}
             />
@@ -312,6 +360,7 @@ export default function AddProduct({ onProductSaved }) {
               <input
                 type="text"
                 className="input-styled"
+                placeholder="e.g. KWF-NT-101"
                 value={skuCode}
                 onChange={(e) => setSkuCode(e.target.value)}
               />
@@ -334,6 +383,7 @@ export default function AddProduct({ onProductSaved }) {
             <textarea
               className="textarea-styled"
               rows="3"
+              placeholder="Seasoned solid Nilambur teak dining table crafted with traditional mortise and tenon joinery..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />
@@ -369,6 +419,7 @@ export default function AddProduct({ onProductSaved }) {
               <input
                 type="text"
                 className="input-styled"
+                placeholder="e.g. 210"
                 value={length}
                 onChange={(e) => setLength(e.target.value)}
               />
@@ -378,6 +429,7 @@ export default function AddProduct({ onProductSaved }) {
               <input
                 type="text"
                 className="input-styled"
+                placeholder="e.g. 100"
                 value={width}
                 onChange={(e) => setWidth(e.target.value)}
               />
@@ -387,6 +439,7 @@ export default function AddProduct({ onProductSaved }) {
               <input
                 type="text"
                 className="input-styled"
+                placeholder="e.g. 76"
                 value={height}
                 onChange={(e) => setHeight(e.target.value)}
               />
@@ -396,6 +449,7 @@ export default function AddProduct({ onProductSaved }) {
               <input
                 type="text"
                 className="input-styled"
+                placeholder="e.g. 68"
                 value={weight}
                 onChange={(e) => setWeight(e.target.value)}
               />
@@ -407,6 +461,7 @@ export default function AddProduct({ onProductSaved }) {
             <input
               type="text"
               className="input-styled"
+              placeholder="e.g. Grade A - Nilambur Heartwood"
               value={woodGrade}
               onChange={(e) => setWoodGrade(e.target.value)}
             />
@@ -418,6 +473,7 @@ export default function AddProduct({ onProductSaved }) {
               <input
                 type="text"
                 className="input-styled"
+                placeholder="e.g. Natural Protective Organic-Beeswax"
                 value={surfacePolish}
                 onChange={(e) => setSurfacePolish(e.target.value)}
               />
@@ -427,6 +483,7 @@ export default function AddProduct({ onProductSaved }) {
               <input
                 type="text"
                 className="input-styled"
+                placeholder="e.g. Mortise & Tenon with Rosewood Dowels"
                 value={joineryTechnique}
                 onChange={(e) => setJoineryTechnique(e.target.value)}
               />
@@ -475,6 +532,7 @@ export default function AddProduct({ onProductSaved }) {
               <input
                 type="text"
                 className="input-styled"
+                placeholder="e.g. 4"
                 value={stockQuantity}
                 onChange={(e) => setStockQuantity(e.target.value)}
               />
@@ -484,6 +542,7 @@ export default function AddProduct({ onProductSaved }) {
               <input
                 type="text"
                 className="input-styled"
+                placeholder="e.g. 2"
                 value={lowStockThreshold}
                 onChange={(e) => setLowStockThreshold(e.target.value)}
               />
