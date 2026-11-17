@@ -15,12 +15,38 @@ export default function ReportsAnalytics() {
   const [exportSuccess, setExportSuccess] = useState(false)
   const [transactions, setTransactions] = useState(() => DataStore.getTransactions())
 
-  // Sync with store updates
+  // Sync with store updates and MongoDB backend
   useEffect(() => {
     const handleUpdate = () => {
       setTransactions(DataStore.getTransactions())
     }
     window.addEventListener('timber_store_updated', handleUpdate)
+
+    // Pull latest sales transactions from MongoDB
+    fetch('/api/sales')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.success && Array.isArray(data.sales) && data.sales.length > 0) {
+          const formatted = data.sales.map((s) => ({
+            id: s.invoice,
+            invoice: s.invoice,
+            date: s.date ? new Date(s.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Nov 17, 2026',
+            year: s.year || (s.date ? new Date(s.date).getFullYear().toString() : '2026'),
+            monthYear: s.monthYear || 'November 2026',
+            customer: s.customer,
+            project: s.location || 'Sivakasi Yard Sale',
+            wood: s.wood || 'Artisan Timber',
+            item: s.items,
+            amount: Number(s.amount || 0).toLocaleString('en-IN'),
+            rawAmount: Number(s.amount || 0),
+            status: s.paymentStatus || s.status || 'Paid',
+          }))
+          setTransactions(formatted)
+          DataStore.saveTransactions(formatted)
+        }
+      })
+      .catch(() => {})
+
     return () => window.removeEventListener('timber_store_updated', handleUpdate)
   }, [])
 

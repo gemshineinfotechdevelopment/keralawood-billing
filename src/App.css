@@ -3,7 +3,7 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  background-color: #FFF4F0;
+  background-color: #FFFFFF;
   padding: 18px 36px;
 }
 
@@ -403,7 +403,7 @@
 .billing-layout {
   min-height: 100vh;
   display: flex;
-  background-color: #FFF4F0;
+  background-color: #FFFFFF;
   overflow: hidden;
   position: relative;
 }
@@ -413,7 +413,7 @@
   height: 100vh;
   overflow-y: auto;
   padding: 24px 36px 36px 36px;
-  background-color: #FFF4F0;
+  background-color: #FFFFFF;
   transition: padding 0.2s ease;
 }
 

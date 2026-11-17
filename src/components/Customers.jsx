@@ -24,6 +24,36 @@ export default function Customers({ onNavigateToBilling }) {
       setPatronsList(DataStore.getCustomers())
     }
     window.addEventListener('timber_store_updated', handleUpdate)
+
+    // Fetch live customers from MongoDB
+    fetch('/api/customers')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.success && Array.isArray(data.customers) && data.customers.length > 0) {
+          const formatted = data.customers.map((c) => ({
+            id: c._id || c.id,
+            name: c.name,
+            personName: c.personName || c.name,
+            phone: c.phone || '',
+            email: c.email || '',
+            location: c.location || '',
+            address: c.address || '',
+            deliveryAddress: c.deliveryAddress || c.address || '',
+            gstin: c.gstin || 'Unregistered / Personal',
+            type: c.type || 'Residential',
+            totalOrders: c.totalOrders || 0,
+            lifetimeValue: c.lifetimeValue || '0',
+            outstandingBalance: c.outstandingBalance || '0',
+            creditUsed: c.creditUsed || '0',
+            creditTotal: c.creditTotal || '2,00,000',
+            recentTx: c.recentTx || [],
+          }))
+          setPatronsList(formatted)
+          DataStore.saveCustomers(formatted)
+        }
+      })
+      .catch(() => {})
+
     return () => window.removeEventListener('timber_store_updated', handleUpdate)
   }, [])
 

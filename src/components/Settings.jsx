@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { DataStore } from '../services/dataStore'
 import './Settings.css'
 
@@ -31,8 +31,8 @@ export default function Settings() {
   const [smsNotifications, setSmsNotifications] = useState(initial.smsNotifications !== undefined ? initial.smsNotifications : true)
 
   // Invoice, Printing & Legal Terms
-  const [printFormat, setPrintFormat] = useState(initial.printFormat || 'A4 Ledger') // 'A4 Ledger' | 'Thermal Slip'
-  const [paymentTerms, setPaymentTerms] = useState(initial.paymentTerms || 'Immediate / POS') // 'Immediate / POS' | 'Net 30 Days'
+  const [printFormat, setPrintFormat] = useState(initial.printFormat || 'A4 Ledger')
+  const [paymentTerms, setPaymentTerms] = useState(initial.paymentTerms || 'Immediate / POS')
   const [signatoryName, setSignatoryName] = useState(initial.signatoryName || 'Rajesh Sivan')
   const [signatoryDesignation, setSignatoryDesignation] = useState(initial.signatoryDesignation || 'Depot Lead & Store Manager')
   const [disclaimer, setDisclaimer] = useState(
@@ -46,6 +46,41 @@ export default function Settings() {
   const [systemDate, setSystemDate] = useState(initial.systemDate || '')
 
   const [savedSuccess, setSavedSuccess] = useState(false)
+
+  // Load from MongoDB backend on mount
+  useEffect(() => {
+    fetch('/api/settings')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.success && data.settings) {
+          const s = data.settings
+          if (s.depotName) setDepotName(s.depotName)
+          if (s.contactPhone) setContactPhone(s.contactPhone)
+          if (s.contactEmail) setContactEmail(s.contactEmail)
+          if (s.address) setAddress(s.address)
+          if (s.dealerLicense) setDealerLicense(s.dealerLicense)
+          if (s.operatingHours) setOperatingHours(s.operatingHours)
+          if (s.gstin) setGstin(s.gstin)
+          if (s.hsnCode) setHsnCode(s.hsnCode)
+          if (s.taxRate) setTaxRate(s.taxRate)
+          if (s.cgstRate !== undefined) setCgstRate(s.cgstRate)
+          if (s.sgstRate !== undefined) setSgstRate(s.sgstRate)
+          if (s.bankName) setBankName(s.bankName)
+          if (s.accountNumber) setAccountNumber(s.accountNumber)
+          if (s.ifscCode) setIfscCode(s.ifscCode)
+          if (s.upiId) setUpiId(s.upiId)
+          if (s.minStockThreshold) setMinStockThreshold(s.minStockThreshold)
+          if (s.printFormat) setPrintFormat(s.printFormat)
+          if (s.paymentTerms) setPaymentTerms(s.paymentTerms)
+          if (s.signatoryName) setSignatoryName(s.signatoryName)
+          if (s.signatoryDesignation) setSignatoryDesignation(s.signatoryDesignation)
+          if (s.disclaimer) setDisclaimer(s.disclaimer)
+          if (s.systemTime) setSystemTime(s.systemTime)
+          if (s.systemDate !== undefined) setSystemDate(s.systemDate)
+        }
+      })
+      .catch(() => {})
+  }, [])
 
   const handleSaveSettings = () => {
     DataStore.saveSettings({
