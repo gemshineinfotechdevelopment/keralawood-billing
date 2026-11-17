@@ -17,7 +17,6 @@ export default function BillingPOS({ onNavigateToProducts }) {
   const [activeInvoiceTab, setActiveInvoiceTab] = useState('preview') // 'preview' | 'edit'
   const [holdSuccess, setHoldSuccess] = useState(false)
   const [stockAlertModal, setStockAlertModal] = useState(null) // Insufficient Stock Alert Dossier
-  const [selectedDropdownSku, setSelectedDropdownSku] = useState('')
 
   // Edit Invoice Bill states (Requirement 2 & 3)
   const [editInvNumber, setEditInvNumber] = useState('')
@@ -248,7 +247,7 @@ export default function BillingPOS({ onNavigateToProducts }) {
   // Open Invoice Modal with Editable Defaults from Settings & Bill
   const handleOpenInvoiceModal = () => {
     if (cartItems.length === 0) return
-    setEditInvNumber(currentBill.invoiceNumber || `TAX-INV #2024-SK-${Math.floor(900 + Math.random() * 100)}`)
+    setEditInvNumber(currentBill.invoiceNumber || `TAX-INV #${new Date().getFullYear()}-SK-${Math.floor(900 + Math.random() * 100)}`)
     setEditCustomerName(currentCustomer.name || '')
     setEditCustomerPhone(currentCustomer.phone || '')
     setEditCustomerAddress(currentCustomer.address || currentCustomer.location || 'Sivakasi, Tamil Nadu')
@@ -424,7 +423,7 @@ export default function BillingPOS({ onNavigateToProducts }) {
         </div>
 
         <div className="pos-banner-meta">
-          <span className="pos-inv-tag">{currentBill.invoiceNumber || 'TAX-INV #2024-SK-982'}</span>
+          <span className="pos-inv-tag">{currentBill.invoiceNumber || `TAX-INV #${new Date().getFullYear()}-SK-982`}</span>
           <span className="pos-banner-pipe">|</span>
           <span className="pos-cart-badge">{totalItemsCount} Items in Cart</span>
         </div>
@@ -532,7 +531,7 @@ export default function BillingPOS({ onNavigateToProducts }) {
                   <span className="pos-cart-heading">Active Invoice Cart</span>
                   <span className="pos-cart-count-pill">{totalItemsCount} Items</span>
                 </div>
-                <span className="pos-cart-tax-inv">{currentBill.invoiceNumber || 'TAX-INV #2024-SK-982'}</span>
+                <span className="pos-cart-tax-inv">{currentBill.invoiceNumber || `TAX-INV #${new Date().getFullYear()}-SK-982`}</span>
               </div>
               <div className="pos-cart-header-actions">
                 <button
@@ -562,43 +561,6 @@ export default function BillingPOS({ onNavigateToProducts }) {
                     Clear Cart
                   </button>
                 )}
-              </div>
-            </div>
-
-            {/* Quick Product Dropdown Bar */}
-            <div className="pos-cart-product-dropdown-bar">
-              <div className="cart-dropdown-label-wrap">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5C3A21" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
-                  <line x1="3" y1="6" x2="21" y2="6" />
-                  <path d="M16 10a4 4 0 0 1-8 0" />
-                </svg>
-                <span>Add Product to Cart:</span>
-              </div>
-              <div className="cart-dropdown-control-wrap">
-                <select
-                  className="pos-cart-product-select"
-                  value={selectedDropdownSku}
-                  onChange={(e) => {
-                    const sku = e.target.value
-                    if (!sku) return
-                    const prod = products.find((p) => p.sku === sku)
-                    if (prod) {
-                      handleAddProductToCart(prod)
-                    }
-                    setSelectedDropdownSku('')
-                  }}
-                >
-                  <option value="">-- Choose Product from List ({products.length} Items Available) --</option>
-                  {products.map((p) => (
-                    <option key={p.id || p.sku} value={p.sku}>
-                      {p.name} — ₹{formatRupees(p.unitPrice)} ({p.category || 'Timber'} • {p.stock || `${p.stockQuantity} in stock`})
-                    </option>
-                  ))}
-                </select>
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="cart-dropdown-chevron">
-                  <polyline points="6 9 12 15 18 9" />
-                </svg>
               </div>
             </div>
 
@@ -682,38 +644,14 @@ export default function BillingPOS({ onNavigateToProducts }) {
                   </div>
                   <h4 className="empty-cart-title">Cart is currently empty</h4>
                   <p className="empty-cart-subtitle">
-                    Select any timber furniture from the dropdown below to immediately add it to this bill:
+                    Click any <strong>Artisan Timber Line</strong> or search SKU above to add timber furniture to this bill.
                   </p>
-
-                  <div className="empty-cart-dropdown-box">
-                    <select
-                      className="empty-cart-select-input"
-                      value={selectedDropdownSku}
-                      onChange={(e) => {
-                        const sku = e.target.value
-                        if (!sku) return
-                        const prod = products.find((p) => p.sku === sku)
-                        if (prod) {
-                          handleAddProductToCart(prod)
-                        }
-                        setSelectedDropdownSku('')
-                      }}
-                    >
-                      <option value="">▼ Select Product to Add to Bill ({products.length} Products)</option>
-                      {products.map((p) => (
-                        <option key={p.id || p.sku} value={p.sku}>
-                          {p.name} — ₹{formatRupees(p.unitPrice)} [{p.stock || `${p.stockQuantity} in stock`}]
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
                   <button
                     type="button"
                     className="btn-browse-timber-cta"
                     onClick={() => setProductPickerOpen(true)}
                   >
-                    + Or Browse Visual Catalog
+                    + Browse Timber Catalog
                   </button>
                 </div>
               )}
@@ -987,7 +925,7 @@ export default function BillingPOS({ onNavigateToProducts }) {
                     <span className="inv-section-title">INVOICE SPECIFICS:</span>
                     <div className="inv-info-row">
                       <span>Invoice No:</span>
-                      <strong>{currentBill.invoiceNumber || 'TAX-INV #2024-SK-982'}</strong>
+                      <strong>{currentBill.invoiceNumber || `TAX-INV #${new Date().getFullYear()}-SK-982`}</strong>
                     </div>
                     <div className="inv-info-row">
                       <span>Date & Time:</span>

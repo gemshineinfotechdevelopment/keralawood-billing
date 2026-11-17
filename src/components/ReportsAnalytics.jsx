@@ -24,25 +24,25 @@ export default function ReportsAnalytics() {
     return () => window.removeEventListener('timber_store_updated', handleUpdate)
   }, [])
 
-  // Collect all unique years dynamically from transactions and system clock
-  const txYears = transactions
-    .map((tx) => {
-      if (tx.year) return String(tx.year)
-      if (tx.createdAt) {
-        const d = new Date(tx.createdAt)
-        if (!isNaN(d.getTime())) return d.getFullYear().toString()
-      }
-      if (tx.date) {
-        const m = String(tx.date).match(/\b(20\d\d)\b/)
-        if (m) return m[1]
-      }
-      return null
-    })
-    .filter(Boolean)
+  // Collect all unique years dynamically from system clock and settings (base year: 2026)
+  const baseYear = 2026
+  const activeYearNum = Math.max(baseYear, Number(currentYear))
 
-  const availableYears = Array.from(new Set([currentYear, ...txYears])).sort(
-    (a, b) => Number(b) - Number(a)
-  )
+  const yearNumbers = []
+  for (let y = activeYearNum; y >= baseYear; y--) {
+    yearNumbers.push(y)
+  }
+
+  // Also include any recorded transaction years that are >= baseYear (never 2024 or older)
+  transactions.forEach((tx) => {
+    const yr = Number(tx.year || (tx.createdAt && new Date(tx.createdAt).getFullYear()))
+    if (yr >= baseYear && !yearNumbers.includes(yr)) {
+      yearNumbers.push(yr)
+    }
+  })
+  yearNumbers.sort((a, b) => b - a)
+
+  const availableYears = yearNumbers.map(String)
 
   const yearOptions = [
     {
@@ -55,8 +55,9 @@ export default function ReportsAnalytics() {
     { value: 'all', label: 'All-Time Annual Ledger' },
   ]
 
-  // Filter transactions for the selected year
+  // Filter transactions for the selected year (strictly excluding any legacy 2024 data)
   const isMatchYear = (tx, targetYear) => {
+    if (String(tx.year) === '2024' || String(tx.date).includes('2024')) return false
     if (targetYear === 'all') return true
     if (tx.year && String(tx.year) === String(targetYear)) return true
     if (tx.createdAt) {

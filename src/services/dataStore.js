@@ -237,9 +237,9 @@ const INITIAL_CUSTOMERS = [
 const INITIAL_TRANSACTIONS = [
   {
     id: 'INV-892',
-    date: 'Oct 28, 2024, 04:30 PM',
-    monthYear: 'October 2024',
-    year: '2024',
+    date: 'Nov 15, 2026, 04:30 PM',
+    monthYear: 'November 2026',
+    year: '2026',
     customer: 'Kumarakom Lake Resort',
     project: 'Heritage Suites Wing B',
     wood: 'Nilambur Teak',
@@ -251,9 +251,9 @@ const INITIAL_TRANSACTIONS = [
   },
   {
     id: 'INV-889',
-    date: 'Oct 26, 2024, 02:15 PM',
-    monthYear: 'October 2024',
-    year: '2024',
+    date: 'Nov 12, 2026, 02:15 PM',
+    monthYear: 'November 2026',
+    year: '2026',
     customer: 'Dr. Ananya Verma',
     project: 'Private Residence, Sivakasi',
     wood: 'Rosewood Timber',
@@ -265,9 +265,9 @@ const INITIAL_TRANSACTIONS = [
   },
   {
     id: 'INV-885',
-    date: 'Oct 24, 2024, 11:45 AM',
-    monthYear: 'October 2024',
-    year: '2024',
+    date: 'Nov 10, 2026, 11:45 AM',
+    monthYear: 'November 2026',
+    year: '2026',
     customer: 'Malabar Heritage Club',
     project: 'Clubhouse Dining Hall',
     wood: 'Wild Anjili Dining',
@@ -279,9 +279,9 @@ const INITIAL_TRANSACTIONS = [
   },
   {
     id: 'INV-881',
-    date: 'Oct 21, 2024, 05:10 PM',
-    monthYear: 'October 2024',
-    year: '2024',
+    date: 'Nov 08, 2026, 05:10 PM',
+    monthYear: 'November 2026',
+    year: '2026',
     customer: 'Brunton Boatyard',
     project: 'Heritage Suite 204',
     wood: 'Teak Wardrobe',
@@ -293,9 +293,9 @@ const INITIAL_TRANSACTIONS = [
   },
   {
     id: 'INV-878',
-    date: 'Oct 18, 2024, 10:20 AM',
-    monthYear: 'October 2024',
-    year: '2024',
+    date: 'Nov 04, 2026, 10:20 AM',
+    monthYear: 'November 2026',
+    year: '2026',
     customer: 'The Leela Kovalam',
     project: 'Deck Renovation',
     wood: '12 Teak Sun Loungers',
@@ -323,7 +323,7 @@ const EMPTY_INITIAL_CUSTOMER = {
 const INITIAL_BILLS = [
   {
     id: 'bill-1',
-    invoiceNumber: 'TAX-INV #2024-SK-982',
+    invoiceNumber: 'TAX-INV #2026-SK-982',
     name: 'Bill #1',
     status: 'active',
     customer: EMPTY_INITIAL_CUSTOMER,
@@ -539,7 +539,8 @@ export const DataStore = {
     const targetCust = preselectedCustomer || emptyCustomer
     const seq = bills.length + 1
     const newId = `bill-${Date.now()}`
-    const invNum = `TAX-INV #2024-SK-${Math.floor(900 + Math.random() * 100)}`
+    const activeYr = new Date().getFullYear()
+    const invNum = `TAX-INV #${activeYr}-SK-${Math.floor(900 + Math.random() * 100)}`
 
     const newBill = {
       id: newId,
@@ -585,7 +586,17 @@ export const DataStore = {
 
   // TRANSACTIONS / SALES
   getTransactions() {
-    return loadFromStorage(STORAGE_KEYS.TRANSACTIONS, INITIAL_TRANSACTIONS)
+    const raw = loadFromStorage(STORAGE_KEYS.TRANSACTIONS, INITIAL_TRANSACTIONS)
+    // Filter out any 2024 records to ensure 2024 is completely removed
+    const cleaned = (raw || []).filter((tx) => {
+      const yr = String(tx.year || '')
+      const dt = String(tx.date || '')
+      return yr !== '2024' && !dt.includes('2024')
+    })
+    if (cleaned.length !== (raw || []).length) {
+      saveToStorage(STORAGE_KEYS.TRANSACTIONS, cleaned.length > 0 ? cleaned : INITIAL_TRANSACTIONS)
+    }
+    return cleaned.length > 0 ? cleaned : INITIAL_TRANSACTIONS
   },
   saveTransactions(txs) {
     saveToStorage(STORAGE_KEYS.TRANSACTIONS, txs)
