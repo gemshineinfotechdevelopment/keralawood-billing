@@ -8,6 +8,7 @@ import Settings from './components/Settings'
 import ReportsAnalytics from './components/ReportsAnalytics'
 import BillingPOS from './components/BillingPOS'
 import Customers from './components/Customers'
+import { DataStore } from './services/dataStore'
 import './App.css'
 
 function App() {
@@ -87,8 +88,14 @@ function App() {
             <StockManagement onAddNewProduct={() => setActiveNav('Products')} />
           ) : activeNav === 'Dashboard' ? (
             <Dashboard
-              onNavigateToNewBill={() => setActiveNav('Billing & POS')}
-              onNavigateToNewInvoice={() => setActiveNav('Billing & POS')}
+              onNavigateToNewBill={() => {
+                DataStore.createNewDraft()
+                setActiveNav('Billing & POS')
+              }}
+              onNavigateToNewInvoice={() => {
+                DataStore.createNewDraft()
+                setActiveNav('Billing & POS')
+              }}
               onNavigate={(nav) => setActiveNav(nav)}
             />
           ) : activeNav === 'Settings' ? (
@@ -96,7 +103,7 @@ function App() {
           ) : activeNav === 'Reports & Analytics' ? (
             <ReportsAnalytics />
           ) : activeNav === 'Billing & POS' ? (
-            <BillingPOS />
+            <BillingPOS onNavigateToProducts={() => setActiveNav('Products')} />
           ) : activeNav === 'Customers' ? (
             <Customers onNavigateToBilling={() => setActiveNav('Billing & POS')} />
           ) : (

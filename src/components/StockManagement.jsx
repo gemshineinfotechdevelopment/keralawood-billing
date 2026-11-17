@@ -537,9 +537,9 @@ export default function StockManagement({ onAddNewProduct }) {
             <thead>
               <tr>
                 <th>PRODUCT</th>
-                <th>CATEGORY</th>
+                <th className="category-th">CATEGORY</th>
                 <th>STOCK LEVEL</th>
-                <th>PRICE</th>
+                <th className="price-th">PRICE</th>
                 <th className="actions-th">ACTIONS</th>
               </tr>
             </thead>
@@ -555,6 +555,7 @@ export default function StockManagement({ onAddNewProduct }) {
                       <div className="product-details">
                         <span className="product-title">{p.name}</span>
                         <span className="product-sku-wood">{p.sku}</span>
+                        <span className="mobile-product-meta">{p.category} • {p.price}</span>
                       </div>
                     </div>
                   </td>

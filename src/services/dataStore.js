@@ -295,26 +295,27 @@ const INITIAL_TRANSACTIONS = [
 ]
 
 // Initial Two Concurrent Draft Bills - Content cleared (Requirement 5)
+const EMPTY_INITIAL_CUSTOMER = {
+  id: 'cust-empty-1',
+  name: '',
+  phone: '',
+  address: '',
+  deliveryAddress: '',
+  location: '',
+  gstin: '',
+  totalOrders: 0,
+  lifetimeValue: 0,
+}
+
 const INITIAL_BILLS = [
   {
     id: 'bill-1',
     invoiceNumber: 'TAX-INV #2024-SK-982',
-    name: 'Bill #1 • Mathew Philip',
+    name: 'Bill #1',
     status: 'active',
-    customer: INITIAL_CUSTOMERS[0],
+    customer: EMPTY_INITIAL_CUSTOMER,
     items: [], // Clean empty cart
     paymentMode: 'UPI',
-    packagingNote: '',
-    deliveryApplied: true,
-  },
-  {
-    id: 'bill-2',
-    invoiceNumber: 'TAX-INV #2024-SK-983',
-    name: 'Bill #2 • Deepak Kurian',
-    status: 'draft',
-    customer: INITIAL_CUSTOMERS[1],
-    items: [], // Clean empty cart
-    paymentMode: 'Cash',
     packagingNote: '',
     deliveryApplied: true,
   },
@@ -511,7 +512,18 @@ export const DataStore = {
   },
   createNewDraft(preselectedCustomer = null) {
     const bills = this.getBills()
-    const defaultCust = preselectedCustomer || this.getCustomers()[0]
+    const emptyCustomer = {
+      id: `cust-${Date.now()}`,
+      name: '',
+      phone: '',
+      address: '',
+      deliveryAddress: '',
+      location: '',
+      gstin: '',
+      totalOrders: 0,
+      lifetimeValue: 0,
+    }
+    const targetCust = preselectedCustomer || emptyCustomer
     const seq = bills.length + 1
     const newId = `bill-${Date.now()}`
     const invNum = `TAX-INV #2024-SK-${Math.floor(900 + Math.random() * 100)}`
@@ -519,10 +531,10 @@ export const DataStore = {
     const newBill = {
       id: newId,
       invoiceNumber: invNum,
-      name: `Bill #${seq} • ${defaultCust.name}`,
+      name: targetCust.name ? `Bill #${seq} • ${targetCust.name}` : `Bill #${seq}`,
       status: 'active',
-      customer: defaultCust,
-      items: [], // Clean empty cart (Requirement 5)
+      customer: targetCust,
+      items: [], // Clean empty cart
       paymentMode: 'UPI',
       packagingNote: '',
       deliveryApplied: true,

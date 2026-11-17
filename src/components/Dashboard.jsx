@@ -206,7 +206,7 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
           <div className="quick-actions-grid">
             <div
               className="quick-action-box"
-              onClick={() => (onNavigate ? onNavigate('Billing & POS') : onNavigateToNewBill && onNavigateToNewBill())}
+              onClick={() => (onNavigateToNewBill ? onNavigateToNewBill() : onNavigate ? onNavigate('Billing & POS') : null)}
               role="button"
               tabIndex={0}
               title="Open Billing & POS to generate customer bills"
@@ -329,14 +329,6 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
                     <span className="stock-left-text">
                       {item.stockQuantity} left
                     </span>
-                    <button
-                      type="button"
-                      className={`btn-reorder ${isReordered ? 'reordered' : ''}`}
-                      onClick={() => handleReorder(item)}
-                      title="Click to restock +5 units dynamically from yard reserves"
-                    >
-                      {isReordered ? '✓ Restocked +5' : 'Reorder'}
-                    </button>
                   </div>
                 </div>
               )

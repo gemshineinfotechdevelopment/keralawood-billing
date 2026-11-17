@@ -2085,20 +2085,23 @@
   }
 
   .pos-cart-header {
-    display: grid;
-    grid-template-columns: 1fr auto;
-    grid-template-areas:
-      "title inv"
-      "actions actions";
-    gap: 10px 8px;
-    align-items: center;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
     margin-bottom: 14px;
     padding-bottom: 10px;
     border-bottom: 1px dashed #F0E6DE;
   }
 
+  .pos-cart-header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+  }
+
   .pos-cart-title-wrap {
-    grid-area: title;
     display: flex;
     align-items: center;
     gap: 6px;
@@ -2115,16 +2118,14 @@
   }
 
   .pos-cart-tax-inv {
-    grid-area: inv;
     text-align: right;
     white-space: nowrap;
-    font-size: 10px;
+    font-size: 10.5px;
     color: #8C7B72;
     margin: 0;
   }
 
   .pos-cart-header-actions {
-    grid-area: actions;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -2135,24 +2136,31 @@
   .btn-add-furniture-cart {
     flex: 1;
     justify-content: center;
-    min-height: 38px;
+    min-height: 40px;
     font-size: 12px;
   }
 
   .btn-clear-cart {
-    min-height: 38px;
-    padding: 0 12px;
+    min-height: 40px;
+    padding: 0 14px;
     font-size: 11px;
     white-space: nowrap;
   }
 
   .pos-cart-item-row {
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px 10px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
     padding: 12px 6px;
     border-bottom: 1px solid #F5EAE4;
+  }
+
+  .pos-item-header-part {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    width: 100%;
   }
 
   .pos-item-icon-box {
@@ -2162,11 +2170,11 @@
   }
 
   .pos-item-details {
-    flex: 1 1 calc(100% - 50px);
-    min-width: calc(100% - 50px);
+    flex: 1;
     display: flex;
     flex-direction: column;
     gap: 2px;
+    min-width: 0;
   }
 
   .pos-item-name {
@@ -2198,8 +2206,17 @@
     word-break: break-word;
   }
 
+  .pos-item-controls-part {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding-left: 46px;
+    gap: 10px;
+  }
+
   .pos-item-stepper {
-    margin-left: 46px;
+    margin: 0;
     flex-shrink: 0;
   }
 
@@ -2235,6 +2252,45 @@
     padding: 6px;
     margin-left: 6px;
     flex-shrink: 0;
+  }
+
+  /* Timber catalog browse modal on mobile - Image 10 fix */
+  .catalog-grid-item {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+    padding: 12px 14px !important;
+  }
+
+  .catalog-item-info {
+    width: 100% !important;
+  }
+
+  .catalog-item-action {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    padding-top: 8px !important;
+    border-top: 1px dashed #F0E6DE !important;
+    gap: 10px !important;
+  }
+
+  .catalog-price {
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    color: #31190B !important;
+  }
+
+  .btn-catalog-add {
+    padding: 8px 18px !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    white-space: nowrap !important;
+    border-radius: 6px !important;
+    min-width: 110px !important;
+    text-align: center !important;
+    justify-content: center !important;
   }
 
   .payment-modes-grid {
@@ -2353,4 +2409,210 @@
   .btn-clear-cart {
     display: none !important;
   }
+}
+
+/* ===================================================
+   Insufficient Stock Warning Modal Dossier
+   =================================================== */
+.stock-alert-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(33, 19, 11, 0.65);
+  backdrop-filter: blur(3px);
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.stock-alert-modal {
+  background-color: #FFFFFF;
+  border: 1px solid #EAE0D8;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 16px 36px rgba(49, 25, 11, 0.25);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: popIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.stock-alert-header {
+  background-color: #FEF1ED;
+  border-bottom: 1px solid #F0E0D6;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stock-alert-icon-wrap {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  background-color: #FDE8E4;
+  border: 1px solid #F8B4A8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.stock-alert-header-text {
+  flex: 1;
+}
+
+.stock-alert-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #31190B;
+  margin: 0;
+}
+
+.stock-alert-depot-tag {
+  font-size: 10px;
+  color: #8C7B72;
+  font-weight: 600;
+}
+
+.stock-alert-close-btn {
+  background: transparent;
+  border: none;
+  font-size: 15px;
+  color: #8C7B72;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.stock-alert-body {
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.stock-alert-prod-info {
+  background-color: #FAF5F2;
+  border-radius: 8px;
+  padding: 10px 14px;
+  border-left: 3px solid #C88D58;
+}
+
+.stock-alert-prod-sku {
+  font-size: 10px;
+  font-weight: 700;
+  color: #8C7B72;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.stock-alert-prod-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #31190B;
+  margin: 2px 0 0 0;
+}
+
+.stock-alert-comparison-grid {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background-color: #FFF9F6;
+  border: 1px dashed #E8D6CB;
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
+.stock-comp-card {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.stock-comp-card.in-yard .comp-label {
+  color: #734826;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.stock-comp-card.in-yard .comp-value {
+  color: #15803D;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.stock-comp-arrow {
+  color: #C0392B;
+  font-size: 18px;
+  font-weight: 700;
+  padding: 0 4px;
+}
+
+.stock-comp-card.requested .comp-label {
+  color: #C0392B;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.stock-comp-card.requested .comp-value {
+  color: #C0392B;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.stock-alert-message {
+  font-size: 11.5px;
+  color: #5C3A21;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.stock-alert-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 12px 20px;
+  background-color: #FAF2EE;
+  border-top: 1px solid #F0E4DC;
+}
+
+.btn-stock-alert-cancel {
+  background-color: #FFFFFF;
+  border: 1px solid #D6C5BC;
+  color: #5C3A21;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 8px 18px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-stock-alert-cancel:hover {
+  background-color: #F5EAE4;
+}
+
+.btn-stock-alert-ok {
+  background-color: #31190B;
+  border: 1px solid #31190B;
+  color: #FFFFFF;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 8px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(49, 25, 11, 0.2);
+  transition: all 0.15s ease;
+}
+
+.btn-stock-alert-ok:hover {
+  background-color: #4A2E18;
 }

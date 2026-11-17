@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { DataStore } from '../services/dataStore'
 import './BillingPOS.css'
 
-export default function BillingPOS() {
+export default function BillingPOS({ onNavigateToProducts }) {
   const [bills, setBills] = useState(() => DataStore.getBills())
   const [activeBillId, setActiveBillId] = useState(() => DataStore.getActiveBillId())
   const [customers, setCustomers] = useState(() => DataStore.getCustomers())
@@ -518,7 +518,13 @@ export default function BillingPOS() {
                 <button
                   type="button"
                   className="btn-add-furniture-cart"
-                  onClick={() => setProductPickerOpen(true)}
+                  onClick={() => {
+                    if (onNavigateToProducts) {
+                      onNavigateToProducts()
+                    } else {
+                      setProductPickerOpen(true)
+                    }
+                  }}
                 >
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <line x1="12" y1="5" x2="12" y2="19" />
@@ -1114,6 +1120,74 @@ export default function BillingPOS() {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Insufficient Stock Warning Modal Dossier */}
+      {stockAlertModal && (
+        <div className="stock-alert-overlay" onClick={() => setStockAlertModal(null)}>
+          <div className="stock-alert-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="stock-alert-header">
+              <div className="stock-alert-icon-wrap">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C0392B" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                  <line x1="12" y1="9" x2="12" y2="13" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+              </div>
+              <div className="stock-alert-header-text">
+                <h3 className="stock-alert-title">Insufficient Stock Alert</h3>
+                <span className="stock-alert-depot-tag">Sivakasi Timber Yard & Central Depot</span>
+              </div>
+              <button
+                type="button"
+                className="stock-alert-close-btn"
+                onClick={() => setStockAlertModal(null)}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="stock-alert-body">
+              <div className="stock-alert-prod-info">
+                <span className="stock-alert-prod-sku">{stockAlertModal.product?.sku}</span>
+                <h4 className="stock-alert-prod-name">{stockAlertModal.product?.name}</h4>
+              </div>
+
+              <div className="stock-alert-comparison-grid">
+                <div className="stock-comp-card in-yard">
+                  <span className="comp-label">In Yard Stock</span>
+                  <span className="comp-value">{stockAlertModal.availableStock} Units</span>
+                </div>
+                <div className="stock-comp-arrow">→</div>
+                <div className="stock-comp-card requested">
+                  <span className="comp-label">Requested for Bill</span>
+                  <span className="comp-value">{stockAlertModal.requestedQty} Units</span>
+                </div>
+              </div>
+
+              <p className="stock-alert-message">
+                The requested quantity exceeds currently verified stock reserves at Sivakasi Central Yard. Would you like to proceed with this bill allocation as a backorder?
+              </p>
+            </div>
+
+            <div className="stock-alert-actions">
+              <button
+                type="button"
+                className="btn-stock-alert-cancel"
+                onClick={() => setStockAlertModal(null)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn-stock-alert-ok"
+                onClick={stockAlertModal.onConfirm}
+              >
+                OK / Proceed
+              </button>
+            </div>
           </div>
         </div>
       )}

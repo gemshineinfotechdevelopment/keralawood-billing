@@ -295,9 +295,9 @@ export default function Customers({ onNavigateToBilling }) {
             <div className="register-sort-wrap">
               <span className="sort-label">Sort by:</span>
               <select className="sort-select" defaultValue="amount">
-                <option value="amount">(amount)</option>
-                <option value="orders">(orders)</option>
-                <option value="name">(name)</option>
+                <option value="amount">Amount</option>
+                <option value="orders">Orders</option>
+                <option value="name">Name</option>
               </select>
             </div>
           </div>
