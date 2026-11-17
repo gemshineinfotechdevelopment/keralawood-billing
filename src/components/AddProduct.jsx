@@ -99,7 +99,7 @@ export default function AddProduct({ onProductSaved }) {
   const dynamicGstLabel = `${totalTax}% GST (CGST ${cgstRate}% + SGST ${sgstRate}%) • HSN ${hsn}`
 
   useEffect(() => {
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+    const apiUrl = import.meta.env.VITE_API_URL || ''
     fetch(`${apiUrl}/api/categories`)
       .then((res) => res.json())
       .then((data) => {
@@ -126,7 +126,7 @@ export default function AddProduct({ onProductSaved }) {
     setCategory(targetName)
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+      const apiUrl = import.meta.env.VITE_API_URL || ''
       await fetch(`${apiUrl}/api/categories`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -187,7 +187,7 @@ export default function AddProduct({ onProductSaved }) {
     localStorage.removeItem('kwf_product_draft')
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+      const apiUrl = import.meta.env.VITE_API_URL || ''
       const response = await fetch(`${apiUrl}/api/products`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

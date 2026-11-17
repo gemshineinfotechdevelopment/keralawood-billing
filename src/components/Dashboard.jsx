@@ -70,9 +70,10 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
   // Dynamic Reorder action (Requirement 3)
   const handleReorder = (prod) => {
     const qtyToAdd = 5
+    const newQty = (prod.stockQuantity || 0) + qtyToAdd
     const updated = products.map((p) => {
       if (p.id === prod.id || p.sku === prod.sku) {
-        return { ...p, stockQuantity: (p.stockQuantity || 0) + qtyToAdd }
+        return { ...p, stockQuantity: newQty }
       }
       return p
     })
@@ -80,6 +81,14 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
     setProducts(updated)
     setReorderedMap((prev) => ({ ...prev, [prod.sku]: true }))
     setToastMessage(`✓ Reordered: +${qtyToAdd} units added to ${prod.name}!`)
+
+    // Sync to MongoDB
+    fetch(`/api/products/${encodeURIComponent(prod.sku || prod.name || prod.id)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ stockQuantity: newQty }),
+    }).catch(() => {})
+
     setTimeout(() => {
       setReorderedMap((prev) => ({ ...prev, [prod.sku]: false }))
     }, 2500)
@@ -89,8 +98,8 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
   }
 
   useEffect(() => {
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
-    fetch(`${apiUrl}/api/dashboard`)
+    // 1. Fetch dashboard aggregated stats and recent sales from MongoDB
+    fetch('/api/dashboard')
       .then((res) => {
         if (!res.ok) throw new Error('Network response not ok')
         return res.json()
@@ -108,6 +117,17 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
       .catch((err) => {
         console.warn('[Dashboard] Backend API offline or unreachable, using fallback dataset:', err.message)
       })
+
+    // 2. Fetch live products from MongoDB
+    fetch('/api/products')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.success && Array.isArray(data.products) && data.products.length > 0) {
+          setProducts(data.products)
+          DataStore.saveProducts(data.products)
+        }
+      })
+      .catch(() => {})
   }, [])
 
   const filteredSales = recentSales.filter((sale) => {

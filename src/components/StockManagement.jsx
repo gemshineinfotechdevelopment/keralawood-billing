@@ -145,7 +145,7 @@ export default function StockManagement({ onAddNewProduct }) {
     DataStore.updateStock(targetProduct.id, newQty)
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+      const apiUrl = import.meta.env.VITE_API_URL || ''
       await fetch(`${apiUrl}/api/products/${targetProduct.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -229,7 +229,7 @@ export default function StockManagement({ onAddNewProduct }) {
     DataStore.updateStock(editingProduct.id, qty)
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+      const apiUrl = import.meta.env.VITE_API_URL || ''
       await fetch(`${apiUrl}/api/products/${editingProduct.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -262,7 +262,7 @@ export default function StockManagement({ onAddNewProduct }) {
   }
 
   useEffect(() => {
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+    const apiUrl = import.meta.env.VITE_API_URL || ''
     fetch(`${apiUrl}/api/products`)
       .then((res) => {
         if (!res.ok) throw new Error('Network response not ok')

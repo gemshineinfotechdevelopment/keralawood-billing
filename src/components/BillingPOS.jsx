@@ -82,6 +82,52 @@ export default function BillingPOS({ onNavigateToProducts }) {
       setSettings(DataStore.getSettings())
     }
     window.addEventListener('timber_store_updated', handleUpdate)
+
+    // Pull live data from MongoDB Atlas on mount
+    fetch('/api/products')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.success && Array.isArray(data.products) && data.products.length > 0) {
+          setProducts(data.products)
+          DataStore.saveProducts(data.products)
+        }
+      })
+      .catch(() => {})
+
+    fetch('/api/customers')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.success && Array.isArray(data.customers) && data.customers.length > 0) {
+          const formatted = data.customers.map((c) => ({
+            id: c._id || c.id,
+            name: c.name,
+            personName: c.personName || c.name,
+            phone: c.phone || '',
+            email: c.email || '',
+            location: c.location || '',
+            address: c.address || '',
+            deliveryAddress: c.deliveryAddress || c.address || '',
+            gstin: c.gstin || 'Unregistered / Personal',
+            type: c.type || 'Residential',
+            totalOrders: c.totalOrders || 0,
+            lifetimeValue: c.lifetimeValue || '0',
+          }))
+          setCustomers(formatted)
+          DataStore.saveCustomers(formatted)
+        }
+      })
+      .catch(() => {})
+
+    fetch('/api/settings')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.success && data.settings) {
+          setSettings(data.settings)
+          DataStore.saveSettings(data.settings)
+        }
+      })
+      .catch(() => {})
+
     return () => window.removeEventListener('timber_store_updated', handleUpdate)
   }, [])
 
