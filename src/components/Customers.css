@@ -419,15 +419,20 @@
 }
 
 .patron-avatar-sq {
-  width: 32px;
-  height: 32px;
-  border-radius: 4px;
+  width: 34px;
+  height: 34px;
+  border-radius: 6px;
+  background-color: #31190B !important;
+  color: #C88D58 !important;
+  border: 1px solid rgba(200, 141, 88, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 13px;
   font-weight: 700;
   flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 }
 
 .patron-meta-wrap {
@@ -479,19 +484,28 @@
 }
 
 .btn-view-details {
-  background-color: #FAF1EE;
-  color: #5C3A21;
-  border: none;
-  border-radius: 4px;
-  padding: 4px 10px;
-  font-size: 10.5px;
-  font-weight: 600;
+  background: #C88D58;
+  color: #FFFFFF;
+  border: 1px solid #B77A42;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 11px;
+  font-weight: 700;
   cursor: pointer;
-  transition: background-color 0.12s ease;
+  letter-spacing: 0.02em;
+  box-shadow: 0 2px 6px rgba(200, 141, 88, 0.35);
+  transition: all 0.18s ease;
+  white-space: nowrap;
 }
 
 .btn-view-details:hover {
-  background-color: #F3E5DE;
+  background: #B3763D;
+  box-shadow: 0 3px 8px rgba(179, 118, 61, 0.45);
+  transform: translateY(-1px);
+}
+
+.btn-view-details:active {
+  transform: translateY(0);
 }
 
 .no-patrons-cell {
@@ -595,7 +609,10 @@
 .dossier-avatar-large {
   width: 44px;
   height: 44px;
-  border-radius: 6px;
+  border-radius: 8px;
+  background-color: #31190B !important;
+  color: #C88D58 !important;
+  border: 1.5px solid rgba(200, 141, 88, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -603,6 +620,7 @@
   font-size: 18px;
   font-weight: 700;
   flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
 }
 
 .dossier-name-block {
@@ -894,19 +912,72 @@
 
 /* Responsiveness */
 @media (max-width: 900px) {
+  .customers-container {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
   .customers-kpi-grid {
     grid-template-columns: 1fr;
+    gap: 12px;
   }
   .customers-main-layout {
     grid-template-columns: 1fr;
+    gap: 16px;
   }
   .customers-header {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
+    gap: 12px;
   }
   .customers-header-actions {
-    align-items: flex-start;
-    flex-direction: row;
+    align-items: stretch;
+    flex-direction: column;
+    width: 100%;
+    gap: 8px;
+  }
+  .btn-privilege-program,
+  .btn-action-customer,
+  .btn-register-patron {
+    width: 100%;
+    justify-content: center;
+    min-height: 40px;
+    box-sizing: border-box;
+  }
+  .patron-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .patron-table {
+    min-width: 620px;
+  }
+  .patron-table th,
+  .patron-table td {
+    padding: 10px 12px;
+  }
+  .contact-info-cell {
+    min-width: 140px;
+  }
+  .patron-table-footer {
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 14px 10px;
+  }
+  .patron-dossier-card {
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .dossier-detail-row {
     flex-wrap: wrap;
+    gap: 4px;
+  }
+  .dossier-btn-invoice {
+    width: 100%;
+    min-height: 44px;
+    justify-content: center;
   }
 }

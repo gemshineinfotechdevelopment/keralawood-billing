@@ -323,13 +323,7 @@ export default function Customers({ onNavigateToBilling }) {
                       {/* Name & Avatar */}
                       <td>
                         <div className="patron-name-cell">
-                          <div
-                            className="patron-avatar-sq"
-                            style={{
-                              backgroundColor: patron.avatarBg || '#5C3A21',
-                              color: patron.avatarColor || '#FFFFFF',
-                            }}
-                          >
+                          <div className="patron-avatar-sq">
                             {patron.initials}
                           </div>
                           <div className="patron-meta-wrap">
@@ -426,13 +420,7 @@ export default function Customers({ onNavigateToBilling }) {
         <div className="patron-dossier-card">
           {/* Header Profile Identity */}
           <div className="dossier-profile-header">
-            <div
-              className="dossier-avatar-large"
-              style={{
-                backgroundColor: currentPatron.avatarBg || '#5C3A21',
-                color: currentPatron.avatarColor || '#FFFFFF',
-              }}
-            >
+            <div className="dossier-avatar-large">
               {currentPatron.initials || 'PT'}
             </div>
             <div className="dossier-name-block">
