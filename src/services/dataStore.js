@@ -366,15 +366,62 @@ export const DataStore = {
   },
   addProduct(item) {
     const list = this.getProducts()
+    const qty = Number(item.stockQuantity) || 4
+    const threshold = Number(item.lowStockThreshold) || 2
+    const numPrice = Number(item.sellingPrice) || 45000
+
+    // Check if product with same SKU or same name already exists
+    const existingIndex = list.findIndex(
+      (p) => (item.sku && p.sku === item.sku) || (item.name && p.name.toLowerCase() === item.name.toLowerCase())
+    )
+
+    if (existingIndex >= 0) {
+      // Increase existing stock
+      const existing = list[existingIndex]
+      const newQty = (Number(existing.stockQuantity) || 0) + qty
+      let stockType = 'in-stock'
+      let stockLabel = `${newQty} in stock`
+      if (newQty <= 1) {
+        stockType = 'critical'
+        stockLabel = `${newQty} left (Critical)`
+      } else if (newQty <= (existing.lowStockThreshold || threshold)) {
+        stockType = 'low'
+        stockLabel = `${newQty} in stock (Low)`
+      }
+      list[existingIndex] = {
+        ...existing,
+        stockQuantity: newQty,
+        stock: stockLabel,
+        stockType,
+        unitPrice: numPrice || existing.unitPrice,
+        price: '₹' + (numPrice || existing.unitPrice).toLocaleString('en-IN'),
+      }
+      this.saveProducts(list)
+      return list[existingIndex]
+    }
+
+    let stockType = 'in-stock'
+    let stockLabel = `${qty} in stock`
+    if (qty <= 1) {
+      stockType = 'critical'
+      stockLabel = `${qty} left (Critical)`
+    } else if (qty <= threshold) {
+      stockType = 'low'
+      stockLabel = `${qty} in stock (Low)`
+    }
+
     const newProduct = {
       id: `prod-${Date.now()}`,
       sku: item.sku || `KWF-${Date.now().toString().slice(-4)}`,
       name: item.name || 'Artisan Timber Furniture',
       finish: item.surfacePolish || 'Matte Natural Wax Finish',
       category: item.category || 'Dining Sets',
-      unitPrice: Number(item.sellingPrice) || 45000,
-      stockQuantity: Number(item.stockQuantity) || 4,
-      lowStockThreshold: Number(item.lowStockThreshold) || 2,
+      unitPrice: numPrice,
+      price: '₹' + numPrice.toLocaleString('en-IN'),
+      stockQuantity: qty,
+      stock: stockLabel,
+      stockType,
+      lowStockThreshold: threshold,
       woodSpecies: item.woodSpecies || 'Teak',
     }
     list.unshift(newProduct)
@@ -383,7 +430,23 @@ export const DataStore = {
   },
   updateStock(productId, newQty) {
     const list = this.getProducts()
-    const updated = list.map((p) => (p.id === productId ? { ...p, stockQuantity: Math.max(0, newQty) } : p))
+    const updated = list.map((p) => {
+      if (p.id === productId) {
+        const qty = Math.max(0, newQty)
+        const threshold = p.lowStockThreshold || 2
+        let stockType = 'in-stock'
+        let stockLabel = `${qty} in stock`
+        if (qty <= 1) {
+          stockType = 'critical'
+          stockLabel = `${qty} left (Critical)`
+        } else if (qty <= threshold) {
+          stockType = 'low'
+          stockLabel = `${qty} in stock (Low)`
+        }
+        return { ...p, stockQuantity: qty, stock: stockLabel, stockType }
+      }
+      return p
+    })
     this.saveProducts(updated)
   },
 
@@ -536,6 +599,17 @@ export const DataStore = {
       const p = products.find((prod) => prod.sku === item.sku || prod.name === item.name)
       if (p) {
         p.stockQuantity = Math.max(0, p.stockQuantity - item.quantity)
+        const threshold = p.lowStockThreshold || 2
+        if (p.stockQuantity <= 1) {
+          p.stockType = 'critical'
+          p.stock = `${p.stockQuantity} left (Critical)`
+        } else if (p.stockQuantity <= threshold) {
+          p.stockType = 'low'
+          p.stock = `${p.stockQuantity} in stock (Low)`
+        } else {
+          p.stockType = 'in-stock'
+          p.stock = `${p.stockQuantity} in stock`
+        }
       }
     })
     this.saveProducts(products)

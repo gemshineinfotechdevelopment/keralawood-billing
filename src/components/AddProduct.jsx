@@ -53,9 +53,77 @@ export default function AddProduct({ onProductSaved }) {
   // Pricing & Statutory GST (Single Price & Settings-derived GST)
   const [unitPrice, setUnitPrice] = useState('₹ 78,500')
   const [tradeDiscount, setTradeDiscount] = useState('Architect / Builder Tier 1 (12% Off)')
-  const [transitPassEnabled, setTransitPassEnabled] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [savedSuccess, setSavedSuccess] = useState(false)
+  const [draftSaved, setDraftSaved] = useState(false)
+  const [toastMsg, setToastMsg] = useState('')
+
+  // Restore saved draft on mount
+  useEffect(() => {
+    try {
+      const savedDraft = localStorage.getItem('kwf_product_draft')
+      if (savedDraft) {
+        const d = JSON.parse(savedDraft)
+        if (d.name) setName(d.name)
+        if (d.sku) setSku(d.sku)
+        if (d.category) setCategory(d.category)
+        if (d.woodType) setWoodType(d.woodType)
+        if (d.description) setDescription(d.description)
+        if (d.length) setLength(d.length)
+        if (d.width) setWidth(d.width)
+        if (d.height) setHeight(d.height)
+        if (d.weight) setWeight(d.weight)
+        if (d.woodGrade) setWoodGrade(d.woodGrade)
+        if (d.surfacePolish) setSurfacePolish(d.surfacePolish)
+        if (d.joineryTechnique) setJoineryTechnique(d.joineryTechnique)
+        if (d.warranty) setWarranty(d.warranty)
+        if (d.stockQuantity) setStockQuantity(d.stockQuantity)
+        if (d.lowStockThreshold) setLowStockThreshold(d.lowStockThreshold)
+        if (d.depotLocation) setDepotLocation(d.depotLocation)
+        if (d.packagingType) setPackagingType(d.packagingType)
+        if (d.shippingClass) setShippingClass(d.shippingClass)
+        if (d.unitPrice) setUnitPrice(d.unitPrice)
+        if (d.tradeDiscount) setTradeDiscount(d.tradeDiscount)
+        setToastMsg('Restored saved product draft')
+        setTimeout(() => setToastMsg(''), 2500)
+      }
+    } catch (e) {
+      console.warn('Failed to parse saved product draft:', e)
+    }
+  }, [])
+
+  const handleSaveDraft = () => {
+    const draftData = {
+      name,
+      sku,
+      category,
+      woodType,
+      description,
+      length,
+      width,
+      height,
+      weight,
+      woodGrade,
+      surfacePolish,
+      joineryTechnique,
+      warranty,
+      stockQuantity,
+      lowStockThreshold,
+      depotLocation,
+      packagingType,
+      shippingClass,
+      unitPrice,
+      tradeDiscount,
+      savedAt: new Date().toISOString(),
+    }
+    localStorage.setItem('kwf_product_draft', JSON.stringify(draftData))
+    setDraftSaved(true)
+    setToastMsg('✓ Product draft saved locally!')
+    setTimeout(() => {
+      setDraftSaved(false)
+      setTimeout(() => setToastMsg(''), 2000)
+    }, 1500)
+  }
 
   // Sync settings when modified
   useEffect(() => {
@@ -154,11 +222,12 @@ export default function AddProduct({ onProductSaved }) {
       costPrice: '',
       gstSlab: dynamicGstLabel,
       tradeDiscount,
-      transitPass: transitPassEnabled,
+      transitPass: true,
     }
 
     // Add to centralized dynamic data store
     DataStore.addProduct(productPayload)
+    localStorage.removeItem('kwf_product_draft')
 
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
@@ -188,6 +257,12 @@ export default function AddProduct({ onProductSaved }) {
 
   return (
     <div className="add-product-container">
+      {toastMsg && (
+        <div className="product-toast-banner">
+          <span>{toastMsg}</span>
+        </div>
+      )}
+
       {/* Top Breadcrumb */}
       <nav className="product-breadcrumb">
         <span>PRODUCTS</span>
@@ -206,7 +281,11 @@ export default function AddProduct({ onProductSaved }) {
         </div>
 
         <div className="product-header-actions">
-          <button type="button" className="btn-save-draft">
+          <button
+            type="button"
+            className={`btn-save-draft ${draftSaved ? 'draft-saved' : ''}`}
+            onClick={handleSaveDraft}
+          >
             <svg
               width="13"
               height="13"
@@ -219,7 +298,7 @@ export default function AddProduct({ onProductSaved }) {
             >
               <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
             </svg>
-            <span>Save Draft</span>
+            <span>{draftSaved ? '✓ Draft Saved!' : 'Save Draft'}</span>
           </button>
 
           <button
@@ -597,42 +676,6 @@ export default function AddProduct({ onProductSaved }) {
                 value={tradeDiscount}
                 onChange={(e) => setTradeDiscount(e.target.value)}
               />
-            </div>
-          </div>
-
-          {/* Forest Transit Pass Card */}
-          <div className="forest-pass-card">
-            <div className="pass-card-left">
-              <span className="pass-icon-gold">
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                  <path d="m9 12 2 2 4-4" />
-                </svg>
-              </span>
-              <div className="pass-meta">
-                <span className="pass-title">Forest Transit Pass (Form IV)</span>
-                <span className="pass-subtext">
-                  Mandatory Sivakasi Forest Dept. movement permit for Nilambur Teak transit
-                </span>
-              </div>
-            </div>
-
-            <div
-              className="toggle-switch-wrap"
-              onClick={() => setTransitPassEnabled(!transitPassEnabled)}
-            >
-              <div className={`toggle-pill ${transitPassEnabled ? 'checked' : ''}`}>
-                <span className="toggle-thumb"></span>
-              </div>
             </div>
           </div>
         </section>

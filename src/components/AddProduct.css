@@ -85,6 +85,27 @@
   border-color: #D3B9A5;
 }
 
+.btn-save-draft.draft-saved {
+  background-color: #E8F5E9;
+  border-color: #81C784;
+  color: #1B5E20;
+}
+
+.product-toast-banner {
+  background-color: #31190B;
+  color: #FFFFFF;
+  border: 1px solid #C88D58;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: fadeIn 0.2s ease-out;
+  box-shadow: 0 4px 12px rgba(49, 25, 11, 0.15);
+}
+
 .btn-save-product {
   background-color: #D7A676;
   border: none;
