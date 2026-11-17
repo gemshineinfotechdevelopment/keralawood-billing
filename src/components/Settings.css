@@ -27,6 +27,20 @@
   flex-direction: column;
 }
 
+.settings-category-pill {
+  display: inline-block;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #C88D58;
+  background-color: rgba(200, 141, 88, 0.12);
+  border: 1px solid rgba(200, 141, 88, 0.28);
+  padding: 2px 7px;
+  border-radius: 4px;
+  margin-bottom: 6px;
+  width: fit-content;
+}
+
 .settings-main-title {
   font-family: 'Playfair Display', Georgia, serif;
   font-size: 26px;
@@ -57,6 +71,7 @@
   gap: 6px;
   box-shadow: 0 1px 3px rgba(49, 25, 11, 0.1);
   transition: background-color 0.15s ease;
+  white-space: nowrap;
 }
 
 .btn-save-settings-top:hover {
@@ -396,8 +411,38 @@
 
 /* Responsive */
 @media (max-width: 800px) {
+  .settings-page-container {
+    padding: 10px 12px;
+  }
+  .settings-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .settings-main-title {
+    font-size: 22px;
+  }
+  .settings-main-subtitle {
+    font-size: 11px;
+    line-height: 1.4;
+  }
+  .btn-save-settings-top,
+  .btn-save-settings-bottom {
+    width: 100%;
+    min-height: 42px;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    box-sizing: border-box;
+    white-space: nowrap;
+  }
+  .settings-card {
+    padding: 16px 14px;
+  }
   .settings-form-row-2col,
   .settings-form-row-3col {
     grid-template-columns: 1fr;
+    gap: 12px;
   }
 }

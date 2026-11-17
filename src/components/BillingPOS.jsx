@@ -284,6 +284,16 @@ export default function BillingPOS() {
 
   return (
     <div className="pos-page-container">
+      {/* Page Header */}
+      <div className="pos-page-header">
+        <div className="pos-page-title-wrap">
+          <h1 className="pos-page-title">Billing & Counter POS</h1>
+          <p className="pos-page-subtitle">
+            Generate GST tax invoices, manage simultaneous drafts, and process patron billing.
+          </p>
+        </div>
+      </div>
+
       {/* Multi-Bill Concurrent Draft Tabs (Prompt 9 Requirement 1) */}
       <div className="pos-drafts-tab-bar">
         <div className="pos-drafts-list">

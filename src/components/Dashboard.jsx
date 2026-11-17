@@ -131,6 +131,7 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
       {/* Page Title & New Invoice Button */}
       <div className="dashboard-page-header">
         <div>
+          <span className="dashboard-category-pill">DASHBOARD OVERVIEW</span>
           <h1 className="depot-main-title">Sivakasi Central Depot</h1>
           <p className="depot-main-subtitle">
             Overview of daily sales, inventory levels, and stock replenishment alerts.

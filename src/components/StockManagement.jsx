@@ -339,6 +339,7 @@ export default function StockManagement({ onAddNewProduct }) {
       {/* Page Header */}
       <div className="stock-page-header">
         <div className="stock-title-wrap">
+          <span className="stock-category-pill">STOCK MANAGEMENT</span>
           <h1 className="stock-main-title">Artisanal Stock & Timber Reserves</h1>
           <p className="stock-main-subtitle">
             Manage indigenous hardwood stock, kiln seasoning logs, warehouse allocations,

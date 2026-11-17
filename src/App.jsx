@@ -75,7 +75,6 @@ function App() {
             </button>
             <div className="mobile-header-brand">
               <span className="mobile-header-title">Kerala Wood Furniture</span>
-              <span className="mobile-header-sub">• {activeNav}</span>
             </div>
             <div className="mobile-header-tag">
               <span>Sivakasi</span>

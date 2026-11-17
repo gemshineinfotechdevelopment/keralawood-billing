@@ -450,20 +450,18 @@
 .mobile-header-brand {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  flex: 1;
+  margin-left: 10px;
 }
 
 .mobile-header-title {
   font-family: 'Playfair Display', Georgia, serif;
-  font-size: 14.5px;
+  font-size: 15px;
   font-weight: 700;
-  color: #FFFFFF;
-}
-
-.mobile-header-sub {
-  font-size: 12px;
-  font-weight: 600;
   color: #C88D58;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
 }
 
 .mobile-header-tag {
@@ -473,8 +471,10 @@
   background-color: rgba(200, 141, 88, 0.15);
   color: #C88D58;
   border: 1px solid #C88D58;
-  padding: 2px 7px;
+  padding: 3px 8px;
   border-radius: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* Mobile Sidebar Backdrop Overlay */

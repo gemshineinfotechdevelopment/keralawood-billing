@@ -15,6 +15,41 @@
   padding-bottom: 32px;
 }
 
+/* Page Header */
+.pos-page-header {
+  margin-bottom: 2px;
+}
+
+.pos-page-title-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.pos-page-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 26px;
+  font-weight: 600;
+  color: #31190B;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.pos-page-subtitle {
+  font-size: 11.5px;
+  color: #8C7B72;
+  margin: 4px 0 0 0;
+}
+
+@media (max-width: 900px) {
+  .pos-page-title {
+    font-size: 22px;
+  }
+  .pos-page-subtitle {
+    font-size: 11px;
+  }
+}
+
 /* Top Banner Status */
 .pos-top-banner {
   background-color: #FAF1EE;

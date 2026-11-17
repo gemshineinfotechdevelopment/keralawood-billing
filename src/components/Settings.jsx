@@ -79,6 +79,7 @@ export default function Settings() {
       {/* Page Header */}
       <div className="settings-header">
         <div className="settings-title-wrap">
+          <span className="settings-category-pill">SYSTEM SETTINGS</span>
           <h1 className="settings-main-title">System Settings</h1>
           <p className="settings-main-subtitle">
             Manage depot info, GST & statutory details, inventory alert thresholds, and printing preferences.

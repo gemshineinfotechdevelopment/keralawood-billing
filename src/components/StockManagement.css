@@ -23,6 +23,20 @@
   max-width: 620px;
 }
 
+.stock-category-pill {
+  display: inline-block;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #C88D58;
+  background-color: rgba(200, 141, 88, 0.12);
+  border: 1px solid rgba(200, 141, 88, 0.28);
+  padding: 2px 7px;
+  border-radius: 4px;
+  margin-bottom: 6px;
+  width: fit-content;
+}
+
 .stock-main-title {
   font-family: 'Playfair Display', Georgia, serif;
   font-size: 28px;
