@@ -327,7 +327,7 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
                   </div>
                   <div className="item-action-wrap">
                     <span className="stock-left-text">
-                      {item.stockQuantity} {item.stockQuantity === 1 ? 'unit left' : 'units left'}
+                      {item.stockQuantity} left
                     </span>
                     <button
                       type="button"
@@ -379,7 +379,8 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
           </div>
         </div>
 
-        <table className="sales-table">
+        <div className="sales-table-wrapper">
+          <table className="sales-table">
           <thead>
             <tr>
               <th>INVOICE #</th>
@@ -420,6 +421,7 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
             ))}
           </tbody>
         </table>
+      </div>
 
         {/* Pagination Bar */}
         <div className="pagination-bar">

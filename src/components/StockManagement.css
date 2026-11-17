@@ -286,6 +286,15 @@
   width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.stock-table-scroll-wrap::-webkit-scrollbar,
+.filter-tabs-wrap::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .stock-table {
@@ -581,6 +590,8 @@
     width: 100%;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
     padding-bottom: 4px;
     flex-wrap: nowrap;
   }

@@ -160,8 +160,9 @@
 }
 
 .section-badge-dark {
-  background-color: #1C130D;
-  color: #C88D58;
+  background-color: #FEF1ED;
+  color: #5C3A21;
+  border: 1px solid #F0E2DA;
   font-size: 9px;
   font-weight: 700;
   padding: 3px 8px;
@@ -413,10 +414,70 @@
 
 /* Responsive adjustments */
 @media (max-width: 900px) {
+  .add-product-container {
+    padding: 10px 12px;
+  }
+  .add-product-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .product-title-wrap {
+    max-width: 100%;
+  }
+  .product-page-title {
+    font-size: 22px;
+  }
+  .product-page-subtitle {
+    font-size: 11px;
+    line-height: 1.4;
+  }
+  .product-header-actions {
+    width: 100%;
+    display: flex;
+    gap: 10px;
+  }
+  .btn-save-draft,
+  .btn-save-product {
+    flex: 1;
+    justify-content: center;
+    min-height: 42px;
+    font-size: 12px;
+    white-space: nowrap;
+    box-sizing: border-box;
+  }
   .product-form-grid {
     grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .form-section-card {
+    padding: 16px 14px;
+    gap: 12px;
+  }
+  .card-section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .card-title-group {
+    width: 100%;
+  }
+  .card-section-title {
+    font-size: 13.5px;
+    line-height: 1.25;
+  }
+  .section-badge-tan,
+  .section-badge-dark,
+  .section-badge-green {
+    align-self: flex-start;
   }
   .form-row-4col {
     grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .form-row-2col,
+  .form-row-3col {
+    grid-template-columns: 1fr;
+    gap: 10px;
   }
 }
