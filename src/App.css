@@ -422,28 +422,29 @@
   display: none;
   align-items: center;
   justify-content: space-between;
-  background-color: #FFFFFF;
-  border: 1px solid #EFE4DC;
+  background-color: #171412;
+  border: 1px solid rgba(200, 141, 88, 0.28);
   border-radius: 8px;
   padding: 10px 14px;
   margin-bottom: 14px;
-  box-shadow: 0 1px 4px rgba(49, 25, 11, 0.04);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
 }
 
 .btn-mobile-hamburger {
-  background: transparent;
-  border: 1px solid #E0D3C9;
+  background: #26211E;
+  border: 1px solid #C88D58;
   border-radius: 6px;
   padding: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #31190B;
+  color: #C88D58;
   cursor: pointer;
+  transition: all 0.18s ease;
 }
 
 .btn-mobile-hamburger:hover {
-  background-color: #FAF1EE;
+  background-color: rgba(200, 141, 88, 0.2);
 }
 
 .mobile-header-brand {
@@ -456,22 +457,22 @@
   font-family: 'Playfair Display', Georgia, serif;
   font-size: 14.5px;
   font-weight: 700;
-  color: #31190B;
+  color: #FFFFFF;
 }
 
 .mobile-header-sub {
   font-size: 12px;
   font-weight: 600;
-  color: #A06A3A;
+  color: #C88D58;
 }
 
 .mobile-header-tag {
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.06em;
-  background-color: #FAF1EE;
-  color: #5C3A21;
-  border: 1px solid #EAE0D8;
+  background-color: rgba(200, 141, 88, 0.15);
+  color: #C88D58;
+  border: 1px solid #C88D58;
   padding: 2px 7px;
   border-radius: 4px;
 }
