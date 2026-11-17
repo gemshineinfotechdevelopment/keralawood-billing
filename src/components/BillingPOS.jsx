@@ -1,6 +1,62 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { DataStore } from '../services/dataStore'
 import './BillingPOS.css'
+
+// Accurate Indian Number-to-Words converter (e.g. 1,500 -> One Thousand Five Hundred Rupees Only)
+function numberToWordsINR(num) {
+  if (isNaN(num) || num <= 0) return 'Zero Rupees Only'
+  const a = [
+    '', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten',
+    'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'
+  ]
+  const b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety']
+
+  const convertTwoDigits = (n) => {
+    if (n === 0) return ''
+    if (n < 20) return a[n] + ' '
+    return b[Math.floor(n / 10)] + (n % 10 !== 0 ? ' ' + a[n % 10] : '') + ' '
+  }
+
+  const convertThreeDigits = (n) => {
+    let str = ''
+    if (Math.floor(n / 100) > 0) {
+      str += a[Math.floor(n / 100)] + ' Hundred '
+    }
+    const rem = n % 100
+    if (rem > 0) {
+      str += convertTwoDigits(rem)
+    }
+    return str
+  }
+
+  let amount = Math.floor(num)
+  let result = ''
+
+  const crore = Math.floor(amount / 10000000)
+  amount %= 10000000
+  if (crore > 0) {
+    result += convertThreeDigits(crore) + 'Crore '
+  }
+
+  const lakh = Math.floor(amount / 100000)
+  amount %= 100000
+  if (lakh > 0) {
+    result += convertThreeDigits(lakh) + 'Lakh '
+  }
+
+  const thousand = Math.floor(amount / 1000)
+  amount %= 1000
+  if (thousand > 0) {
+    result += convertThreeDigits(thousand) + 'Thousand '
+  }
+
+  if (amount > 0) {
+    result += convertThreeDigits(amount)
+  }
+
+  result = result.trim()
+  return result ? `${result} Rupees Only` : 'Zero Rupees Only'
+}
 
 export default function BillingPOS({ onNavigateToProducts }) {
   const [bills, setBills] = useState(() => DataStore.getBills())
@@ -9,24 +65,14 @@ export default function BillingPOS({ onNavigateToProducts }) {
   const [products, setProducts] = useState(() => DataStore.getProducts())
   const [settings, setSettings] = useState(() => DataStore.getSettings())
 
-  const [activeCategory, setActiveCategory] = useState('Dining Sets')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [customerModalOpen, setCustomerModalOpen] = useState(false)
-  const [productPickerOpen, setProductPickerOpen] = useState(false)
+  // Modal & Toast States
   const [invoiceModalOpen, setInvoiceModalOpen] = useState(false)
-  const [activeInvoiceTab, setActiveInvoiceTab] = useState('preview') // 'preview' | 'edit'
-  const [holdSuccess, setHoldSuccess] = useState(false)
-  const [stockAlertModal, setStockAlertModal] = useState(null) // Insufficient Stock Alert Dossier
+  const [printSuccessToast, setPrintSuccessToast] = useState('')
+  const [saveCustomerToDirectory, setSaveCustomerToDirectory] = useState(false)
+  const [additionalOptionsOpen, setAdditionalOptionsOpen] = useState(false)
+  const [expandedItemDetails, setExpandedItemDetails] = useState({}) // { [itemId]: boolean }
 
-  // Edit Invoice Bill states (Requirement 2 & 3)
-  const [editInvNumber, setEditInvNumber] = useState('')
-  const [editCustomerName, setEditCustomerName] = useState('')
-  const [editCustomerPhone, setEditCustomerPhone] = useState('')
-  const [editCustomerAddress, setEditCustomerAddress] = useState('')
-  const [editDeliveryAddress, setEditDeliveryAddress] = useState('')
-  const [editCustomerGstin, setEditCustomerGstin] = useState('')
-
-  // Sync with data store events
+  // Listen to store updates
   useEffect(() => {
     const handleUpdate = () => {
       setBills(DataStore.getBills())
@@ -39,1183 +85,1001 @@ export default function BillingPOS({ onNavigateToProducts }) {
     return () => window.removeEventListener('timber_store_updated', handleUpdate)
   }, [])
 
-  // Find active bill
-  const currentBill = bills.find((b) => b.id === activeBillId) || bills[0] || DataStore.createNewDraft()
-  const cartItems = currentBill.items || []
-  const currentCustomer = currentBill.customer || customers[0]
+  // Find or create active bill
+  const currentBill = useMemo(() => {
+    return bills.find((b) => b.id === activeBillId) || bills[0] || DataStore.createNewDraft()
+  }, [bills, activeBillId])
 
-  // Switch Bill Draft (Prompt 9 Requirement 1)
+  // Top fields: Invoice Number, Invoice Date, Due Date
+  const invoiceNumber = currentBill.invoiceNumber || 'INV-1003'
+  const invoiceDate = currentBill.invoiceDate || new Date().toISOString().split('T')[0]
+  const dueDate = currentBill.dueDate || new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+
+  // Customer state
+  const customer = currentBill.customer || { name: '', phone: '', address: '', gstin: '' }
+
+  // Items in active bill (fallback to 1 empty row if items array is empty)
+  const items = currentBill.items && currentBill.items.length > 0
+    ? currentBill.items
+    : [
+        {
+          id: 'item-initial-1',
+          description: '',
+          quantity: 1,
+          unit: 'Pieces (Nos)',
+          price: 0,
+          gstRate: 0,
+          length: '',
+          width: '',
+          height: '',
+          weight: '',
+          woodSpecies: 'Teak',
+          finish: 'Natural Beeswax',
+        },
+      ]
+
+  // Payment status & modes
+  const paymentStatus = currentBill.paymentStatus || 'Pending' // 'Pending' | 'Partial' | 'Paid'
+  const paymentMode = currentBill.paymentMode || 'UPI'
+  const amountPaid = Number(currentBill.amountPaid) || 0
+  const discount = Number(currentBill.discount) || 0
+  const deliveryCharge = Number(currentBill.deliveryCharge) || 0
+  const notes = currentBill.notes || ''
+
+  // Calculations
+  const itemsSubtotal = items.reduce((sum, item) => {
+    const qty = Number(item.quantity) || 0
+    const prc = Number(item.price) || 0
+    return sum + qty * prc
+  }, 0)
+
+  const totalGst = items.reduce((sum, item) => {
+    const qty = Number(item.quantity) || 0
+    const prc = Number(item.price) || 0
+    const gstRate = Number(item.gstRate) || 0
+    return sum + (qty * prc * gstRate) / 100
+  }, 0)
+
+  const grandTotal = Math.max(0, Math.round(itemsSubtotal + totalGst + deliveryCharge - discount))
+  const balanceDue = paymentStatus === 'Paid' ? 0 : Math.max(0, grandTotal - amountPaid)
+
+  // -------------------------------------------------------------
+  // Bill State Updaters
+  // -------------------------------------------------------------
+  const updateCurrentBill = (updates) => {
+    DataStore.updateBill(currentBill.id, updates)
+    setBills(DataStore.getBills())
+  }
+
+  // Handle Switch or Create Bill
   const handleSwitchBill = (id) => {
     setActiveBillId(id)
     DataStore.setActiveBillId(id)
   }
 
-  // Create New Draft Bill
   const handleCreateNewBill = () => {
     const newBill = DataStore.createNewDraft()
     setBills(DataStore.getBills())
     setActiveBillId(newBill.id)
+    setSaveCustomerToDirectory(false)
+    setPrintSuccessToast('✓ Created fresh empty bill!')
+    setTimeout(() => setPrintSuccessToast(''), 2000)
   }
 
-  // Close / Delete Bill Draft
-  const handleCloseBill = (e, id) => {
+  const handleRemoveBill = (e, id) => {
     e.stopPropagation()
     const nextBill = DataStore.removeBill(id)
     setBills(DataStore.getBills())
-    if (nextBill) {
-      setActiveBillId(nextBill.id)
-    }
+    if (nextBill) setActiveBillId(nextBill.id)
   }
 
-  // Formatted date and time from system settings or live clock
-  const getInvoiceDateTimeDisplay = () => {
-    let dateStr
-    if (settings.systemDate) {
-      const d = new Date(settings.systemDate)
-      dateStr = !isNaN(d.getTime())
-        ? d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-        : new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-    } else {
-      dateStr = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-    }
-
-    const timeStr = settings.systemTime?.trim()
-      ? settings.systemTime.trim()
-      : new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
-
-    return `${dateStr} • ${timeStr} • Sivakasi Standard Time`
+  // Customer Field Changes
+  const handleCustomerChange = (field, val) => {
+    const updated = { ...customer, [field]: val }
+    updateCurrentBill({
+      customer: updated,
+      name: updated.name ? `${currentBill.name.split('•')[0].trim()} • ${updated.name}` : currentBill.name,
+    })
   }
 
-  // Clear Cart Items (Requirement 5)
-  const handleClearCart = () => {
-    DataStore.updateBill(currentBill.id, { items: [] })
-    setBills(DataStore.getBills())
-  }
-
-  // Hold Order / Save as Draft
-  const handleHoldOrder = () => {
-    DataStore.holdCurrentBill(currentBill.id)
-    setBills(DataStore.getBills())
-    setHoldSuccess(true)
-    setTimeout(() => setHoldSuccess(false), 2200)
-  }
-
-  // Helper to commit cart update
-  const commitCartUpdate = (updatedItems) => {
-    DataStore.updateBill(currentBill.id, { items: updatedItems })
-    setBills(DataStore.getBills())
-    setSearchQuery('')
-  }
-
-  // Helper to directly add or set quantity in cart
-  const commitAddToCart = (prod, targetQty) => {
-    const existing = cartItems.find((item) => item.sku === prod.sku)
-    let updatedItems
-    if (existing) {
-      updatedItems = cartItems.map((item) =>
-        item.sku === prod.sku ? { ...item, quantity: targetQty } : item
-      )
-    } else {
-      updatedItems = [
-        ...cartItems,
-        {
-          id: `${prod.sku}-${cartItems.length + 1}`,
-          sku: prod.sku,
-          name: prod.name,
-          finish: prod.finish,
-          unitPrice: prod.unitPrice,
-          quantity: targetQty,
-          category: prod.category,
-        },
-      ]
-    }
-    commitCartUpdate(updatedItems)
-  }
-
-  // Update Cart Quantity with Insufficient Stock Check
-  const handleUpdateQuantity = (itemId, delta) => {
-    const targetItem = cartItems.find((item) => item.id === itemId)
-    if (!targetItem) return
-
-    const newQty = targetItem.quantity + delta
-    if (newQty <= 0) {
-      handleRemoveItem(itemId)
+  // Autofill Customer from Dropdown
+  const handleAutofillCustomer = (e) => {
+    const selectedId = e.target.value
+    if (!selectedId || selectedId === 'clear') {
+      updateCurrentBill({
+        customer: { name: '', phone: '', address: '', deliveryAddress: '', gstin: '' },
+      })
       return
     }
+    const found = customers.find((c) => String(c.id) === String(selectedId) || c.name === selectedId)
+    if (found) {
+      updateCurrentBill({
+        customer: {
+          id: found.id,
+          name: found.name,
+          phone: found.phone || '',
+          address: found.address || found.location || '',
+          deliveryAddress: found.deliveryAddress || found.address || '',
+          gstin: found.gstin || '',
+        },
+        name: `${currentBill.name.split('•')[0].trim()} • ${found.name}`,
+      })
+    }
+  }
 
-    // If increasing quantity, check available stock
-    if (delta > 0) {
-      const liveProd = products.find((p) => p.sku === targetItem.sku || p.name === targetItem.name)
-      const availableStock = liveProd?.stockQuantity !== undefined ? liveProd.stockQuantity : 999
-      if (newQty > availableStock) {
-        setStockAlertModal({
-          product: liveProd || { name: targetItem.name, sku: targetItem.sku },
-          requestedQty: newQty,
-          availableStock,
-          onConfirm: () => {
-            const updatedItems = cartItems.map((item) =>
-              item.id === itemId ? { ...item, quantity: newQty } : item
-            )
-            commitCartUpdate(updatedItems)
-            setStockAlertModal(null)
-          },
-        })
-        return
+  // -------------------------------------------------------------
+  // Items Operations
+  // -------------------------------------------------------------
+  // Add Blank Row
+  const handleAddBlankRow = () => {
+    const newRow = {
+      id: `item-${Date.now()}-${items.length + 1}`,
+      description: '',
+      quantity: 1,
+      unit: 'Pieces (Nos)',
+      price: 0,
+      gstRate: 0,
+      length: '',
+      width: '',
+      height: '',
+      weight: '',
+      woodSpecies: 'Teak',
+      finish: 'Natural Beeswax',
+    }
+    updateCurrentBill({ items: [...items, newRow] })
+  }
+
+  // Pick from Products Catalog Dropdown
+  const handlePickFromCatalog = (e) => {
+    const prodIdOrSku = e.target.value
+    if (!prodIdOrSku) return
+
+    const prod = products.find((p) => p.id === prodIdOrSku || p.sku === prodIdOrSku || p.name === prodIdOrSku)
+    if (!prod) return
+
+    const newRow = {
+      id: `item-${Date.now()}-${items.length + 1}`,
+      sku: prod.sku,
+      description: prod.name,
+      quantity: 1,
+      unit: 'Pieces (Nos)',
+      price: Number(prod.sellingPrice || prod.unitPrice || prod.rawPrice || 0),
+      gstRate: 18,
+      length: prod.dimensions?.length || '',
+      width: prod.dimensions?.width || '',
+      height: prod.dimensions?.height || '',
+      weight: prod.dimensions?.weight || '',
+      woodSpecies: prod.woodSpecies || 'Teak',
+      finish: prod.surfacePolish || prod.finish || 'Natural Protective Beeswax',
+    }
+
+    // If first row is blank and untouched, replace it; else append
+    if (items.length === 1 && !items[0].description && Number(items[0].price) === 0) {
+      updateCurrentBill({ items: [newRow] })
+    } else {
+      updateCurrentBill({ items: [...items, newRow] })
+    }
+
+    // Reset dropdown selector back to default
+    e.target.value = ''
+  }
+
+  // Update item field
+  const handleItemChange = (index, field, value) => {
+    const updated = items.map((item, idx) => {
+      if (idx === index) {
+        return { ...item, [field]: value }
       }
+      return item
+    })
+    updateCurrentBill({ items: updated })
+  }
+
+  // Duplicate Row
+  const handleDuplicateRow = (index) => {
+    const target = items[index]
+    const clone = {
+      ...target,
+      id: `item-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
     }
-
-    const updatedItems = cartItems
-      .map((item) => {
-        if (item.id === itemId) {
-          return { ...item, quantity: newQty }
-        }
-        return item
-      })
-      .filter((item) => item.quantity > 0)
-
-    commitCartUpdate(updatedItems)
+    const updated = [...items.slice(0, index + 1), clone, ...items.slice(index + 1)]
+    updateCurrentBill({ items: updated })
   }
 
-  // Remove Item
-  const handleRemoveItem = (itemId) => {
-    const updatedItems = cartItems.filter((item) => item.id !== itemId)
-    commitCartUpdate(updatedItems)
-  }
-
-  // Add Product to Cart with Insufficient Stock Check
-  const handleAddProductToCart = (prod) => {
-    const existing = cartItems.find((item) => item.sku === prod.sku)
-    const targetQty = existing ? existing.quantity + 1 : 1
-    const availableStock = prod.stockQuantity !== undefined ? prod.stockQuantity : 999
-
-    if (targetQty > availableStock) {
-      setStockAlertModal({
-        product: prod,
-        requestedQty: targetQty,
-        availableStock,
-        onConfirm: () => {
-          commitAddToCart(prod, targetQty)
-          setStockAlertModal(null)
-        },
+  // Delete Row
+  const handleDeleteRow = (index) => {
+    if (items.length <= 1) {
+      // Keep at least one empty row
+      updateCurrentBill({
+        items: [
+          {
+            id: `item-${Date.now()}`,
+            description: '',
+            quantity: 1,
+            unit: 'Pieces (Nos)',
+            price: 0,
+            gstRate: 0,
+          },
+        ],
       })
       return
     }
-
-    commitAddToCart(prod, targetQty)
+    const updated = items.filter((_, idx) => idx !== index)
+    updateCurrentBill({ items: updated })
   }
 
-  // Live customer field updater for billing page
-  const handleCustomerFieldChange = (field, value) => {
-    const updatedCust = {
-      ...currentCustomer,
-      [field]: value,
+  // Toggle item details expansion
+  const toggleItemExpansion = (itemId) => {
+    setExpandedItemDetails((prev) => ({
+      ...prev,
+      [itemId]: !prev[itemId],
+    }))
+  }
+
+  // -------------------------------------------------------------
+  // Save & Print Actions
+  // -------------------------------------------------------------
+  const handleSaveBill = (showModalAfter = false) => {
+    if (itemsSubtotal <= 0 && items.filter((i) => i.description.trim()).length === 0) {
+      setPrintSuccessToast('⚠️ Please add at least one item before saving.')
+      setTimeout(() => setPrintSuccessToast(''), 2500)
+      return
     }
-    if (field === 'name') {
-      updatedCust.personName = value
+
+    // 1. If "Save customer to directory" is checked, save customer to MongoDB & store
+    if (saveCustomerToDirectory && customer.name.trim()) {
+      DataStore.addCustomer({
+        name: customer.name.trim(),
+        phone: customer.phone?.trim() || '',
+        address: customer.address?.trim() || '',
+        deliveryAddress: customer.address?.trim() || '',
+        gstin: customer.gstin?.trim() || 'Unregistered / Personal',
+        location: customer.address?.trim() ? customer.address.trim().split(',')[0] : 'Sivakasi',
+      })
     }
-    DataStore.updateBill(currentBill.id, {
-      customer: updatedCust,
-      name: `${currentBill.name.split('•')[0]} • ${value || 'New Patron'}`,
-    })
-    setBills(DataStore.getBills())
-  }
 
-  // Change Customer from Directory on Active Bill
-  const handleSelectCustomer = (cust) => {
-    DataStore.updateBill(currentBill.id, {
-      customer: {
-        ...cust,
-        deliveryAddress: cust.deliveryAddress || cust.address || 'Sivakasi Yard Destination',
-      },
-      name: `${currentBill.name.split('•')[0]} • ${cust.name}`,
-    })
-    setBills(DataStore.getBills())
-    setCustomerModalOpen(false)
-  }
-
-  // Dynamic Totals
-  const totalUnits = cartItems.reduce((acc, item) => acc + item.quantity, 0)
-  const totalItemsCount = cartItems.length
-  const subtotal = cartItems.reduce((acc, item) => acc + item.unitPrice * item.quantity, 0)
-  const cgstRateNum = Number(settings.cgstRate) || (parseFloat(settings.taxRate) ? parseFloat(settings.taxRate) / 2 : 9)
-  const sgstRateNum = Number(settings.sgstRate) || (parseFloat(settings.taxRate) ? parseFloat(settings.taxRate) / 2 : 9)
-  const cgst = Math.round((subtotal * cgstRateNum) / 100)
-  const sgst = Math.round((subtotal * sgstRateNum) / 100)
-  const totalGst = cgst + sgst
-  const grandTotal = subtotal + totalGst
-
-  // Open Invoice Modal with Editable Defaults from Settings & Bill
-  const handleOpenInvoiceModal = () => {
-    if (cartItems.length === 0) return
-    setEditInvNumber(currentBill.invoiceNumber || `TAX-INV #${new Date().getFullYear()}-SK-${Math.floor(900 + Math.random() * 100)}`)
-    setEditCustomerName(currentCustomer.name || '')
-    setEditCustomerPhone(currentCustomer.phone || '')
-    setEditCustomerAddress(currentCustomer.address || currentCustomer.location || 'Sivakasi, Tamil Nadu')
-    setEditDeliveryAddress(currentCustomer.deliveryAddress || currentCustomer.address || 'Sivakasi, Tamil Nadu')
-    setEditCustomerGstin(currentCustomer.gstin || 'Unregistered / Personal')
-    setActiveInvoiceTab('preview')
-    setInvoiceModalOpen(true)
-  }
-
-  // Save changes from Edit Bill Drawer
-  const handleSaveBillEdits = () => {
-    const updatedCust = {
-      ...currentCustomer,
-      name: editCustomerName,
-      phone: editCustomerPhone,
-      address: editCustomerAddress,
-      deliveryAddress: editDeliveryAddress,
-      gstin: editCustomerGstin,
+    // 2. Record sale into MongoDB & local dataStore
+    const billToRecord = {
+      ...currentBill,
+      invoiceNumber,
+      invoiceDate,
+      dueDate,
+      customer,
+      items,
+      discount,
+      deliveryCharge,
+      paymentStatus,
+      paymentMode,
+      amountPaid: paymentStatus === 'Paid' ? grandTotal : amountPaid,
+      notes,
     }
-    DataStore.updateBill(currentBill.id, {
-      invoiceNumber: editInvNumber,
-      customer: updatedCust,
-    })
+
+    DataStore.recordSaleFromBill(billToRecord)
     setBills(DataStore.getBills())
-    setActiveInvoiceTab('preview')
+
+    if (showModalAfter) {
+      setInvoiceModalOpen(true)
+    } else {
+      setPrintSuccessToast(`✓ Bill ${invoiceNumber} saved successfully to MongoDB!`)
+      setTimeout(() => setPrintSuccessToast(''), 3000)
+    }
   }
 
-  // Finalize Sale & Print
-  const handleFinalizeAndPrint = () => {
-    DataStore.recordSaleFromBill(currentBill)
+  const handlePrint = () => {
     window.print()
   }
 
-  // Close Invoice and Proceed to Next Draft
-  const handleNextBill = () => {
-    setInvoiceModalOpen(false)
-    DataStore.recordSaleFromBill(currentBill)
-    const nextBill = DataStore.removeBill(currentBill.id)
-    setBills(DataStore.getBills())
-    if (nextBill) {
-      setActiveBillId(nextBill.id)
-    }
-  }
-
-  // Categories
-  const categories = [
-    {
-      name: 'Dining Sets',
-      icon: (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M3 8h18M5 8v11M19 8v11M8 8v4M16 8v4" />
-        </svg>
-      ),
-    },
-    {
-      name: 'Chairs',
-      icon: (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M19 9V6a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2v3" />
-          <path d="M3 11v5a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2z" />
-          <path d="M5 18v2M19 18v2" />
-        </svg>
-      ),
-    },
-    {
-      name: 'Beds',
-      icon: (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M2 4v16M2 8h18a2 2 0 0 1 2 2v10M2 17h20M6 8v4" />
-        </svg>
-      ),
-    },
-    {
-      name: 'Living',
-      icon: (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M20 9V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v2" />
-          <path d="M2 11v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z" />
-          <path d="M4 19v2M20 19v2" />
-        </svg>
-      ),
-    },
-    {
-      name: 'Storage',
-      icon: (
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="3" y="4" width="18" height="15" rx="2" />
-          <line x1="12" y1="4" x2="12" y2="19" />
-          <line x1="8" y1="11" x2="8" y2="12" />
-          <line x1="16" y1="11" x2="16" y2="12" />
-        </svg>
-      ),
-    },
-  ]
-
-  // Filtered products for quick-search dropdown or catalog picker
-  const filteredProducts = products.filter((p) => {
-    const q = searchQuery.toLowerCase().trim()
-    if (!q) return p.category === activeCategory
-    return (
-      p.sku.toLowerCase().includes(q) ||
-      p.name.toLowerCase().includes(q) ||
-      p.woodSpecies?.toLowerCase().includes(q) ||
-      p.category.toLowerCase().includes(q)
-    )
-  })
-
-  const formatRupees = (amount) => Number(amount || 0).toLocaleString('en-IN')
-
   return (
-    <div className="pos-page-container">
-      {/* Page Header */}
-      <div className="pos-page-header">
-        <div className="pos-page-title-wrap">
-          <h1 className="pos-page-title">Billing & Counter POS</h1>
-          <p className="pos-page-subtitle">
-            Generate GST tax invoices, manage simultaneous drafts, and process patron billing.
-          </p>
+    <div className="pos-concept-page">
+      {/* Toast Notification */}
+      {printSuccessToast && <div className="pos-floating-toast">{printSuccessToast}</div>}
+
+      {/* Top Bar with Concurrent Draft Tabs */}
+      <div className="pos-drafts-topbar">
+        <div className="pos-drafts-tabs-scroll">
+          {bills.map((b, idx) => (
+            <button
+              key={b.id}
+              type="button"
+              className={`pos-draft-chip ${b.id === currentBill.id ? 'active' : ''}`}
+              onClick={() => handleSwitchBill(b.id)}
+            >
+              <span>{b.invoiceNumber || `Bill #${idx + 1}`}</span>
+              {bills.length > 1 && (
+                <span
+                  className="pos-draft-chip-close"
+                  onClick={(e) => handleRemoveBill(e, b.id)}
+                  title="Close draft"
+                >
+                  ✕
+                </span>
+              )}
+            </button>
+          ))}
         </div>
-      </div>
-
-      {/* Multi-Bill Concurrent Draft Tabs (Prompt 9 Requirement 1) */}
-      <div className="pos-drafts-tab-bar">
-        <div className="pos-drafts-list">
-          {bills.map((b, idx) => {
-            const isActive = b.id === currentBill.id
-            return (
-              <div
-                key={b.id}
-                className={`pos-draft-tab ${isActive ? 'active' : ''}`}
-                onClick={() => handleSwitchBill(b.id)}
-              >
-                <div className="draft-tab-title-wrap">
-                  <span className={`draft-dot ${isActive ? 'active' : ''}`} />
-                  <span className="draft-tab-label">
-                    Bill #{idx + 1}: {b.customer ? b.customer.name.split(' ')[0] : 'Draft'}
-                  </span>
-                  <span className="draft-items-pill">{b.items ? b.items.length : 0} items</span>
-                </div>
-
-                {bills.length > 1 && (
-                  <button
-                    type="button"
-                    className="btn-close-draft"
-                    onClick={(e) => handleCloseBill(e, b.id)}
-                    title="Close Draft"
-                  >
-                    ✕
-                  </button>
-                )}
-              </div>
-            )
-          })}
-        </div>
-
-        <button
-          type="button"
-          className="btn-add-draft"
-          onClick={handleCreateNewBill}
-          title="Create another simultaneous bill draft"
-        >
-          <span>+ New Draft Bill</span>
+        <button type="button" className="pos-btn-new-draft" onClick={handleCreateNewBill}>
+          + New Draft Bill
         </button>
       </div>
 
-      {/* Top Banner Status */}
-      <div className="pos-top-banner">
-        <div className="pos-terminal-info">
-          <span className="pos-pulse-dot" />
-          <span className="pos-terminal-name">Terminal #02</span>
-          <span className="pos-banner-sep">•</span>
-          <span className="pos-counter-label">Sivakasi Counter POS</span>
-        </div>
-
-        <div className="pos-banner-meta">
-          <span className="pos-inv-tag">{currentBill.invoiceNumber || `TAX-INV #${new Date().getFullYear()}-SK-982`}</span>
-          <span className="pos-banner-pipe">|</span>
-          <span className="pos-cart-badge">{totalItemsCount} Items in Cart</span>
-        </div>
-      </div>
-
-      {/* Main Grid: Left Workspace & Right Summary */}
-      <div className="pos-main-grid">
-        {/* Left Column: Customer & Delivery Details, Active Cart */}
-        <div className="pos-left-column">
-          {/* Customer & Delivery Information Form */}
-          <div className="pos-customer-edit-card">
-            <div className="pos-customer-edit-header">
-              <div className="pos-customer-title-wrap">
-                <div className="pos-customer-title-icon">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                    <circle cx="12" cy="7" r="4" />
-                  </svg>
-                </div>
-                <span className="pos-customer-edit-title">Patron & Delivery Details</span>
-              </div>
-
-              <button
-                type="button"
-                className="btn-pick-existing-customer"
-                onClick={() => setCustomerModalOpen(true)}
-              >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                  <circle cx="9" cy="7" r="4" />
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                </svg>
-                <span>Select from Patrons</span>
-              </button>
-            </div>
-
-            <div className="pos-customer-fields-grid">
-              <div className="pos-customer-row-2col">
-                <div className="pos-field-group">
-                  <label className="pos-field-label">Customer / Patron Name *</label>
-                  <input
-                    type="text"
-                    className="pos-field-input"
-                    placeholder="e.g. Mathew Philip"
-                    value={currentCustomer.name || ''}
-                    onChange={(e) => handleCustomerFieldChange('name', e.target.value)}
-                  />
-                </div>
-
-                <div className="pos-field-group">
-                  <label className="pos-field-label">Contact Phone *</label>
-                  <input
-                    type="text"
-                    className="pos-field-input"
-                    placeholder="e.g. +91 98470 12345"
-                    value={currentCustomer.phone || ''}
-                    onChange={(e) => handleCustomerFieldChange('phone', e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div className="pos-customer-row-2col">
-                <div className="pos-field-group">
-                  <label className="pos-field-label">Customer / Billing Address *</label>
-                  <input
-                    type="text"
-                    className="pos-field-input"
-                    placeholder="e.g. Bazaar Street, Sivakasi"
-                    value={currentCustomer.address || currentCustomer.location || ''}
-                    onChange={(e) => handleCustomerFieldChange('address', e.target.value)}
-                  />
-                </div>
-
-                <div className="pos-field-group">
-                  <label className="pos-field-label">Delivery Address *</label>
-                  <input
-                    type="text"
-                    className="pos-field-input"
-                    placeholder="e.g. Delivery Yard, Site #4, Sivakasi"
-                    value={currentCustomer.deliveryAddress || currentCustomer.address || ''}
-                    onChange={(e) => handleCustomerFieldChange('deliveryAddress', e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div className="pos-field-group">
-                <label className="pos-field-label">Client GSTIN (Optional)</label>
+      {/* Main 2-Column Concept Workspace */}
+      <div className="pos-concept-workspace">
+        {/* LEFT COLUMN: Metadata, Customer Details, Items, Additional Options */}
+        <div className="pos-concept-left-column">
+          {/* 1. Header Card: Invoice Number, Invoice Date, Due Date */}
+          <div className="pos-card pos-meta-header-card">
+            <div className="pos-meta-grid">
+              <div className="pos-input-group">
+                <label className="pos-label">Invoice Number *</label>
                 <input
                   type="text"
-                  className="pos-field-input"
-                  placeholder="e.g. 33AABCP9821K1ZK"
-                  value={currentCustomer.gstin && currentCustomer.gstin !== 'Unregistered / Personal' ? currentCustomer.gstin : ''}
-                  onChange={(e) => handleCustomerFieldChange('gstin', e.target.value)}
+                  className="pos-input"
+                  value={invoiceNumber}
+                  onChange={(e) => updateCurrentBill({ invoiceNumber: e.target.value })}
+                  placeholder="INV-1003"
+                />
+              </div>
+
+              <div className="pos-input-group">
+                <label className="pos-label">Invoice Date *</label>
+                <div className="pos-date-wrapper">
+                  <input
+                    type="date"
+                    className="pos-input pos-date-input"
+                    value={invoiceDate}
+                    onChange={(e) => updateCurrentBill({ invoiceDate: e.target.value })}
+                  />
+                  <span className="pos-calendar-icon">📅</span>
+                </div>
+              </div>
+
+              <div className="pos-input-group">
+                <label className="pos-label">Due Date</label>
+                <div className="pos-date-wrapper">
+                  <input
+                    type="date"
+                    className="pos-input pos-date-input"
+                    value={dueDate}
+                    onChange={(e) => updateCurrentBill({ dueDate: e.target.value })}
+                  />
+                  <span className="pos-calendar-icon">📅</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 2. Customer Details Card */}
+          <div className="pos-card pos-customer-card">
+            <div className="pos-card-header">
+              <h3 className="pos-card-title">CUSTOMER DETAILS</h3>
+              <div className="pos-card-header-actions">
+                <select className="pos-select-autofill" onChange={handleAutofillCustomer} defaultValue="">
+                  <option value="" disabled>
+                    Autofill Saved Customer... ▾
+                  </option>
+                  <option value="clear">— Clear / New Customer —</option>
+                  {customers.map((c) => (
+                    <option key={c.id || c.name} value={c.id || c.name}>
+                      {c.name} {c.phone ? `(${c.phone})` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="pos-customer-grid">
+              <div className="pos-input-group">
+                <input
+                  type="text"
+                  className="pos-input"
+                  value={customer.name || ''}
+                  onChange={(e) => handleCustomerChange('name', e.target.value)}
+                  placeholder="Customer / Shop Name *"
+                />
+              </div>
+
+              <div className="pos-input-group">
+                <input
+                  type="text"
+                  className="pos-input"
+                  value={customer.phone || ''}
+                  onChange={(e) => handleCustomerChange('phone', e.target.value)}
+                  placeholder="Phone Number (Optional)"
+                />
+              </div>
+
+              <div className="pos-input-group pos-full-width">
+                <input
+                  type="text"
+                  className="pos-input"
+                  value={customer.address || ''}
+                  onChange={(e) => handleCustomerChange('address', e.target.value)}
+                  placeholder="Customer Address / City (Optional)"
                 />
               </div>
             </div>
+
+            <div className="pos-customer-checkbox-row">
+              <label className="pos-checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={saveCustomerToDirectory}
+                  onChange={(e) => setSaveCustomerToDirectory(e.target.checked)}
+                />
+                <span>Save customer to directory for future bills</span>
+              </label>
+            </div>
           </div>
 
-          {/* Active Invoice Cart */}
-          <div className="pos-cart-card">
-            <div className="pos-cart-header">
-              <div className="pos-cart-header-top">
-                <div className="pos-cart-title-wrap">
-                  <span className="pos-cart-heading">Active Invoice Cart</span>
-                  <span className="pos-cart-count-pill">{totalItemsCount} Items</span>
-                </div>
-                <span className="pos-cart-tax-inv">{currentBill.invoiceNumber || `TAX-INV #${new Date().getFullYear()}-SK-982`}</span>
-              </div>
-              <div className="pos-cart-header-actions">
-                <button
-                  type="button"
-                  className="btn-add-furniture-cart"
-                  onClick={() => setProductPickerOpen(true)}
-                  title="Browse artisanal furniture catalog to add to bill"
-                >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="12" y1="5" x2="12" y2="19" />
-                    <line x1="5" y1="12" x2="19" y2="12" />
-                  </svg>
-                  <span>Browse Furniture</span>
+          {/* 3. ITEMS Section */}
+          <div className="pos-card pos-items-card">
+            <div className="pos-card-header">
+              <h3 className="pos-card-title">ITEMS ({items.length})</h3>
+              <div className="pos-items-header-actions">
+                <select className="pos-select-pick-catalog" onChange={handlePickFromCatalog} defaultValue="">
+                  <option value="" disabled>
+                    + Pick from Products Catalog... ▾
+                  </option>
+                  {products.map((p) => (
+                    <option key={p.id || p.sku} value={p.sku || p.name}>
+                      {p.name} — ₹{Number(p.sellingPrice || p.unitPrice || 0).toLocaleString('en-IN')}
+                    </option>
+                  ))}
+                </select>
+
+                <button type="button" className="pos-btn-add-blank-row" onClick={handleAddBlankRow}>
+                  <span className="pos-plus-icon">⊕</span> Add Blank Row
                 </button>
-                {cartItems.length > 0 && (
-                  <button
-                    type="button"
-                    className="btn-clear-cart"
-                    onClick={handleClearCart}
-                    title="Clear all items in cart"
-                  >
-                    Clear Cart
-                  </button>
-                )}
               </div>
             </div>
 
-            {/* Cart Items List */}
-            <div className="pos-cart-items-list">
-              {cartItems.length > 0 ? (
-                cartItems.map((item) => (
-                  <div key={item.id} className="pos-cart-item-row">
-                    <div className="pos-item-header-part">
-                      <div className="pos-item-icon-box">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#5C3A21" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                          <path d="M3 8h18M5 8v11M19 8v11M8 8v4M16 8v4" />
-                        </svg>
-                      </div>
+            {/* Items Table */}
+            <div className="pos-items-table-wrapper">
+              <div className="pos-items-table-header">
+                <div className="pos-col-idx">#</div>
+                <div className="pos-col-desc">ITEM DESCRIPTION</div>
+                <div className="pos-col-qty">QUANTITY</div>
+                <div className="pos-col-unit">UNIT</div>
+                <div className="pos-col-rate">PRICE / RATE (₹)</div>
+                <div className="pos-col-total">TOTAL & ACTIONS</div>
+              </div>
 
-                      <div className="pos-item-details">
-                        <h3 className="pos-item-name">{item.name}</h3>
-                        <div className="pos-item-meta-line">
-                          <span className="pos-item-sku">{item.sku}</span>
-                          <span className="pos-item-dot">▪</span>
-                          <span className="pos-item-finish">{item.finish}</span>
+              <div className="pos-items-rows-container">
+                {items.map((item, index) => {
+                  const qty = Number(item.quantity) || 0
+                  const prc = Number(item.price) || 0
+                  const lineTotal = qty * prc
+                  const isExpanded = !!expandedItemDetails[item.id]
+
+                  return (
+                    <div key={item.id || index} className="pos-item-row-block">
+                      <div className="pos-item-row-main">
+                        {/* Number Badge */}
+                        <div className="pos-col-idx">
+                          <span className="pos-idx-badge">{index + 1}</span>
+                        </div>
+
+                        {/* Item Description */}
+                        <div className="pos-col-desc">
+                          <input
+                            type="text"
+                            className="pos-input pos-item-desc-input"
+                            value={item.description || ''}
+                            onChange={(e) => handleItemChange(index, 'description', e.target.value)}
+                            placeholder="Enter item description or furniture name"
+                          />
+                        </div>
+
+                        {/* Quantity */}
+                        <div className="pos-col-qty">
+                          <input
+                            type="number"
+                            min="1"
+                            className="pos-input pos-item-qty-input"
+                            value={item.quantity}
+                            onChange={(e) => handleItemChange(index, 'quantity', Math.max(1, Number(e.target.value) || 1))}
+                          />
+                        </div>
+
+                        {/* Unit */}
+                        <div className="pos-col-unit">
+                          <select
+                            className="pos-select pos-item-unit-select"
+                            value={item.unit || 'Pieces (Nos)'}
+                            onChange={(e) => handleItemChange(index, 'unit', e.target.value)}
+                          >
+                            <option value="Pieces (Nos)">Pieces (Nos)</option>
+                            <option value="Sets">Sets</option>
+                            <option value="Kilograms (kg)">Kilograms (kg)</option>
+                            <option value="CFT (Cubic Feet)">CFT (Cubic Feet)</option>
+                            <option value="Sq.Ft (Square Feet)">Sq.Ft (Square Feet)</option>
+                            <option value="Meters (m)">Meters (m)</option>
+                            <option value="Tons">Tons (MT)</option>
+                          </select>
+                        </div>
+
+                        {/* Price / Rate (₹) */}
+                        <div className="pos-col-rate">
+                          <div className="pos-price-input-wrap">
+                            <span className="pos-rupee-symbol">₹</span>
+                            <input
+                              type="number"
+                              min="0"
+                              className="pos-input pos-item-price-input"
+                              value={item.price}
+                              onChange={(e) => handleItemChange(index, 'price', Math.max(0, Number(e.target.value) || 0))}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Total & Action Buttons */}
+                        <div className="pos-col-total">
+                          <span className="pos-item-line-total">
+                            ₹{lineTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                          <button
+                            type="button"
+                            className="pos-row-action-btn pos-btn-copy"
+                            onClick={() => handleDuplicateRow(index)}
+                            title="Duplicate Row"
+                          >
+                            📋
+                          </button>
+                          <button
+                            type="button"
+                            className="pos-row-action-btn pos-btn-delete"
+                            onClick={() => handleDeleteRow(index)}
+                            title="Delete Row"
+                          >
+                            🗑️
+                          </button>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="pos-item-controls-part">
-                      {/* Stepper */}
-                      <div className="pos-item-stepper">
+                      {/* Expandable row strip under each row */}
+                      <div className="pos-item-row-substrip">
                         <button
                           type="button"
-                          className="stepper-btn"
-                          onClick={() => handleUpdateQuantity(item.id, -1)}
+                          className="pos-btn-expand-specs"
+                          onClick={() => toggleItemExpansion(item.id)}
                         >
-                          –
+                          <span className="pos-expand-icon">⚙️</span>
+                          <span>+ Add Dimensions, Wood Species & Finish (Optional) {isExpanded ? '▴' : '▾'}</span>
                         </button>
-                        <span className="stepper-val">{item.quantity}</span>
-                        <button
-                          type="button"
-                          className="stepper-btn"
-                          onClick={() => handleUpdateQuantity(item.id, 1)}
-                        >
-                          +
-                        </button>
+
+                        <div className="pos-gst-selector-wrap">
+                          <span className="pos-gst-label">GST:</span>
+                          <select
+                            className="pos-select-gst"
+                            value={item.gstRate !== undefined ? item.gstRate : 0}
+                            onChange={(e) => handleItemChange(index, 'gstRate', Number(e.target.value))}
+                          >
+                            <option value="0">0% (Nil)</option>
+                            <option value="5">5%</option>
+                            <option value="12">12%</option>
+                            <option value="18">18%</option>
+                            <option value="28">28%</option>
+                          </select>
+                        </div>
                       </div>
 
-                      {/* Price Block */}
-                      <div className="pos-item-price-block">
-                        <span className="pos-item-total-price">
-                          <span className="straight-rupee">₹</span>
-                          {formatRupees(item.unitPrice * item.quantity)}
-                        </span>
-                        <span className="pos-item-unit-rate">
-                          <span className="straight-rupee">₹</span>
-                          {formatRupees(item.unitPrice)} / unit
-                        </span>
-                      </div>
-
-                      {/* Trash Delete Action */}
-                      <button
-                        type="button"
-                        className="btn-delete-item"
-                        onClick={() => handleRemoveItem(item.id)}
-                        aria-label="Remove item"
-                      >
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="3 6 5 6 21 6" />
-                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                        </svg>
-                      </button>
+                      {/* Expanded Timber Specifications (Optional) */}
+                      {isExpanded && (
+                        <div className="pos-item-specs-drawer">
+                          <div className="pos-specs-grid">
+                            <div>
+                              <label className="pos-specs-label">Length (cm)</label>
+                              <input
+                                type="text"
+                                className="pos-input"
+                                value={item.length || ''}
+                                onChange={(e) => handleItemChange(index, 'length', e.target.value)}
+                                placeholder="e.g. 210"
+                              />
+                            </div>
+                            <div>
+                              <label className="pos-specs-label">Width (cm)</label>
+                              <input
+                                type="text"
+                                className="pos-input"
+                                value={item.width || ''}
+                                onChange={(e) => handleItemChange(index, 'width', e.target.value)}
+                                placeholder="e.g. 100"
+                              />
+                            </div>
+                            <div>
+                              <label className="pos-specs-label">Height (cm)</label>
+                              <input
+                                type="text"
+                                className="pos-input"
+                                value={item.height || ''}
+                                onChange={(e) => handleItemChange(index, 'height', e.target.value)}
+                                placeholder="e.g. 76"
+                              />
+                            </div>
+                            <div>
+                              <label className="pos-specs-label">Wood Species</label>
+                              <input
+                                type="text"
+                                className="pos-input"
+                                value={item.woodSpecies || ''}
+                                onChange={(e) => handleItemChange(index, 'woodSpecies', e.target.value)}
+                                placeholder="Teak / Rosewood"
+                              />
+                            </div>
+                            <div>
+                              <label className="pos-specs-label">Finish / Polish</label>
+                              <input
+                                type="text"
+                                className="pos-input"
+                                value={item.finish || ''}
+                                onChange={(e) => handleItemChange(index, 'finish', e.target.value)}
+                                placeholder="Organic Beeswax"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))
-              ) : (
-                <div className="pos-empty-cart-state">
-                  <div className="empty-cart-icon-wrap">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#A06A3A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="9" cy="21" r="1" />
-                      <circle cx="20" cy="21" r="1" />
-                      <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-                    </svg>
-                  </div>
-                  <h4 className="empty-cart-title">Cart is currently empty</h4>
-                  <p className="empty-cart-subtitle">
-                    Click any <strong>Artisan Timber Line</strong> or search SKU above to add timber furniture to this bill.
-                  </p>
-                  <button
-                    type="button"
-                    className="btn-browse-timber-cta"
-                    onClick={() => setProductPickerOpen(true)}
-                  >
-                    + Browse Timber Catalog
-                  </button>
-                </div>
-              )}
+                  )
+                })}
+              </div>
             </div>
-
           </div>
-        </div>
 
-        {/* Right Column: Invoice Summary & Settlement */}
-        <div className="pos-right-column">
-          <div className="pos-summary-card">
-            {/* Header */}
-            <div className="summary-card-header">
-              <div>
-                <h2 className="summary-title">Invoice Summary</h2>
-                <p className="summary-subtitle">
-                  {totalItemsCount} items • {totalUnits} units
-                </p>
-              </div>
-              <span className="summary-hsn-tag">HSN {settings.hsnCode || '9403'}</span>
-            </div>
-
-            {/* Subtotal & GST Rows */}
-            <div className="summary-breakdown">
-              <div className="breakdown-row">
-                <span className="breakdown-label">Subtotal</span>
-                <span className="breakdown-value">
-                  <span className="straight-rupee">₹</span>
-                  {formatRupees(subtotal)}.00
-                </span>
-              </div>
-
-              <div className="breakdown-row gst">
-                <span className="breakdown-label">CGST ({cgstRateNum}%)</span>
-                <span className="breakdown-value">
-                  <span className="straight-rupee">₹</span>
-                  {formatRupees(cgst)}.00
-                </span>
-              </div>
-
-              <div className="breakdown-row gst">
-                <span className="breakdown-label">SGST ({sgstRateNum}%)</span>
-                <span className="breakdown-value">
-                  <span className="straight-rupee">₹</span>
-                  {formatRupees(sgst)}.00
-                </span>
-              </div>
-            </div>
-
-            {/* Grand Total Box */}
-            <div className="pos-grand-total-box">
-              <div className="grand-total-left">
-                <span className="grand-total-label">GRAND TOTAL</span>
-                <span className="grand-total-sub">Incl. all taxes</span>
-              </div>
-
-              <div className="grand-total-right">
-                <span className="grand-total-amount">
-                  <span className="straight-rupee">₹</span>
-                  {formatRupees(grandTotal)}
-                </span>
-              </div>
-            </div>
-
-
-            {/* Primary Action Button (Derived from Settings & Opens Review/Edit Bill) */}
+          {/* 4. Collapsible Box: Additional Options */}
+          <div className="pos-card pos-additional-options-card">
             <button
               type="button"
-              className="btn-print-tax-invoice"
-              onClick={handleOpenInvoiceModal}
-              disabled={cartItems.length === 0}
+              className="pos-accordion-toggle"
+              onClick={() => setAdditionalOptionsOpen(!additionalOptionsOpen)}
             >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="6 9 6 2 18 2 18 9" />
-                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-                <rect x="6" y="14" width="12" height="8" />
-              </svg>
-              <span>Save & Print Tax Invoice</span>
+              <div className="pos-accordion-title">
+                <span>⚙️</span>
+                <span>Additional Options (Discount, Delivery, Customer GST, Note)</span>
+              </div>
+              <span className="pos-accordion-chevron">{additionalOptionsOpen ? '▴' : '▾'}</span>
             </button>
 
-            {/* Secondary Action: Hold Draft */}
-            <div className="pos-secondary-actions">
-              <button
-                type="button"
-                className="btn-secondary-pos"
-                onClick={handleHoldOrder}
-                style={{ width: '100%' }}
-              >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="6" y="4" width="4" height="16" />
-                  <rect x="14" y="4" width="4" height="16" />
-                </svg>
-                <span>{holdSuccess ? '✓ Held as Draft' : 'Hold Order'}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Modal: Customer Picker */}
-      {customerModalOpen && (
-        <div className="pos-modal-overlay" onClick={() => setCustomerModalOpen(false)}>
-          <div className="pos-modal-card" onClick={(e) => e.stopPropagation()}>
-            <div className="pos-modal-header">
-              <h3 className="pos-modal-title">Select Customer for Bill</h3>
-              <button type="button" className="pos-modal-close" onClick={() => setCustomerModalOpen(false)}>✕</button>
-            </div>
-            <div className="pos-customer-picker-list">
-              {customers.map((c) => (
-                <div
-                  key={c.id}
-                  className={`customer-picker-item ${currentCustomer.id === c.id ? 'active' : ''}`}
-                  onClick={() => handleSelectCustomer(c)}
-                >
-                  <div className="picker-avatar">{c.initials}</div>
-                  <div className="picker-info">
-                    <span className="picker-name">{c.name}</span>
-                    <span className="picker-phone">{c.phone} • {c.location}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal: Timber Catalog Item Picker */}
-      {productPickerOpen && (
-        <div className="pos-modal-overlay" onClick={() => setProductPickerOpen(false)}>
-          <div className="pos-modal-card catalog-picker-card" onClick={(e) => e.stopPropagation()}>
-            <div className="pos-modal-header">
-              <div>
-                <h3 className="pos-modal-title">Artisanal Furniture Catalog</h3>
-                <span className="picker-sub">Category: <strong>{activeCategory}</strong> • Click any line to add to current bill</span>
-              </div>
-              <div className="catalog-header-actions-wrap">
-                {onNavigateToProducts && (
-                  <button
-                    type="button"
-                    className="btn-modal-add-product"
-                    onClick={() => {
-                      setProductPickerOpen(false)
-                      onNavigateToProducts()
-                    }}
-                    title="Open Add Product form to create brand new item"
-                  >
-                    + Create New Product
-                  </button>
-                )}
-                <button type="button" className="pos-modal-close" onClick={() => setProductPickerOpen(false)}>✕</button>
-              </div>
-            </div>
-
-            <div className="catalog-category-tabs">
-              {categories.map((c) => (
-                <button
-                  key={c.name}
-                  type="button"
-                  className={`catalog-tab-btn ${activeCategory === c.name ? 'active' : ''}`}
-                  onClick={() => setActiveCategory(c.name)}
-                >
-                  {c.name}
-                </button>
-              ))}
-            </div>
-
-            <div className="pos-catalog-grid-scroll">
-              {filteredProducts.map((p) => {
-                const inCart = cartItems.find((ci) => ci.sku === p.sku)
-                return (
-                  <div key={p.sku} className="catalog-grid-item">
-                    <div className="catalog-item-info">
-                      <span className="catalog-item-sku">{p.sku}</span>
-                      <h4 className="catalog-item-name">{p.name}</h4>
-                      <span className="catalog-item-finish">{p.finish} • {p.woodSpecies}</span>
-                      <span className="catalog-item-stock">{p.stockQuantity} in stock</span>
-                    </div>
-                    <div className="catalog-item-action">
-                      <span className="catalog-price">₹{formatRupees(p.unitPrice)}</span>
-                      <button
-                        type="button"
-                        className="btn-catalog-add"
-                        onClick={() => handleAddProductToCart(p)}
-                      >
-                        {inCart ? `+ Add (${inCart.quantity} in cart)` : '+ Add to Bill'}
-                      </button>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-
-            <div className="catalog-picker-footer">
-              <button
-                type="button"
-                className="btn-done-picking"
-                onClick={() => setProductPickerOpen(false)}
-              >
-                Done Adding Items
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal: Tax Invoice Preview & Edit Bill Details (Derived from Settings - Requirement 2) */}
-      {invoiceModalOpen && (
-        <div className="pos-modal-overlay" onClick={() => setInvoiceModalOpen(false)}>
-          <div className="pos-invoice-full-modal" onClick={(e) => e.stopPropagation()}>
-            {/* Modal Top Switcher */}
-            <div className="invoice-modal-header-bar">
-              <div className="inv-tabs">
-                <button
-                  type="button"
-                  className={`inv-tab-btn ${activeInvoiceTab === 'preview' ? 'active' : ''}`}
-                  onClick={() => setActiveInvoiceTab('preview')}
-                >
-                  🖨 Tax Invoice Preview
-                </button>
-                <button
-                  type="button"
-                  className={`inv-tab-btn ${activeInvoiceTab === 'edit' ? 'active' : ''}`}
-                  onClick={() => setActiveInvoiceTab('edit')}
-                >
-                  ✏ Edit Invoice Bill Details
-                </button>
-              </div>
-
-              <div className="inv-header-right-actions">
-                <button
-                  type="button"
-                  className="btn-inv-print"
-                  onClick={handleFinalizeAndPrint}
-                  title="Print GST Invoice"
-                >
-                  🖨 Print Invoice
-                </button>
-                <button
-                  type="button"
-                  className="btn-inv-close"
-                  onClick={() => setInvoiceModalOpen(false)}
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-
-            {/* Tab 1: Tax Invoice Preview (Print Area) */}
-            {activeInvoiceTab === 'preview' ? (
-              <div className="invoice-print-area">
-                {/* Depot Header Derived from System Settings */}
-                <div className="inv-sheet-header">
-                  <div className="inv-brand-block">
-                    <span className="inv-brand-title">{settings.depotName || 'Kerala Wood Furniture - Sivakasi Depot'}</span>
-                    <span className="inv-brand-tagline">HERITAGE ARTISAN TIMBER • SIVAKASI</span>
-                    <p className="inv-depot-address">{settings.address || 'Sivakasi Central Depot & Mill Yard, Sivakasi'}</p>
-                    <p className="inv-depot-contact">
-                      Phone: {settings.contactPhone || '+91 94842 89120'} | Email: {settings.contactEmail || 'depot@keralawood.in'}
-                    </p>
-                  </div>
-
-                  <div className="inv-gst-statutory-block">
-                    <div className="statutory-badge">GST TAX INVOICE</div>
-                    <div className="statutory-field"><strong>GSTIN:</strong> {settings.gstin || '33AABCP9821K1ZK'}</div>
-                    <div className="statutory-field"><strong>HSN Code:</strong> {settings.hsnCode || '9403'}</div>
-                    <div className="statutory-field"><strong>Forest Reg:</strong> {settings.dealerLicense || 'SFD/SVK/TMR/2023-884'}</div>
-                  </div>
-                </div>
-
-                <div className="inv-sheet-divider" />
-
-                {/* Invoice & Customer Meta Grid */}
-                <div className="inv-meta-grid">
-                  <div className="inv-billed-to">
-                    <span className="inv-section-title">BILLED TO (PATRON):</span>
-                    <h3 className="inv-client-name">{currentCustomer.name || 'Walk-in Patron'}</h3>
-                    <p className="inv-client-phone"><strong>Phone:</strong> {currentCustomer.phone || '-'}</p>
-                    <p className="inv-client-addr"><strong>Billing Address:</strong> {currentCustomer.address || currentCustomer.location || 'Sivakasi'}</p>
-                    <p className="inv-client-delivery"><strong>Delivery Address:</strong> {currentCustomer.deliveryAddress || currentCustomer.address || 'Same as Billing Address'}</p>
-                    {currentCustomer.gstin && currentCustomer.gstin !== 'Unregistered / Personal' && (
-                      <p className="inv-client-gstin"><strong>Client GSTIN:</strong> {currentCustomer.gstin}</p>
-                    )}
-                  </div>
-
-                  <div className="inv-doc-info">
-                    <span className="inv-section-title">INVOICE SPECIFICS:</span>
-                    <div className="inv-info-row">
-                      <span>Invoice No:</span>
-                      <strong>{currentBill.invoiceNumber || `TAX-INV #${new Date().getFullYear()}-SK-982`}</strong>
-                    </div>
-                    <div className="inv-info-row">
-                      <span>Date & Time:</span>
-                      <strong>{getInvoiceDateTimeDisplay()}</strong>
-                    </div>
-                    <div className="inv-info-row">
-                      <span>Place of Supply:</span>
-                      <span>Sivakasi, Tamil Nadu (State Code: 33)</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Itemized Table */}
-                <div className="inv-table-wrap">
-                  <table className="inv-table">
-                    <thead>
-                      <tr>
-                        <th>#</th>
-                        <th>Artisan Timber Description & Finish</th>
-                        <th>HSN</th>
-                        <th className="num-col">Qty</th>
-                        <th className="num-col">Unit Rate (₹)</th>
-                        <th className="num-col">CGST ({cgstRateNum}%)</th>
-                        <th className="num-col">SGST ({sgstRateNum}%)</th>
-                        <th className="num-col">Amount (₹)</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {cartItems.map((item, idx) => {
-                        const itemSub = item.unitPrice * item.quantity
-                        const itemCgst = Math.round((itemSub * cgstRateNum) / 100)
-                        const itemSgst = Math.round((itemSub * sgstRateNum) / 100)
-                        const itemTotal = itemSub + itemCgst + itemSgst
-                        return (
-                          <tr key={item.id}>
-                            <td>{idx + 1}</td>
-                            <td>
-                              <strong>{item.name}</strong>
-                              <span className="inv-item-sub">{item.sku} • {item.finish}</span>
-                            </td>
-                            <td>{settings.hsnCode || '9403'}</td>
-                            <td className="num-col">{item.quantity}</td>
-                            <td className="num-col">₹{formatRupees(item.unitPrice)}</td>
-                            <td className="num-col">₹{formatRupees(itemCgst)}</td>
-                            <td className="num-col">₹{formatRupees(itemSgst)}</td>
-                            <td className="num-col font-bold">₹{formatRupees(itemTotal)}</td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Totals & Settlement Box */}
-                <div className="inv-settlement-row">
-                  <div className="inv-bank-box">
-                    <span className="inv-box-heading">DEPOT SETTLEMENT ACCOUNT (DIRECT SETTLEMENT):</span>
-                    <p className="bank-meta"><strong>Bank:</strong> {settings.bankName || 'State Bank of India - Sivakasi Town Branch'}</p>
-                    <p className="bank-meta"><strong>A/C No:</strong> {settings.accountNumber || '4092817290192'}</p>
-                    <p className="bank-meta"><strong>IFSC Code:</strong> {settings.ifscCode || 'SBIN0008839'}</p>
-                    <p className="bank-meta"><strong>UPI VPA:</strong> {settings.upiId || 'keralawood.sivakasi@sbi'}</p>
-                    {currentBill.packagingNote && (
-                      <p className="packaging-note-text">
-                        <strong>Packaging & Transit Note:</strong> {currentBill.packagingNote}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="inv-totals-box">
-                    <div className="inv-tot-line">
-                      <span>Taxable Subtotal:</span>
-                      <strong>₹{formatRupees(subtotal)}.00</strong>
-                    </div>
-                    <div className="inv-tot-line">
-                      <span>Central GST (CGST {cgstRateNum}%):</span>
-                      <span>₹{formatRupees(cgst)}.00</span>
-                    </div>
-                    <div className="inv-tot-line">
-                      <span>State GST (SGST {sgstRateNum}%):</span>
-                      <span>₹{formatRupees(sgst)}.00</span>
-                    </div>
-                    <div className="inv-tot-divider" />
-                    <div className="inv-tot-line grand">
-                      <span>Grand Total (Settled):</span>
-                      <strong className="grand-val">₹{formatRupees(grandTotal)}.00</strong>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Signatory & Legal Terms Derived from Settings */}
-                <div className="inv-footer-signatures">
-                  <div className="inv-legal-disclaimer">
-                    <span className="disclaimer-label">TERMS & TIMBER GRAIN DISCLAIMER:</span>
-                    <p className="disclaimer-text">{settings.disclaimer || 'Natural variations in teak & rosewood grain are organic characteristics. Claims accepted within 7 days of yard delivery.'}</p>
-                  </div>
-
-                  <div className="inv-signatory-block">
-                    <div className="signature-line" />
-                    <span className="signatory-name">{settings.signatoryName || 'Rajesh Sivan'}</span>
-                    <span className="signatory-title">{settings.signatoryDesignation || 'Depot Lead & Store Manager'}</span>
-                    <span className="signatory-store">Kerala Wood Furniture • Sivakasi</span>
-                  </div>
-                </div>
-
-                {/* Final Confirmation Buttons */}
-                <div className="inv-bottom-actions">
-                  <button
-                    type="button"
-                    className="btn-print-bill-primary"
-                    onClick={handleFinalizeAndPrint}
-                  >
-                    🖨 Print Official Invoice
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-edit-bill-details"
-                    onClick={() => setActiveInvoiceTab('edit')}
-                  >
-                    ✏ Edit Bill Details
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-done-bill-next"
-                    onClick={handleNextBill}
-                  >
-                    ✓ Complete & Next Bill
-                  </button>
-                </div>
-              </div>
-            ) : (
-              /* Tab 2: Edit Invoice Bill Details (Requirement 2) */
-              <div className="invoice-edit-form-wrap">
-                <div className="edit-form-header">
-                  <h3 className="edit-form-title">Edit Invoice Bill Details</h3>
-                  <p className="edit-form-sub">
-                    Adjust customer billing data, tax invoice code, payment terms, or transit notes before printing.
-                  </p>
-                </div>
-
-                <div className="edit-fields-grid">
-                  <div className="edit-field">
-                    <label>Invoice Number</label>
+            {additionalOptionsOpen && (
+              <div className="pos-accordion-content">
+                <div className="pos-additional-grid">
+                  <div className="pos-input-group">
+                    <label className="pos-label">Trade Discount (₹)</label>
                     <input
-                      type="text"
-                      value={editInvNumber}
-                      onChange={(e) => setEditInvNumber(e.target.value)}
+                      type="number"
+                      min="0"
+                      className="pos-input"
+                      value={discount}
+                      onChange={(e) => updateCurrentBill({ discount: Math.max(0, Number(e.target.value) || 0) })}
+                      placeholder="0"
                     />
                   </div>
 
-                  <div className="edit-field">
-                    <label>Customer / Patron Name</label>
+                  <div className="pos-input-group">
+                    <label className="pos-label">Delivery Logistics Charges (₹)</label>
                     <input
-                      type="text"
-                      value={editCustomerName}
-                      onChange={(e) => setEditCustomerName(e.target.value)}
+                      type="number"
+                      min="0"
+                      className="pos-input"
+                      value={deliveryCharge}
+                      onChange={(e) => updateCurrentBill({ deliveryCharge: Math.max(0, Number(e.target.value) || 0) })}
+                      placeholder="0"
                     />
                   </div>
 
-                  <div className="edit-field">
-                    <label>Contact Phone</label>
+                  <div className="pos-input-group">
+                    <label className="pos-label">Client GSTIN (Optional)</label>
                     <input
                       type="text"
-                      value={editCustomerPhone}
-                      onChange={(e) => setEditCustomerPhone(e.target.value)}
+                      className="pos-input"
+                      value={customer.gstin || ''}
+                      onChange={(e) => handleCustomerChange('gstin', e.target.value)}
+                      placeholder="32AABCP9821K1ZK"
                     />
                   </div>
 
-                  <div className="edit-field">
-                    <label>Patron GSTIN</label>
+                  <div className="pos-input-group pos-full-width">
+                    <label className="pos-label">Invoice Note / Disclaimer</label>
                     <input
                       type="text"
-                      value={editCustomerGstin}
-                      onChange={(e) => setEditCustomerGstin(e.target.value)}
+                      className="pos-input"
+                      value={notes}
+                      onChange={(e) => updateCurrentBill({ notes: e.target.value })}
+                      placeholder="e.g. Natural teak wood grain variation is normal."
                     />
                   </div>
-
-                  <div className="edit-field">
-                    <label>Billing Address</label>
-                    <input
-                      type="text"
-                      value={editCustomerAddress}
-                      onChange={(e) => setEditCustomerAddress(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="edit-field">
-                    <label>Delivery Address</label>
-                    <input
-                      type="text"
-                      value={editDeliveryAddress}
-                      onChange={(e) => setEditDeliveryAddress(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="edit-form-actions">
-                  <button
-                    type="button"
-                    className="btn-save-bill-edits"
-                    onClick={handleSaveBillEdits}
-                  >
-                    Save Changes & Return to Preview
-                  </button>
-                  <button
-                    type="button"
-                    className="btn-cancel-bill-edits"
-                    onClick={() => setActiveInvoiceTab('preview')}
-                  >
-                    Cancel
-                  </button>
                 </div>
               </div>
             )}
           </div>
         </div>
-      )}
 
-      {/* Insufficient Stock Warning Modal Dossier */}
-      {stockAlertModal && (
-        <div className="stock-alert-overlay" onClick={() => setStockAlertModal(null)}>
-          <div className="stock-alert-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="stock-alert-header">
-              <div className="stock-alert-icon-wrap">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C0392B" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
-                  <line x1="12" y1="9" x2="12" y2="13" />
-                  <line x1="12" y1="17" x2="12.01" y2="17" />
-                </svg>
+        {/* RIGHT COLUMN: BILL SUMMARY Card */}
+        <div className="pos-concept-right-column">
+          <div className="pos-card pos-summary-card">
+            <h3 className="pos-summary-title">BILL SUMMARY</h3>
+
+            <div className="pos-summary-lines">
+              <div className="pos-summary-line">
+                <span className="pos-line-label">Items Subtotal:</span>
+                <span className="pos-line-val">
+                  ₹{itemsSubtotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
               </div>
-              <div className="stock-alert-header-text">
-                <h3 className="stock-alert-title">Insufficient Stock Alert</h3>
-                <span className="stock-alert-depot-tag">Sivakasi Timber Yard & Central Depot</span>
-              </div>
-              <button
-                type="button"
-                className="stock-alert-close-btn"
-                onClick={() => setStockAlertModal(null)}
-              >
-                ✕
-              </button>
+
+              {discount > 0 && (
+                <div className="pos-summary-line pos-discount-line">
+                  <span className="pos-line-label">Trade Discount:</span>
+                  <span className="pos-line-val">-₹{discount.toLocaleString('en-IN')}</span>
+                </div>
+              )}
+
+              {deliveryCharge > 0 && (
+                <div className="pos-summary-line">
+                  <span className="pos-line-label">Delivery Charges:</span>
+                  <span className="pos-line-val">+₹{deliveryCharge.toLocaleString('en-IN')}</span>
+                </div>
+              )}
+
+              {totalGst > 0 && (
+                <div className="pos-summary-line">
+                  <span className="pos-line-label">Tax / GST Breakdown:</span>
+                  <span className="pos-line-val">
+                    +₹{totalGst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
+              )}
             </div>
 
-            <div className="stock-alert-body">
-              <div className="stock-alert-prod-info">
-                <span className="stock-alert-prod-sku">{stockAlertModal.product?.sku}</span>
-                <h4 className="stock-alert-prod-name">{stockAlertModal.product?.name}</h4>
-              </div>
+            <div className="pos-summary-divider" />
 
-              <div className="stock-alert-comparison-grid">
-                <div className="stock-comp-card in-yard">
-                  <span className="comp-label">In Yard Stock</span>
-                  <span className="comp-value">{stockAlertModal.availableStock} Units</span>
-                </div>
-                <div className="stock-comp-arrow">→</div>
-                <div className="stock-comp-card requested">
-                  <span className="comp-label">Requested for Bill</span>
-                  <span className="comp-value">{stockAlertModal.requestedQty} Units</span>
-                </div>
+            {/* Grand Total & Dynamic In-Words */}
+            <div className="pos-grand-total-block">
+              <div className="pos-grand-total-row">
+                <span className="pos-grand-label">GRAND TOTAL:</span>
+                <span className="pos-grand-amount">
+                  ₹{grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </span>
               </div>
-
-              <p className="stock-alert-message">
-                The requested quantity exceeds currently verified stock reserves at Sivakasi Central Yard. Would you like to proceed with this bill allocation as a backorder?
-              </p>
+              <div className="pos-grand-words">
+                <em>{numberToWordsINR(grandTotal)}</em>
+              </div>
             </div>
 
-            <div className="stock-alert-actions">
+            {/* Payment Status Segmented Control */}
+            <div className="pos-payment-status-block">
+              <label className="pos-label">Payment Status</label>
+              <div className="pos-payment-status-segmented">
+                {['Pending', 'Partial', 'Paid'].map((st) => (
+                  <button
+                    key={st}
+                    type="button"
+                    className={`pos-status-tab ${paymentStatus === st ? 'active' : ''}`}
+                    onClick={() => updateCurrentBill({ paymentStatus: st })}
+                  >
+                    {st}
+                  </button>
+                ))}
+              </div>
+
+              {/* Partial Amount Input */}
+              {paymentStatus === 'Partial' && (
+                <div className="pos-partial-input-wrap">
+                  <div className="pos-input-group">
+                    <label className="pos-label">Amount Paid (₹)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      max={grandTotal}
+                      className="pos-input"
+                      value={amountPaid}
+                      onChange={(e) => updateCurrentBill({ amountPaid: Number(e.target.value) || 0 })}
+                    />
+                  </div>
+                  <div className="pos-partial-balance">
+                    <span>Balance Due:</span>
+                    <strong>₹{balanceDue.toLocaleString('en-IN')}</strong>
+                  </div>
+                </div>
+              )}
+
+              {/* Payment Mode Selector */}
+              <div className="pos-payment-mode-wrap">
+                <label className="pos-label">Payment Mode</label>
+                <select
+                  className="pos-select"
+                  value={paymentMode}
+                  onChange={(e) => updateCurrentBill({ paymentMode: e.target.value })}
+                >
+                  <option value="UPI">UPI / QR Transfer</option>
+                  <option value="Cash">Cash at Yard</option>
+                  <option value="Bank Transfer">Bank Wire (NEFT/RTGS)</option>
+                  <option value="Cheque">Commercial Cheque</option>
+                  <option value="Card">Credit / Debit Card</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="pos-summary-actions">
               <button
                 type="button"
-                className="btn-stock-alert-cancel"
-                onClick={() => setStockAlertModal(null)}
+                className="pos-btn-save-bill"
+                onClick={() => handleSaveBill(false)}
               >
-                Cancel
+                💾 Save Bill
               </button>
+
               <button
                 type="button"
-                className="btn-stock-alert-ok"
-                onClick={stockAlertModal.onConfirm}
+                className="pos-btn-save-print"
+                onClick={() => handleSaveBill(true)}
               >
-                OK / Proceed
+                👁️ Save & Print Preview
               </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Printable Invoice Modal Dossier */}
+      {invoiceModalOpen && (
+        <div className="pos-modal-overlay" onClick={() => setInvoiceModalOpen(false)}>
+          <div className="pos-invoice-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="pos-modal-header">
+              <div className="pos-modal-header-info">
+                <h3>Kerala Wood Furniture — Tax Invoice</h3>
+                <p>Official Sivakasi Central Depot Tax Document</p>
+              </div>
+              <div className="pos-modal-header-actions">
+                <button type="button" className="pos-btn-print-now" onClick={handlePrint}>
+                  🖨️ Print Invoice
+                </button>
+                <button type="button" className="pos-btn-modal-close" onClick={() => setInvoiceModalOpen(false)}>
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            <div className="pos-invoice-printable-sheet" id="pos-printable-invoice">
+              {/* Invoice Header */}
+              <div className="pos-print-top">
+                <div className="pos-print-brand">
+                  <h2>{settings.depotName || 'Kerala Wood Furniture — Sivakasi Depot'}</h2>
+                  <p>{settings.address || 'Sivakasi Central Depot & Mill Yard, Sivakasi'}</p>
+                  <p>
+                    Phone: {settings.contactPhone} • GSTIN: {settings.gstin} • HSN: {settings.hsnCode}
+                  </p>
+                </div>
+                <div className="pos-print-meta">
+                  <div className="pos-print-badge">TAX INVOICE</div>
+                  <p>
+                    <strong>Invoice #:</strong> {invoiceNumber}
+                  </p>
+                  <p>
+                    <strong>Invoice Date:</strong> {invoiceDate}
+                  </p>
+                  <p>
+                    <strong>Due Date:</strong> {dueDate}
+                  </p>
+                  <p>
+                    <strong>Payment:</strong> {paymentStatus} ({paymentMode})
+                  </p>
+                </div>
+              </div>
+
+              {/* Customer Box */}
+              <div className="pos-print-customer-box">
+                <div className="pos-print-col">
+                  <h4>Billed To:</h4>
+                  <p className="pos-print-cust-name">{customer.name || 'Walk-in Patron'}</p>
+                  <p>{customer.address || 'Sivakasi Yard Destination'}</p>
+                  <p>Phone: {customer.phone || 'N/A'}</p>
+                  <p>GSTIN: {customer.gstin || 'Unregistered / Personal'}</p>
+                </div>
+                <div className="pos-print-col">
+                  <h4>Depot & Mill Yard:</h4>
+                  <p>{settings.depotName}</p>
+                  <p>Forest Timber Transit Permit: SFD/SVK/TMR/2026-884</p>
+                  <p>Payment Terms: {settings.paymentTerms || 'Immediate / POS'}</p>
+                </div>
+              </div>
+
+              {/* Items Table */}
+              <table className="pos-print-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Item Description</th>
+                    <th>Unit</th>
+                    <th>Qty</th>
+                    <th>Price (₹)</th>
+                    <th>GST</th>
+                    <th>Total (₹)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((it, idx) => {
+                    const rowLine = (Number(it.quantity) || 0) * (Number(it.price) || 0)
+                    return (
+                      <tr key={it.id || idx}>
+                        <td>{idx + 1}</td>
+                        <td>
+                          <strong>{it.description || 'Timber Item'}</strong>
+                          {it.woodSpecies && (
+                            <span className="pos-print-subspec">
+                              {' '}
+                              • {it.woodSpecies} {it.finish ? `(${it.finish})` : ''}
+                            </span>
+                          )}
+                        </td>
+                        <td>{it.unit || 'Pieces'}</td>
+                        <td>{it.quantity}</td>
+                        <td>₹{Number(it.price).toLocaleString('en-IN')}</td>
+                        <td>{it.gstRate || 0}%</td>
+                        <td>₹{rowLine.toLocaleString('en-IN')}</td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+
+              {/* Totals & Signatures */}
+              <div className="pos-print-footer">
+                <div className="pos-print-words-and-notes">
+                  <p>
+                    <strong>Amount in Words:</strong>
+                  </p>
+                  <p className="pos-print-italic-words">{numberToWordsINR(grandTotal)}</p>
+                  {notes && (
+                    <p className="pos-print-note">
+                      <strong>Note:</strong> {notes}
+                    </p>
+                  )}
+                  <p className="pos-print-disclaimer">{settings.disclaimer}</p>
+                </div>
+
+                <div className="pos-print-summary-totals">
+                  <div className="pos-print-line">
+                    <span>Items Subtotal:</span>
+                    <span>₹{itemsSubtotal.toLocaleString('en-IN')}</span>
+                  </div>
+                  {discount > 0 && (
+                    <div className="pos-print-line">
+                      <span>Trade Discount:</span>
+                      <span>-₹{discount.toLocaleString('en-IN')}</span>
+                    </div>
+                  )}
+                  {deliveryCharge > 0 && (
+                    <div className="pos-print-line">
+                      <span>Delivery Logistics:</span>
+                      <span>+₹{deliveryCharge.toLocaleString('en-IN')}</span>
+                    </div>
+                  )}
+                  {totalGst > 0 && (
+                    <div className="pos-print-line">
+                      <span>GST Amount:</span>
+                      <span>+₹{totalGst.toLocaleString('en-IN')}</span>
+                    </div>
+                  )}
+                  <div className="pos-print-line pos-print-grand">
+                    <strong>Grand Total:</strong>
+                    <strong>₹{grandTotal.toLocaleString('en-IN')}</strong>
+                  </div>
+                  {paymentStatus === 'Partial' && (
+                    <div className="pos-print-line pos-print-balance">
+                      <span>Balance Due:</span>
+                      <span>₹{balanceDue.toLocaleString('en-IN')}</span>
+                    </div>
+                  )}
+                  <div className="pos-print-sign-box">
+                    <p>For {settings.depotName}</p>
+                    <div className="pos-print-sign-space" />
+                    <p>Authorized Signatory: {settings.signatoryName || 'Rajesh Sivan'}</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

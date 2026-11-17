@@ -1,9 +1,12 @@
 import { Product } from './models/Product.js';
 import { Sale } from './models/Sale.js';
 import { Category } from './models/Category.js';
+import { Customer } from './models/Customer.js';
+import { Settings } from './models/Settings.js';
 
 export async function seedInitialData() {
   try {
+    // 1. Products
     const productCount = await Product.countDocuments();
     if (productCount === 0) {
       console.log('[Seed] Seeding initial artisanal products...');
@@ -23,9 +26,9 @@ export async function seedInitialData() {
           surfacePolish: 'Natural Protective Organic-Beeswax',
           joineryTechnique: 'Mortise & Tenon with Rosewood Dowels',
           warranty: '5-Yr Termite & Wood',
-          stockQuantity: 2,
+          stockQuantity: 4,
           lowStockThreshold: 2,
-          depotLocation: 'Kochi Central Depot',
+          depotLocation: 'Sivakasi Central Depot',
           warehouseBay: 'Bay C-04 / Shed 2',
           leadTime: 'In Stock (Ready to Ship)',
           packagingType: 'Corrugated Multi-layer Wood Wrap',
@@ -50,9 +53,9 @@ export async function seedInitialData() {
           surfacePolish: 'Oil & Wax Polish',
           joineryTechnique: 'Traditional Lap Joinery',
           warranty: '10-Yr Royal Warranty',
-          stockQuantity: 1,
+          stockQuantity: 2,
           lowStockThreshold: 2,
-          depotLocation: 'Kochi Central Depot',
+          depotLocation: 'Sivakasi Central Depot',
           warehouseBay: 'Bay B-02 / Shed 1',
           leadTime: 'In Stock (Ready to Ship)',
           packagingType: 'Wooden Crate Packing',
@@ -77,15 +80,15 @@ export async function seedInitialData() {
           surfacePolish: 'Organic Matte Polish',
           joineryTechnique: 'Mortise & Tenon',
           warranty: '5-Yr Termite & Wood',
-          stockQuantity: 3,
-          lowStockThreshold: 2,
-          depotLocation: 'Kochi Central Depot',
+          stockQuantity: 18,
+          lowStockThreshold: 4,
+          depotLocation: 'Sivakasi Central Depot',
           warehouseBay: 'Bay A-01 / Shed 1',
           leadTime: 'In Stock (Ready to Ship)',
           packagingType: 'Padded Bubble Wrap',
           shippingClass: 'Class 2 - Medium Parcel (Flat Pack / Courier)',
           costPrice: 9200,
-          sellingPrice: 14500,
+          sellingPrice: 6500,
           gstSlab: '18% GST (HSN 9403 - Wooden Furniture)',
           tradeDiscount: 'Architect / Builder Tier 1 (12% Off)',
           transitPass: true,
@@ -98,20 +101,20 @@ export async function seedInitialData() {
           description: '5-tier architectural bookcase combining seasoned mahogany with hand-woven natural cane sides.',
           collectionSeries: 'Malabar Heritage Collection',
           originZone: 'Idukki Sustainable Harvest',
-          searchTags: 'Bookcase, 5-Tier, Cane, Mahogany',
-          dimensions: { length: 90, width: 35, height: 180, weight: 32 },
-          woodGrade: 'Grade A - Seasoned Mahogany',
-          surfacePolish: 'Clear Natural Wax',
-          joineryTechnique: 'Dowel & Tenon',
+          searchTags: 'Bookcase, 5-Tier, Cane Weave, Solid Wood',
+          dimensions: { length: 110, width: 40, height: 185, weight: 38 },
+          woodGrade: 'Seasoned Kiln-Dried Timber',
+          surfacePolish: 'Natural Clear Lacquer',
+          joineryTechnique: 'Dovetail & Dowel',
           warranty: '5-Yr Termite & Wood',
-          stockQuantity: 2,
+          stockQuantity: 4,
           lowStockThreshold: 2,
-          depotLocation: 'Kochi Central Depot',
-          warehouseBay: 'Bay C-01 / Shed 2',
+          depotLocation: 'Sivakasi Central Depot',
+          warehouseBay: 'Bay D-03 / Shed 2',
           leadTime: 'In Stock (Ready to Ship)',
-          packagingType: 'Corrugated Wrap',
+          packagingType: 'Corrugated Box + Corner Protectors',
           shippingClass: 'Class 3 - Heavy Solid Furniture (Direct Depot Truck)',
-          costPrice: 11500,
+          costPrice: 12500,
           sellingPrice: 18500,
           gstSlab: '18% GST (HSN 9403 - Wooden Furniture)',
           tradeDiscount: 'Architect / Builder Tier 1 (12% Off)',
@@ -119,26 +122,26 @@ export async function seedInitialData() {
         },
         {
           name: 'Anjili Heritage Brass Chest',
-          sku: 'KWF-CT-AN-14 • Anjili Wild Timber',
+          sku: 'KWF-CT-AN-14 • Anjili Wood',
           category: 'Storage',
-          woodSpecies: 'Jackfruit',
-          description: 'Traditional Kerala storage trunk crafted from seasoned wild Anjili wood with ornamental solid brass strapwork.',
-          collectionSeries: 'Travancore Royal Series',
-          originZone: 'Pathanamthitta Old-Growth',
-          searchTags: 'Brass Chest, Nettoor, Anjili Wood, Antique',
-          dimensions: { length: 80, width: 45, height: 50, weight: 28 },
-          woodGrade: 'Heartwood Anjili',
-          surfacePolish: 'Aged Patina Wax',
-          joineryTechnique: 'Dovetail Corners',
-          warranty: 'Lifetime Heritage Care',
+          woodSpecies: 'Wild Anjili',
+          description: 'Traditional Malabar storage chest crafted from seasoned wild Anjili wood, studded with hand-beaten brass rosettes.',
+          collectionSeries: 'Heritage Keepsake Series',
+          originZone: 'Central Travancore Foothills',
+          searchTags: 'Chest, Brass Rosettes, Anjili Wood, Vintage Trunk',
+          dimensions: { length: 120, width: 60, height: 65, weight: 44 },
+          woodGrade: 'Selected Heartwood Grain',
+          surfacePolish: 'Traditional Boiled Linseed & Mineral Oil',
+          joineryTechnique: 'Half-Lap Corner Lock with Brass Brackets',
+          warranty: '7-Yr Artisan Guarantee',
           stockQuantity: 7,
           lowStockThreshold: 2,
-          depotLocation: 'Kochi Central Depot',
-          warehouseBay: 'Bay D-03 / Shed 3',
+          depotLocation: 'Sivakasi Central Depot',
+          warehouseBay: 'Bay C-01 / Shed 1',
           leadTime: 'In Stock (Ready to Ship)',
-          packagingType: 'Heavy Crate',
-          shippingClass: 'Class 2 - Medium Parcel (Flat Pack / Courier)',
-          costPrice: 14000,
+          packagingType: 'Cushioned Foam + Wooden Frame',
+          shippingClass: 'Class 3 - Heavy Solid Furniture (Direct Depot Truck)',
+          costPrice: 14800,
           sellingPrice: 22500,
           gstSlab: '18% GST (HSN 9403 - Wooden Furniture)',
           tradeDiscount: 'Architect / Builder Tier 1 (12% Off)',
@@ -160,7 +163,7 @@ export async function seedInitialData() {
           warranty: 'Lifetime Heritage Care',
           stockQuantity: 4,
           lowStockThreshold: 2,
-          depotLocation: 'Kochi Central Depot',
+          depotLocation: 'Sivakasi Central Depot',
           warehouseBay: 'Bay E-01 / Heavy Bay',
           leadTime: 'In Stock (Ready to Ship)',
           packagingType: 'Heavy Crate Protection',
@@ -172,9 +175,140 @@ export async function seedInitialData() {
           transitPass: true,
         },
       ]);
-      console.log('[Seed] Seeded 6 products successfully.');
+      console.log('[Seed] Seeded products successfully.');
     }
 
+    // 2. Customers
+    const customerCount = await Customer.countDocuments();
+    if (customerCount === 0) {
+      console.log('[Seed] Seeding initial customers in MongoDB...');
+      await Customer.insertMany([
+        {
+          name: 'Mathew Philip',
+          personName: 'Mathew Philip',
+          type: 'Residential',
+          phone: '+91 98470 12345',
+          email: 'mathew.philip@gmail.com',
+          location: 'Sivakasi Town Center',
+          address: 'Bazaar Street, Sivakasi',
+          deliveryAddress: 'Bazaar Street, Sivakasi',
+          gstin: '32AABCP9821K1ZK',
+          totalOrders: 3,
+          lifetimeValue: '1,38,060',
+          outstandingBalance: '0',
+          creditUsed: '1,38,060',
+          creditTotal: '3,00,000',
+          creditProgress: 46,
+        },
+        {
+          name: 'Deepak Kurian & Architects',
+          personName: 'Deepak Kurian',
+          type: 'B2B Studio',
+          phone: '+91 97455 11029',
+          email: 'deepak.studio@architects.in',
+          location: 'Sivakasi Architecture Guild',
+          address: 'Bazaar Rd, Sivakasi',
+          deliveryAddress: 'Bazaar Rd, Sivakasi',
+          gstin: '32AABCK9902Q1Z',
+          totalOrders: 18,
+          lifetimeValue: '18,40,000',
+          outstandingBalance: '22,600',
+          creditUsed: '1,20,000',
+          creditTotal: '5,00,000',
+          creditProgress: 24,
+        },
+        {
+          name: 'Anoop Menon',
+          personName: 'Anoop Menon',
+          type: 'Residential',
+          phone: '+91 98471 20984',
+          email: 'anoop.menon@outlook.com',
+          location: 'Sivakasi Colony',
+          address: 'Plot 42, Sivakasi Colony',
+          deliveryAddress: 'Plot 42, Sivakasi Colony',
+          gstin: 'Unregistered / Personal',
+          totalOrders: 4,
+          lifetimeValue: '3,42,000',
+          outstandingBalance: '0',
+          creditUsed: '0',
+          creditTotal: '1,00,000',
+          creditProgress: 0,
+        },
+        {
+          name: 'Dr. Thomas Varghese',
+          personName: 'Dr. Thomas Varghese',
+          type: 'Residential',
+          phone: '+91 97455 11029',
+          email: 'dr.thomas.v@gmail.com',
+          location: 'Sivakasi Division',
+          address: 'Riverside Bungalow, Sivakasi',
+          deliveryAddress: 'Riverside Bungalow, Sivakasi',
+          gstin: 'Unregistered / Personal',
+          totalOrders: 6,
+          lifetimeValue: '5,80,000',
+          outstandingBalance: '45,000',
+          creditUsed: '45,000',
+          creditTotal: '2,50,000',
+          creditProgress: 18,
+        },
+        {
+          name: 'Lakshmi Nair',
+          personName: 'Lakshmi Nair',
+          type: 'Residential',
+          phone: '+91 91944 60882',
+          email: 'lakshmi.nair@live.com',
+          location: 'Sivakasi East Yard',
+          address: 'Main Road, Sivakasi',
+          deliveryAddress: 'Main Road, Sivakasi',
+          gstin: 'Unregistered / Personal',
+          totalOrders: 2,
+          lifetimeValue: '85,000',
+          outstandingBalance: '0',
+          creditUsed: '0',
+          creditTotal: '1,50,000',
+          creditProgress: 0,
+        },
+      ]);
+      console.log('[Seed] Seeded customers successfully.');
+    }
+
+    // 3. Settings
+    const settingsCount = await Settings.countDocuments();
+    if (settingsCount === 0) {
+      console.log('[Seed] Seeding initial settings in MongoDB...');
+      await Settings.create({
+        depotName: 'Kerala Wood Furniture - Sivakasi Depot',
+        contactPhone: '+91 484 289 1204',
+        contactEmail: 'depot@keralawood.in',
+        address: 'Sivakasi Central Depot & Mill Yard, Sivakasi',
+        dealerLicense: 'SFD/SVK/TMR/2023-884',
+        operatingHours: 'Mon - Sat: 08:30 AM - 06:30 PM (Sun: Closed)',
+        gstin: '32AABCP9821K1ZK',
+        hsnCode: '9403',
+        taxRate: '18% (Standard GST)',
+        cgstRate: 9,
+        sgstRate: 9,
+        bankName: 'State Bank of India - Sivakasi Branch',
+        accountNumber: '4092817290192',
+        ifscCode: 'SBIN0008839',
+        upiId: 'keralawood.depot@sbi',
+        minStockThreshold: '5',
+        moistureTarget: '10% - 12%',
+        emailAlerts: true,
+        smsNotifications: true,
+        printFormat: 'A4 Ledger',
+        paymentTerms: 'Immediate / POS',
+        signatoryName: 'Rajesh Sivan',
+        signatoryDesignation: 'Depot Lead & Store Manager',
+        disclaimer:
+          'Natural variations in teak & rosewood grain are organic characteristics. Claims accepted within 7 days of yard delivery.',
+        systemTime: '10:30 AM',
+        systemDate: '',
+      });
+      console.log('[Seed] Seeded settings successfully.');
+    }
+
+    // 4. Sales / Invoices
     const saleCount = await Sale.countDocuments();
     if (saleCount === 0) {
       console.log('[Seed] Seeding initial sales transactions...');
@@ -185,7 +319,10 @@ export async function seedInitialData() {
           location: 'Panampilly Nagar, Kochi',
           items: '1x Solid Rosewood Royal King Bed, 2x Nightstands',
           amount: 78400,
+          paymentStatus: 'Paid',
           status: 'Dispatched',
+          year: '2026',
+          monthYear: 'November 2026',
         },
         {
           invoice: '#KWF-0890',
@@ -193,7 +330,10 @@ export async function seedInitialData() {
           location: 'Thottakkattukara, Aluva',
           items: '1x Nilambur Teak Dining Table, 6x Artisan Chairs',
           amount: 52000,
+          paymentStatus: 'Paid',
           status: 'Dispatched',
+          year: '2026',
+          monthYear: 'November 2026',
         },
         {
           invoice: '#KWF-0889',
@@ -201,7 +341,10 @@ export async function seedInitialData() {
           location: 'Kumaranalloor, Kottayam',
           items: '2x Teakwood Ergonomic Armchairs, 1x Coffee Table',
           amount: 31500,
+          paymentStatus: 'Paid',
           status: 'Dispatched',
+          year: '2026',
+          monthYear: 'November 2026',
         },
         {
           invoice: '#KWF-0888',
@@ -209,11 +352,16 @@ export async function seedInitialData() {
           location: 'Fort Kochi Heritage Zone',
           items: '1x Handcrafted Cane Bookcase, 1x Side Table',
           amount: 22600,
+          paymentStatus: 'Paid',
           status: 'Dispatched',
+          year: '2026',
+          monthYear: 'November 2026',
         },
       ]);
       console.log('[Seed] Seeded 4 sales transactions successfully.');
     }
+
+    // 5. Categories
     const categoryCount = await Category.countDocuments();
     if (categoryCount === 0) {
       console.log('[Seed] Seeding initial product categories...');

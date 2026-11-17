@@ -12,6 +12,12 @@ export default defineConfig(({ mode }) => {
     envDir: './src',
     server: {
       port: frontendPort,
+      proxy: {
+        '/api': {
+          target: 'http://localhost:5000',
+          changeOrigin: true,
+        },
+      },
     },
   }
 })

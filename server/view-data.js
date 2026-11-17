@@ -5,6 +5,8 @@ import mongoose from 'mongoose';
 import { Product } from './models/Product.js';
 import { Sale } from './models/Sale.js';
 import { Category } from './models/Category.js';
+import { Customer } from './models/Customer.js';
+import { Settings } from './models/Settings.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -21,10 +23,12 @@ async function viewData() {
   await mongoose.connect(uri, { dbName: 'kerala_wood_billing' });
   console.log('✓ Connected to Database: kerala_wood_billing\n');
 
-  const [products, sales, categories] = await Promise.all([
+  const [products, sales, categories, customers, settings] = await Promise.all([
     Product.find().lean(),
     Sale.find().lean(),
     Category.find().lean(),
+    Customer.find().lean(),
+    Settings.findOne().lean(),
   ]);
 
   console.log('====================================================');
@@ -45,6 +49,23 @@ async function viewData() {
   }
 
   console.log('\n====================================================');
+  console.log(`👥 CUSTOMERS (${customers.length} patrons in MongoDB):`);
+  console.log('====================================================');
+  if (customers.length > 0) {
+    console.table(
+      customers.map((c) => ({
+        Name: c.name?.slice(0, 26),
+        Phone: c.phone,
+        Location: c.location,
+        Orders: c.totalOrders,
+        LTV: '₹' + c.lifetimeValue,
+      }))
+    );
+  } else {
+    console.log('No customers found in MongoDB.');
+  }
+
+  console.log('\n====================================================');
   console.log(`🧾 SALES / INVOICES (${sales.length} orders in MongoDB):`);
   console.log('====================================================');
   if (sales.length > 0) {
@@ -53,7 +74,7 @@ async function viewData() {
         Invoice: s.invoice,
         Customer: s.customer,
         Amount: '₹' + s.amount,
-        Status: s.status,
+        Status: s.paymentStatus || s.status,
         Items: s.items?.slice(0, 32),
       }))
     );
@@ -66,6 +87,17 @@ async function viewData() {
   console.log('====================================================');
   if (categories.length > 0) {
     console.table(categories.map((c) => ({ Name: c.name, HSN: c.hsnCode })));
+  }
+
+  console.log('\n====================================================');
+  console.log(`⚙️ SETTINGS in MongoDB:`);
+  console.log('====================================================');
+  if (settings) {
+    console.log(`Depot: ${settings.depotName}`);
+    console.log(`GSTIN: ${settings.gstin} | Tax: ${settings.taxRate} (CGST ${settings.cgstRate}% + SGST ${settings.sgstRate}%)`);
+    console.log(`System Time: ${settings.systemTime} | Phone: ${settings.contactPhone}`);
+  } else {
+    console.log('No settings found in MongoDB.');
   }
 
   await mongoose.disconnect();

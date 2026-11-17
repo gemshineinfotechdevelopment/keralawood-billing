@@ -7,6 +7,8 @@ import mongoose from 'mongoose';
 import { Product } from './models/Product.js';
 import { Sale } from './models/Sale.js';
 import { Category } from './models/Category.js';
+import { Customer } from './models/Customer.js';
+import { Settings } from './models/Settings.js';
 import { seedInitialData } from './seed.js';
 
 // Resolve __dirname for ES modules
@@ -24,7 +26,7 @@ const MONGODB_URI = process.env.MONGODB_URI;
 // Allowed CORS origins (supports comma-separated URLs and wildcards)
 const allowedOrigins = FRONTEND_URL.split(',').map((u) => u.trim().replace(/\/$/, ''));
 
-// 1. Explicit Custom CORS & Preflight Middleware (guarantees headers on all requests & OPTIONS preflight)
+// 1. Explicit Custom CORS & Preflight Middleware
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   if (origin) {
@@ -35,7 +37,7 @@ app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
   res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
-  
+
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
@@ -43,33 +45,34 @@ app.use((req, res, next) => {
 });
 
 // 2. Standard CORS Middleware with dynamic origin reflection
-app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps, curl, or server-to-server)
-    if (!origin) return callback(null, true);
-    const cleanOrigin = origin.replace(/\/$/, '');
-    if (
-      allowedOrigins.includes('*') ||
-      allowedOrigins.includes(cleanOrigin) ||
-      cleanOrigin.includes('vercel.app') ||
-      cleanOrigin.includes('localhost') ||
-      process.env.NODE_ENV !== 'production'
-    ) {
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      const cleanOrigin = origin.replace(/\/$/, '');
+      if (
+        allowedOrigins.includes('*') ||
+        allowedOrigins.includes(cleanOrigin) ||
+        cleanOrigin.includes('vercel.app') ||
+        cleanOrigin.includes('localhost') ||
+        process.env.NODE_ENV !== 'production'
+      ) {
+        return callback(null, true);
+      }
       return callback(null, true);
-    }
-    // Reflect origin to prevent cross-origin blockage
-    return callback(null, true);
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'],
-}));
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'],
+  })
+);
 
 app.use(express.json());
 
 // MongoDB connection
 if (MONGODB_URI) {
-  mongoose.connect(MONGODB_URI, { dbName: 'kerala_wood_billing' })
+  mongoose
+    .connect(MONGODB_URI, { dbName: 'kerala_wood_billing' })
     .then(async () => {
       console.log('[MongoDB] Connected successfully to database: kerala_wood_billing');
       await seedInitialData();
@@ -77,18 +80,22 @@ if (MONGODB_URI) {
     .catch((err) => console.warn('[MongoDB] Connection warning (Verify service is running):', err.message));
 }
 
-// Basic API routes
+// -------------------------------------------------------------
+// Health Check
+// -------------------------------------------------------------
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     message: 'Backend server is running',
     environment: process.env.NODE_ENV || 'development',
     mongoStatus: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
-// Categories: List all
+// -------------------------------------------------------------
+// CATEGORIES API
+// -------------------------------------------------------------
 app.get('/api/categories', async (req, res) => {
   try {
     const categories = await Category.find().sort({ name: 1 });
@@ -99,7 +106,6 @@ app.get('/api/categories', async (req, res) => {
   }
 });
 
-// Categories: Create new
 app.post('/api/categories', async (req, res) => {
   try {
     const { name, description, hsnCode } = req.body;
@@ -128,7 +134,9 @@ app.post('/api/categories', async (req, res) => {
   }
 });
 
-// Products: List & Search
+// -------------------------------------------------------------
+// PRODUCTS API
+// -------------------------------------------------------------
 app.get('/api/products', async (req, res) => {
   try {
     const { category, search } = req.query;
@@ -187,11 +195,21 @@ app.get('/api/products', async (req, res) => {
         name: p.name,
         sku: p.sku,
         category: p.category,
+        woodSpecies: p.woodSpecies,
+        finish: p.surfacePolish,
+        surfacePolish: p.surfacePolish,
         stock,
         stockType,
         stockQuantity: qty,
+        lowStockThreshold: threshold,
         price: '₹' + Number(p.sellingPrice || 0).toLocaleString('en-IN'),
         rawPrice: p.sellingPrice,
+        unitPrice: p.sellingPrice,
+        costPrice: p.costPrice,
+        depotLocation: p.depotLocation,
+        warehouseBay: p.warehouseBay,
+        dimensions: p.dimensions,
+        warranty: p.warranty,
       };
     });
 
@@ -201,7 +219,10 @@ app.get('/api/products', async (req, res) => {
       products: formattedProducts,
       metrics: {
         totalStock: totalStock > 0 ? totalStock.toLocaleString('en-IN') : '3,892',
-        totalValuationFormatted: totalValuation >= 10000000 ? `₹${(totalValuation / 10000000).toFixed(2)} Cr` : `₹${(totalValuation / 100000).toFixed(2)} L`,
+        totalValuationFormatted:
+          totalValuation >= 10000000
+            ? `₹${(totalValuation / 10000000).toFixed(2)} Cr`
+            : `₹${(totalValuation / 100000).toFixed(2)} L`,
         lowStockCount: `${lowStockCount} SKUs`,
         categoryCounts,
       },
@@ -212,7 +233,6 @@ app.get('/api/products', async (req, res) => {
   }
 });
 
-// Products: Update stock & pricing by ID or SKU
 app.put('/api/products/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -222,9 +242,10 @@ app.put('/api/products/:id', async (req, res) => {
     if (stockQuantity !== undefined) updateFields.stockQuantity = Number(stockQuantity);
     if (lowStockThreshold !== undefined) updateFields.lowStockThreshold = Number(lowStockThreshold);
     if (sellingPrice !== undefined) {
-      updateFields.sellingPrice = typeof sellingPrice === 'number'
-        ? sellingPrice
-        : Number(String(sellingPrice).replace(/[^0-9.]/g, ''));
+      updateFields.sellingPrice =
+        typeof sellingPrice === 'number'
+          ? sellingPrice
+          : Number(String(sellingPrice).replace(/[^0-9.]/g, ''));
     }
     if (depotLocation !== undefined) updateFields.depotLocation = depotLocation;
     if (warehouseBay !== undefined) updateFields.warehouseBay = warehouseBay;
@@ -249,7 +270,6 @@ app.put('/api/products/:id', async (req, res) => {
   }
 });
 
-// Products: Create new
 app.post('/api/products', async (req, res) => {
   try {
     const data = req.body;
@@ -281,20 +301,20 @@ app.post('/api/products', async (req, res) => {
       warranty: data.warranty || '5-Yr Termite & Wood',
       stockQuantity: parseNum(data.stockQuantity, 4),
       lowStockThreshold: parseNum(data.lowStockThreshold, 2),
-      depotLocation: data.depotLocation || 'Kochi Central Depot',
+      depotLocation: data.depotLocation || 'Sivakasi Central Depot',
       warehouseBay: data.warehouseBay || 'Bay C-04 / Shed 2',
       leadTime: data.leadTime || 'In Stock (Ready to Ship)',
       packagingType: data.packagingType || 'Corrugated Multi-layer Wood Wrap',
       shippingClass: data.shippingClass || 'Class 3 - Heavy Solid Furniture (Direct Depot Truck)',
       costPrice: parseNum(data.costPrice, 48500),
-      sellingPrice: parseNum(data.sellingPrice, 78500),
+      sellingPrice: parseNum(data.sellingPrice || data.unitPrice, 78500),
       gstSlab: data.gstSlab || '18% GST (HSN 9403 - Wooden Furniture)',
       tradeDiscount: data.tradeDiscount || 'Architect / Builder Tier 1 (12% Off)',
       transitPass: data.transitPass !== undefined ? Boolean(data.transitPass) : true,
     });
 
     const saved = await newProduct.save();
-    console.log('[API] Created new product:', saved.name, saved.sku);
+    console.log('[API] Created new product in MongoDB:', saved.name, saved.sku);
     res.status(201).json({ success: true, product: saved });
   } catch (err) {
     console.error('[API] /api/products POST error:', err);
@@ -302,10 +322,138 @@ app.post('/api/products', async (req, res) => {
   }
 });
 
-// Sales: List all
+// -------------------------------------------------------------
+// CUSTOMERS API
+// -------------------------------------------------------------
+app.get('/api/customers', async (req, res) => {
+  try {
+    const { search } = req.query;
+    let query = {};
+    if (search && search.trim()) {
+      const reg = new RegExp(search.trim(), 'i');
+      query = { $or: [{ name: reg }, { personName: reg }, { phone: reg }, { location: reg }, { gstin: reg }] };
+    }
+    const customers = await Customer.find(query).sort({ createdAt: -1 });
+    res.json({ success: true, count: customers.length, customers });
+  } catch (err) {
+    console.error('[API] /api/customers GET error:', err);
+    res.status(500).json({ success: false, message: 'Failed to fetch customers', error: err.message });
+  }
+});
+
+app.post('/api/customers', async (req, res) => {
+  try {
+    const data = req.body;
+    if (!data.name || !data.name.trim()) {
+      return res.status(400).json({ success: false, message: 'Customer name is required' });
+    }
+
+    // Check if customer already exists by phone or name
+    const existing = await Customer.findOne({
+      $or: [
+        { name: new RegExp(`^${data.name.trim()}$`, 'i') },
+        ...(data.phone && data.phone.trim().length > 5 ? [{ phone: data.phone.trim() }] : []),
+      ],
+    });
+
+    if (existing) {
+      if (data.phone) existing.phone = data.phone;
+      if (data.address) existing.address = data.address;
+      if (data.deliveryAddress) existing.deliveryAddress = data.deliveryAddress;
+      if (data.gstin) existing.gstin = data.gstin;
+      const updated = await existing.save();
+      console.log('[API] Updated existing customer:', updated.name);
+      return res.json({ success: true, customer: updated, message: 'Customer updated' });
+    }
+
+    const newCustomer = new Customer({
+      name: data.name.trim(),
+      personName: data.personName || data.name.trim(),
+      phone: data.phone || '',
+      email: data.email || '',
+      address: data.address || '',
+      deliveryAddress: data.deliveryAddress || data.address || '',
+      location: data.location || (data.address ? data.address.split(',')[0] : 'Sivakasi'),
+      gstin: data.gstin || 'Unregistered / Personal',
+      type: data.type || 'Residential',
+      totalOrders: data.totalOrders || 0,
+      lifetimeValue: data.lifetimeValue || '0',
+    });
+
+    const saved = await newCustomer.save();
+    console.log('[API] Created new customer in MongoDB:', saved.name);
+    res.status(201).json({ success: true, customer: saved });
+  } catch (err) {
+    console.error('[API] /api/customers POST error:', err);
+    res.status(500).json({ success: false, message: 'Failed to save customer', error: err.message });
+  }
+});
+
+app.put('/api/customers/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    let updated = null;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      updated = await Customer.findByIdAndUpdate(id, req.body, { new: true });
+    } else {
+      updated = await Customer.findOneAndUpdate({ name: id }, req.body, { new: true });
+    }
+    res.json({ success: true, customer: updated });
+  } catch (err) {
+    console.error('[API] /api/customers PUT error:', err);
+    res.status(500).json({ success: false, message: 'Failed to update customer', error: err.message });
+  }
+});
+
+// -------------------------------------------------------------
+// SETTINGS API
+// -------------------------------------------------------------
+app.get('/api/settings', async (req, res) => {
+  try {
+    let settings = await Settings.findOne();
+    if (!settings) {
+      settings = await Settings.create({});
+    }
+    res.json({ success: true, settings });
+  } catch (err) {
+    console.error('[API] /api/settings GET error:', err);
+    res.status(500).json({ success: false, message: 'Failed to fetch settings', error: err.message });
+  }
+});
+
+app.put('/api/settings', async (req, res) => {
+  try {
+    const updates = req.body;
+    let settings = await Settings.findOne();
+    if (!settings) {
+      settings = new Settings(updates);
+    } else {
+      Object.assign(settings, updates);
+    }
+    const saved = await settings.save();
+    console.log('[API] Saved settings to MongoDB successfully');
+    res.json({ success: true, settings: saved });
+  } catch (err) {
+    console.error('[API] /api/settings PUT error:', err);
+    res.status(500).json({ success: false, message: 'Failed to update settings', error: err.message });
+  }
+});
+
+// -------------------------------------------------------------
+// SALES / BILLING API
+// -------------------------------------------------------------
 app.get('/api/sales', async (req, res) => {
   try {
-    const sales = await Sale.find().sort({ createdAt: -1 });
+    const { year, search } = req.query;
+    const query = {};
+    if (year && year !== 'All') {
+      query.year = year;
+    }
+    if (search && search.trim()) {
+      const reg = new RegExp(search.trim(), 'i');
+      query.$or = [{ invoice: reg }, { customer: reg }, { items: reg }, { location: reg }];
+    }
+    const sales = await Sale.find(query).sort({ createdAt: -1 });
     res.json({ success: true, count: sales.length, sales });
   } catch (err) {
     console.error('[API] /api/sales GET error:', err);
@@ -313,39 +461,102 @@ app.get('/api/sales', async (req, res) => {
   }
 });
 
-// Sales: Record new sale / invoice in MongoDB
 app.post('/api/sales', async (req, res) => {
   try {
     const data = req.body;
-    const invNo = data.invoice || data.id || `TAX-INV #${Date.now()}`;
-    const rawAmt = typeof data.amount === 'number'
-      ? data.amount
-      : Number(String(data.amount || data.rawAmount || 0).replace(/[^0-9.]/g, '')) || 0;
+    const invNo = data.invoice || data.invoiceNumber || data.id || `INV-${Date.now().toString().slice(-4)}`;
+    const rawAmt =
+      typeof data.amount === 'number'
+        ? data.amount
+        : Number(String(data.amount || data.rawAmount || data.grandTotal || 0).replace(/[^0-9.]/g, '')) || 0;
+
+    // Check if items were provided for inventory stock deduction
+    const lineItems = Array.isArray(data.itemsList)
+      ? data.itemsList
+      : Array.isArray(data.items)
+      ? data.items
+      : [];
+
+    // Deduct stock for each line item in MongoDB Product collection
+    for (const item of lineItems) {
+      const qtyToDeduct = Number(item.quantity) || 1;
+      if (item.sku || item.name) {
+        await Product.findOneAndUpdate(
+          { $or: [{ sku: item.sku }, { name: item.name }] },
+          { $inc: { stockQuantity: -qtyToDeduct } }
+        );
+      }
+    }
 
     // Upsert or create new sale record
     const existing = await Sale.findOne({ invoice: invNo });
     if (existing) {
       existing.customer = data.customer || existing.customer;
-      existing.items = data.items || data.item || existing.items;
+      existing.customerPhone = data.customerPhone || existing.customerPhone;
+      existing.customerAddress = data.customerAddress || existing.customerAddress;
+      existing.customerGstin = data.customerGstin || existing.customerGstin;
+      existing.items = typeof data.items === 'string' ? data.items : (data.itemSummary || existing.items);
+      existing.itemDetails = lineItems.length > 0 ? lineItems : existing.itemDetails;
       existing.amount = rawAmt || existing.amount;
-      existing.status = data.status || existing.status;
+      existing.subtotal = Number(data.subtotal) || existing.subtotal;
+      existing.taxAmount = Number(data.taxAmount) || existing.taxAmount;
+      existing.discount = Number(data.discount) || existing.discount;
+      existing.deliveryCharge = Number(data.deliveryCharge) || existing.deliveryCharge;
+      existing.paymentStatus = data.paymentStatus || existing.paymentStatus;
+      existing.paymentMode = data.paymentMode || existing.paymentMode;
+      existing.amountPaid = Number(data.amountPaid) || existing.amountPaid;
+      existing.balanceDue = Number(data.balanceDue) || existing.balanceDue;
+      existing.notes = data.notes || existing.notes;
       const updated = await existing.save();
-      console.log('[MongoDB] Updated existing invoice:', invNo);
+      console.log('[MongoDB] Updated existing invoice in MongoDB:', invNo);
       return res.json({ success: true, sale: updated });
     }
 
+    const currentYear = new Date().getFullYear().toString();
     const newSale = new Sale({
       invoice: invNo,
       customer: data.customer || 'Walk-in Patron',
+      customerPhone: data.customerPhone || '',
+      customerAddress: data.customerAddress || '',
+      customerGstin: data.customerGstin || '',
       location: data.location || data.project || 'Sivakasi Yard Sale',
-      items: data.items || data.item || 'Timber Furniture Order',
+      project: data.project || 'Timber Order',
+      wood: data.wood || 'Artisan Timber',
+      items: typeof data.items === 'string' ? data.items : (data.itemSummary || `${lineItems.length} Furniture Items`),
+      itemDetails: lineItems,
+      subtotal: Number(data.subtotal) || rawAmt,
+      taxAmount: Number(data.taxAmount) || 0,
+      discount: Number(data.discount) || 0,
+      deliveryCharge: Number(data.deliveryCharge) || 0,
       amount: rawAmt,
-      status: data.status || 'Paid',
+      paymentStatus: data.paymentStatus || 'Pending',
+      paymentMode: data.paymentMode || 'UPI',
+      amountPaid: Number(data.amountPaid) || (data.paymentStatus === 'Paid' ? rawAmt : 0),
+      balanceDue: Number(data.balanceDue) || (data.paymentStatus === 'Paid' ? 0 : rawAmt),
+      status: data.status || 'Dispatched',
       date: data.date ? new Date(data.date) : new Date(),
+      invoiceDate: data.invoiceDate || new Date().toLocaleDateString('en-GB'),
+      dueDate: data.dueDate || '',
+      notes: data.notes || '',
+      year: data.year || currentYear,
+      monthYear: data.monthYear || new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+      volume: Number(data.volume) || 36,
     });
 
     const saved = await newSale.save();
-    console.log('[MongoDB] Stored new sale record:', saved.invoice, 'Amount: ₹' + saved.amount);
+    console.log('[MongoDB] Stored new sale record in MongoDB:', saved.invoice, 'Amount: ₹' + saved.amount);
+
+    // If customer name is provided, update customer's lifetime value and order count in MongoDB
+    if (data.customer && data.customer !== 'Walk-in Patron') {
+      const cust = await Customer.findOne({ name: new RegExp(`^${data.customer.trim()}$`, 'i') });
+      if (cust) {
+        cust.totalOrders = (cust.totalOrders || 0) + 1;
+        const currentLtv = Number(String(cust.lifetimeValue || 0).replace(/[^0-9.]/g, '')) || 0;
+        cust.lifetimeValue = (currentLtv + rawAmt).toLocaleString('en-IN');
+        await cust.save();
+      }
+    }
+
     res.status(201).json({ success: true, sale: saved });
   } catch (err) {
     console.error('[API] /api/sales POST error:', err);
@@ -353,7 +564,9 @@ app.post('/api/sales', async (req, res) => {
   }
 });
 
-// Dashboard: Aggregated stats, Low Stock, Recent Sales
+// -------------------------------------------------------------
+// DASHBOARD API
+// -------------------------------------------------------------
 app.get('/api/dashboard', async (req, res) => {
   try {
     const [sales, products] = await Promise.all([
@@ -385,7 +598,7 @@ app.get('/api/dashboard', async (req, res) => {
     const formattedSales = sales.map((s) => ({
       invoice: s.invoice,
       customer: s.customer,
-      location: s.location,
+      location: s.location || s.project || 'Sivakasi Yard',
       items: s.items,
       amount: '₹' + Number(s.amount || 0).toLocaleString('en-IN'),
       status: s.status || 'Dispatched',
@@ -397,49 +610,15 @@ app.get('/api/dashboard', async (req, res) => {
         todaySales: '₹' + (totalSalesAmt > 0 ? totalSalesAmt.toLocaleString('en-IN') : '1,84,500'),
         ordersToday: `${sales.length > 0 ? sales.length : 18} orders processed today`,
         totalStock: totalStock > 0 ? totalStock.toLocaleString('en-IN') : '3,892',
-        stockLocationNote: 'Across Nilambur & Kochi depots',
+        stockLocationNote: 'Across Nilambur & Sivakasi depots',
         lowStockCount: `${lowStockItems.length} items`,
       },
       lowStockItems: lowStockItems.length > 0 ? lowStockItems : [
         { name: 'Nilambur Teak 6-Seater', category: 'Dining Table', count: '2 left' },
         { name: 'Solid Rosewood King Bed', category: 'Hand-Carved Headboard', count: '1 left' },
         { name: 'Teakwood Ergonomic Armchair', category: 'Cane Weave Seating', count: '3 left' },
-        { name: 'Cane & Teak Bookcase', category: '5-Tier Architectural', count: '2 left' },
       ],
-      recentSales: formattedSales.length > 0 ? formattedSales : [
-        {
-          invoice: '#KWF-0891',
-          customer: 'Anoop Menon',
-          location: 'Panampilly Nagar, Kochi',
-          items: '1x Solid Rosewood Royal King Bed, 2x Nightstands',
-          amount: '₹78,400',
-          status: 'Dispatched',
-        },
-        {
-          invoice: '#KWF-0890',
-          customer: 'Lakshmi Nair',
-          location: 'Thottakkattukara, Aluva',
-          items: '1x Nilambur Teak Dining Table, 6x Artisan Chairs',
-          amount: '₹52,000',
-          status: 'Dispatched',
-        },
-        {
-          invoice: '#KWF-0889',
-          customer: 'Dr. Thomas Varghese',
-          location: 'Kumaranalloor, Kottayam',
-          items: '2x Teakwood Ergonomic Armchairs, 1x Coffee Table',
-          amount: '₹31,500',
-          status: 'Dispatched',
-        },
-        {
-          invoice: '#KWF-0888',
-          customer: 'Deepak Kurian & Architects',
-          location: 'Fort Kochi Heritage Zone',
-          items: '1x Handcrafted Cane Bookcase, 1x Side Table',
-          amount: '₹22,600',
-          status: 'Dispatched',
-        },
-      ],
+      recentSales: formattedSales.length > 0 ? formattedSales : [],
     });
   } catch (err) {
     console.error('[API] /api/dashboard error:', err);
@@ -462,7 +641,7 @@ app.use((req, res) => {
       res.json({
         status: 'ok',
         message: 'Kerala Wood Billing API is online',
-        backendEnv: process.env.NODE_ENV || 'development'
+        backendEnv: process.env.NODE_ENV || 'development',
       });
     }
   });

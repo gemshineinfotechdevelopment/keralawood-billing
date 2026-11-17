@@ -1,4 +1,4 @@
-// Centralized Dynamic Data Store with LocalStorage Persistence
+// Centralized Dynamic Data Store with LocalStorage Persistence & MongoDB Backend Sync
 // Supports multiple concurrent bills, dynamic products, customers, settings, and reports
 
 const STORAGE_KEYS = {
@@ -9,6 +9,8 @@ const STORAGE_KEYS = {
   TRANSACTIONS: 'sivakasi_wood_transactions',
   SETTINGS: 'sivakasi_wood_settings',
 }
+
+const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) || ''
 
 // System Settings (Company: Kerala Wood Furniture, Location: Sivakasi)
 const INITIAL_SETTINGS = {
@@ -36,7 +38,6 @@ const INITIAL_SETTINGS = {
   signatoryName: 'Rajesh Sivan',
   signatoryDesignation: 'Depot Lead & Store Manager',
   disclaimer: 'Natural variations in teak & rosewood grain are organic characteristics. Claims accepted within 7 days of yard delivery.',
-  // System Date & Time (POS Billing Clock)
   systemTime: '10:30 AM',
   systemDate: '',
 }
@@ -132,8 +133,8 @@ const INITIAL_CUSTOMERS = [
     creditTotal: '3,00,000',
     creditProgress: 46,
     recentTx: [
-      { id: '#KWF-2024-0982', dateItem: 'Today • 6-Seater Table & Chairs', amount: '1,38,060' },
-      { id: '#KWF-2024-0850', dateItem: '15 Oct • Teak Coffee Table', amount: '24,000' },
+      { id: '#KWF-2026-0982', dateItem: 'Today • 6-Seater Table & Chairs', amount: '1,38,060' },
+      { id: '#KWF-2026-0850', dateItem: '15 Oct • Teak Coffee Table', amount: '24,000' },
     ],
   },
   {
@@ -147,6 +148,7 @@ const INITIAL_CUSTOMERS = [
     phone: '+91 97455 11029',
     location: 'Sivakasi Architecture Guild',
     address: 'Bazaar Rd, Sivakasi',
+    deliveryAddress: 'Bazaar Rd, Sivakasi',
     gstin: '32AABCK9902Q1Z',
     totalOrders: 18,
     lifetimeValue: '18,40,000',
@@ -155,9 +157,8 @@ const INITIAL_CUSTOMERS = [
     creditTotal: '5,00,000',
     creditProgress: 24,
     recentTx: [
-      { id: '#KWF-2024-0888', dateItem: 'Today • Cane Bookcase', amount: '22,600' },
-      { id: '#KWF-2024-0792', dateItem: '14 Oct • Boardroom Desk', amount: '95,000' },
-      { id: '#KWF-2024-0710', dateItem: '28 Sep • Armchair Suites', amount: '1,16,000' },
+      { id: '#KWF-2026-0888', dateItem: 'Today • Cane Bookcase', amount: '22,600' },
+      { id: '#KWF-2026-0792', dateItem: '14 Oct • Boardroom Desk', amount: '95,000' },
     ],
   },
   {
@@ -172,6 +173,7 @@ const INITIAL_CUSTOMERS = [
     phone: '+91 98471 20984',
     location: 'Sivakasi Colony',
     address: 'Plot 42, Sivakasi Colony',
+    deliveryAddress: 'Plot 42, Sivakasi Colony',
     gstin: 'Unregistered / Personal',
     totalOrders: 4,
     lifetimeValue: '3,42,000',
@@ -180,8 +182,7 @@ const INITIAL_CUSTOMERS = [
     creditTotal: '1,00,000',
     creditProgress: 0,
     recentTx: [
-      { id: '#KWF-2024-0854', dateItem: '18 Oct • Nilambur Teak Bed', amount: '1,45,000' },
-      { id: '#KWF-2024-0711', dateItem: '02 Sep • Rosewood Armchair', amount: '48,000' },
+      { id: '#KWF-2026-0854', dateItem: '18 Oct • Nilambur Teak Bed', amount: '1,45,000' },
     ],
   },
   {
@@ -196,6 +197,7 @@ const INITIAL_CUSTOMERS = [
     phone: '+91 97455 11029',
     location: 'Sivakasi Division',
     address: 'Riverside Bungalow, Sivakasi',
+    deliveryAddress: 'Riverside Bungalow, Sivakasi',
     gstin: 'Unregistered / Personal',
     totalOrders: 6,
     lifetimeValue: '5,80,000',
@@ -204,8 +206,7 @@ const INITIAL_CUSTOMERS = [
     creditTotal: '2,50,000',
     creditProgress: 18,
     recentTx: [
-      { id: '#KWF-2024-0870', dateItem: '22 Oct • Dining Suite 8-Seater', amount: '2,80,000' },
-      { id: '#KWF-2024-0744', dateItem: '11 Sep • Teak Wall Paneling', amount: '1,10,000' },
+      { id: '#KWF-2026-0870', dateItem: '22 Oct • Dining Suite 8-Seater', amount: '2,80,000' },
     ],
   },
   {
@@ -218,25 +219,37 @@ const INITIAL_CUSTOMERS = [
     type: 'Residential',
     fullTypeLabel: 'Lakshmi Nair • Residential Client',
     phone: '+91 91944 60882',
-    location: 'Sivakasi Depot Enclave',
-    address: 'Riverbank Enclave, Sivakasi',
+    location: 'Sivakasi East Yard',
+    address: 'Main Road, Sivakasi',
+    deliveryAddress: 'Main Road, Sivakasi',
     gstin: 'Unregistered / Personal',
     totalOrders: 2,
-    lifetimeValue: '1,12,000',
+    lifetimeValue: '85,000',
     outstandingBalance: '0',
     creditUsed: '0',
-    creditTotal: '1,00,000',
+    creditTotal: '1,50,000',
     creditProgress: 0,
-    recentTx: [
-      { id: '#KWF-2024-0812', dateItem: '05 Oct • Solid Teak Study Desk', amount: '64,000' },
-      { id: '#KWF-2024-0690', dateItem: '15 Aug • Anjili Coffee Table', amount: '48,000' },
-    ],
+    recentTx: [],
   },
 ]
 
 const INITIAL_TRANSACTIONS = [
   {
-    id: 'INV-892',
+    id: 'INV-891',
+    date: 'Nov 17, 2026, 05:45 PM',
+    monthYear: 'November 2026',
+    year: '2026',
+    customer: 'Dr. Thomas Varghese',
+    project: 'Sivakasi Villa',
+    wood: 'Wild Anjili',
+    item: 'Heritage Brass Chest',
+    volume: 38,
+    amount: '1,45,000',
+    rawAmount: 145000,
+    status: 'Paid',
+  },
+  {
+    id: 'INV-890',
     date: 'Nov 15, 2026, 04:30 PM',
     monthYear: 'November 2026',
     year: '2026',
@@ -277,37 +290,8 @@ const INITIAL_TRANSACTIONS = [
     rawAmount: 520000,
     status: 'Paid',
   },
-  {
-    id: 'INV-881',
-    date: 'Nov 08, 2026, 05:10 PM',
-    monthYear: 'November 2026',
-    year: '2026',
-    customer: 'Brunton Boatyard',
-    project: 'Heritage Suite 204',
-    wood: 'Teak Wardrobe',
-    item: 'Armoire',
-    volume: 28,
-    amount: '1,95,000',
-    rawAmount: 195000,
-    status: 'Paid',
-  },
-  {
-    id: 'INV-878',
-    date: 'Nov 04, 2026, 10:20 AM',
-    monthYear: 'November 2026',
-    year: '2026',
-    customer: 'The Leela Kovalam',
-    project: 'Deck Renovation',
-    wood: '12 Teak Sun Loungers',
-    item: 'Weather-Treated',
-    volume: 52,
-    amount: '3,80,000',
-    rawAmount: 380000,
-    status: 'Paid',
-  },
 ]
 
-// Initial Two Concurrent Draft Bills - Content cleared (Requirement 5)
 const EMPTY_INITIAL_CUSTOMER = {
   id: 'cust-empty-1',
   name: '',
@@ -323,11 +307,14 @@ const EMPTY_INITIAL_CUSTOMER = {
 const INITIAL_BILLS = [
   {
     id: 'bill-1',
-    invoiceNumber: 'TAX-INV #2026-SK-982',
+    invoiceNumber: 'INV-1003',
+    invoiceDate: '2026-11-17',
+    dueDate: '2026-12-02',
     name: 'Bill #1',
     status: 'active',
     customer: EMPTY_INITIAL_CUSTOMER,
-    items: [], // Clean empty cart
+    items: [],
+    paymentStatus: 'Pending',
     paymentMode: 'UPI',
     packagingNote: '',
     deliveryApplied: true,
@@ -361,13 +348,97 @@ function saveToStorage(key, value) {
 }
 
 export const DataStore = {
-  // SETTINGS (Derived for Invoice Bills - Requirement 2)
+  // SYNC WITH BACKEND
+  async syncFromBackend() {
+    try {
+      // 1. Sync Settings
+      const resSettings = await fetch(`${API_BASE}/api/settings`).catch(() => null)
+      if (resSettings && resSettings.ok) {
+        const data = await resSettings.json()
+        if (data.settings) {
+          saveToStorage(STORAGE_KEYS.SETTINGS, data.settings)
+        }
+      }
+
+      // 2. Sync Products
+      const resProducts = await fetch(`${API_BASE}/api/products`).catch(() => null)
+      if (resProducts && resProducts.ok) {
+        const data = await resProducts.json()
+        if (data.products && data.products.length > 0) {
+          saveToStorage(STORAGE_KEYS.PRODUCTS, data.products)
+        }
+      }
+
+      // 3. Sync Customers
+      const resCustomers = await fetch(`${API_BASE}/api/customers`).catch(() => null)
+      if (resCustomers && resCustomers.ok) {
+        const data = await resCustomers.json()
+        if (data.customers && data.customers.length > 0) {
+          const formatted = data.customers.map((c) => ({
+            id: c._id || c.id || Date.now(),
+            name: c.name,
+            personName: c.personName || c.name,
+            phone: c.phone || '',
+            email: c.email || '',
+            location: c.location || '',
+            address: c.address || '',
+            deliveryAddress: c.deliveryAddress || c.address || '',
+            gstin: c.gstin || 'Unregistered / Personal',
+            type: c.type || 'Residential',
+            totalOrders: c.totalOrders || 0,
+            lifetimeValue: c.lifetimeValue || '0',
+            outstandingBalance: c.outstandingBalance || '0',
+            creditUsed: c.creditUsed || '0',
+            creditTotal: c.creditTotal || '2,00,000',
+            recentTx: c.recentTx || [],
+          }))
+          saveToStorage(STORAGE_KEYS.CUSTOMERS, formatted)
+        }
+      }
+
+      // 4. Sync Sales / Transactions
+      const resSales = await fetch(`${API_BASE}/api/sales`).catch(() => null)
+      if (resSales && resSales.ok) {
+        const data = await resSales.json()
+        if (data.sales && data.sales.length > 0) {
+          const formatted = data.sales.map((s) => ({
+            id: s.invoice,
+            invoice: s.invoice,
+            date: s.date ? new Date(s.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Nov 17, 2026',
+            year: s.year || '2026',
+            monthYear: s.monthYear || 'November 2026',
+            customer: s.customer,
+            project: s.location || 'Sivakasi Yard Sale',
+            wood: s.wood || 'Artisan Timber',
+            item: s.items,
+            amount: Number(s.amount || 0).toLocaleString('en-IN'),
+            rawAmount: Number(s.amount || 0),
+            status: s.paymentStatus || s.status || 'Paid',
+          }))
+          saveToStorage(STORAGE_KEYS.TRANSACTIONS, formatted)
+        }
+      }
+
+      notifyStoreUpdate()
+    } catch (err) {
+      console.warn('[dataStore] Background sync failed, using offline cache:', err.message)
+    }
+  },
+
+  // SETTINGS
   getSettings() {
     return loadFromStorage(STORAGE_KEYS.SETTINGS, INITIAL_SETTINGS)
   },
   saveSettings(settings) {
     saveToStorage(STORAGE_KEYS.SETTINGS, settings)
     notifyStoreUpdate()
+
+    // Sync to backend MongoDB
+    fetch(`${API_BASE}/api/settings`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(settings),
+    }).catch(() => {})
   },
 
   // PRODUCTS
@@ -384,13 +455,11 @@ export const DataStore = {
     const threshold = Number(item.lowStockThreshold) || 2
     const numPrice = Number(item.sellingPrice) || 45000
 
-    // Check if product with same SKU or same name already exists
     const existingIndex = list.findIndex(
       (p) => (item.sku && p.sku === item.sku) || (item.name && p.name.toLowerCase() === item.name.toLowerCase())
     )
 
     if (existingIndex >= 0) {
-      // Increase existing stock
       const existing = list[existingIndex]
       const newQty = (Number(existing.stockQuantity) || 0) + qty
       let stockType = 'in-stock'
@@ -411,6 +480,14 @@ export const DataStore = {
         price: '₹' + (numPrice || existing.unitPrice).toLocaleString('en-IN'),
       }
       this.saveProducts(list)
+
+      // Sync stock update to MongoDB
+      fetch(`${API_BASE}/api/products/${encodeURIComponent(existing.sku || existing.name)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stockQuantity: newQty, sellingPrice: numPrice || existing.unitPrice }),
+      }).catch(() => {})
+
       return list[existingIndex]
     }
 
@@ -440,12 +517,21 @@ export const DataStore = {
     }
     list.unshift(newProduct)
     this.saveProducts(list)
+
+    // Sync create to MongoDB
+    fetch(`${API_BASE}/api/products`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newProduct),
+    }).catch(() => {})
+
     return newProduct
   },
   updateStock(productId, newQty) {
     const list = this.getProducts()
+    let target = null
     const updated = list.map((p) => {
-      if (p.id === productId) {
+      if (p.id === productId || p.sku === productId || p.name === productId) {
         const qty = Math.max(0, newQty)
         const threshold = p.lowStockThreshold || 2
         let stockType = 'in-stock'
@@ -457,11 +543,20 @@ export const DataStore = {
           stockType = 'low'
           stockLabel = `${qty} in stock (Low)`
         }
-        return { ...p, stockQuantity: qty, stock: stockLabel, stockType }
+        target = { ...p, stockQuantity: qty, stock: stockLabel, stockType }
+        return target
       }
       return p
     })
     this.saveProducts(updated)
+
+    if (target) {
+      fetch(`${API_BASE}/api/products/${encodeURIComponent(target.sku || target.name)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stockQuantity: target.stockQuantity }),
+      }).catch(() => {})
+    }
   },
 
   // CUSTOMERS
@@ -485,10 +580,11 @@ export const DataStore = {
       personName: c.personName || c.name,
       type: c.type || 'Residential',
       fullTypeLabel: `${c.name} • ${c.type || 'Client'}`,
-      phone: c.phone || '+91 98470 00000',
+      phone: c.phone || '',
+      email: c.email || '',
       location: c.location || 'Sivakasi Yard Division',
-      address: c.address || 'Sivakasi, Tamil Nadu',
-      deliveryAddress: c.deliveryAddress || c.address || 'Sivakasi, Tamil Nadu',
+      address: c.address || '',
+      deliveryAddress: c.deliveryAddress || c.address || '',
       gstin: c.gstin || 'Unregistered / Personal',
       totalOrders: 0,
       lifetimeValue: '0',
@@ -500,10 +596,18 @@ export const DataStore = {
     }
     list.unshift(newCustomer)
     this.saveCustomers(list)
+
+    // Sync to backend MongoDB
+    fetch(`${API_BASE}/api/customers`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newCustomer),
+    }).catch(() => {})
+
     return newCustomer
   },
 
-  // BILLS & CONCURRENT DRAFTS (Feature 1)
+  // BILLS & DRAFTS
   getBills() {
     return loadFromStorage(STORAGE_KEYS.BILLS, INITIAL_BILLS)
   },
@@ -539,19 +643,28 @@ export const DataStore = {
     const targetCust = preselectedCustomer || emptyCustomer
     const seq = bills.length + 1
     const newId = `bill-${Date.now()}`
-    const activeYr = new Date().getFullYear()
-    const invNum = `TAX-INV #${activeYr}-SK-${Math.floor(900 + Math.random() * 100)}`
+    const randomInv = `INV-${Math.floor(1000 + Math.random() * 9000)}`
+
+    // Today's date formatted as YYYY-MM-DD
+    const today = new Date().toISOString().split('T')[0]
+    // Due date +15 days
+    const due = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
     const newBill = {
       id: newId,
-      invoiceNumber: invNum,
+      invoiceNumber: randomInv,
+      invoiceDate: today,
+      dueDate: due,
       name: targetCust.name ? `Bill #${seq} • ${targetCust.name}` : `Bill #${seq}`,
       status: 'active',
       customer: targetCust,
-      items: [], // Clean empty cart
+      items: [], // Completely clean empty items
+      paymentStatus: 'Pending',
       paymentMode: 'UPI',
-      packagingNote: '',
-      deliveryApplied: true,
+      amountPaid: 0,
+      discount: 0,
+      deliveryCharge: 0,
+      notes: '',
     }
 
     bills.push(newBill)
@@ -587,15 +700,11 @@ export const DataStore = {
   // TRANSACTIONS / SALES
   getTransactions() {
     const raw = loadFromStorage(STORAGE_KEYS.TRANSACTIONS, INITIAL_TRANSACTIONS)
-    // Filter out any 2024 records to ensure 2024 is completely removed
     const cleaned = (raw || []).filter((tx) => {
       const yr = String(tx.year || '')
       const dt = String(tx.date || '')
       return yr !== '2024' && !dt.includes('2024')
     })
-    if (cleaned.length !== (raw || []).length) {
-      saveToStorage(STORAGE_KEYS.TRANSACTIONS, cleaned.length > 0 ? cleaned : INITIAL_TRANSACTIONS)
-    }
     return cleaned.length > 0 ? cleaned : INITIAL_TRANSACTIONS
   },
   saveTransactions(txs) {
@@ -604,14 +713,19 @@ export const DataStore = {
   },
   recordSaleFromBill(bill) {
     const txs = this.getTransactions()
-    const subtotal = (bill.items || []).reduce((sum, item) => sum + item.unitPrice * item.quantity, 0)
-    const settings = this.getSettings()
-    const cgstRate = Number(settings.cgstRate) || 9
-    const sgstRate = Number(settings.sgstRate) || 9
-    const gst = Math.round((subtotal * (cgstRate + sgstRate)) / 100)
-    const grandTotal = subtotal + gst
-    const totalVolume = (bill.items || []).reduce((sum, item) => sum + (item.quantity * 12), 0)
+    const items = bill.items || []
+    const subtotal = items.reduce((sum, item) => sum + (Number(item.price || item.unitPrice || 0) * Number(item.quantity || 1)), 0)
+    const totalGst = items.reduce((sum, item) => {
+      const lineCost = Number(item.price || item.unitPrice || 0) * Number(item.quantity || 1)
+      const gstRate = item.gstRate !== undefined ? Number(item.gstRate) : 0
+      return sum + (lineCost * gstRate) / 100
+    }, 0)
+    const discount = Number(bill.discount) || 0
+    const delivery = Number(bill.deliveryCharge) || 0
+    const grandTotal = Math.max(0, Math.round(subtotal + totalGst + delivery - discount))
+    const totalVolume = items.reduce((sum, item) => sum + (Number(item.quantity || 1) * 12), 0)
 
+    const settings = this.getSettings()
     let txDateStr
     let txYear
     if (settings.systemDate) {
@@ -630,98 +744,83 @@ export const DataStore = {
       ? settings.systemTime.trim()
       : new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
 
+    const itemNames = items.map((i) => `${i.quantity || 1}x ${i.description || i.name || 'Furniture'}`).join(', ')
+
     const newTx = {
-      id: bill.invoiceNumber.replace(/[^0-9]/g, '').slice(-3) ? `INV-${bill.invoiceNumber.replace(/[^0-9]/g, '').slice(-3)}` : `INV-${Date.now().toString().slice(-3)}`,
+      id: bill.invoiceNumber || `INV-${Date.now().toString().slice(-4)}`,
+      invoice: bill.invoiceNumber || `INV-${Date.now().toString().slice(-4)}`,
       date: `${txDateStr}, ${txTimeStr}`,
       year: txYear,
       createdAt: new Date().toISOString(),
       monthYear: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
-      customer: bill.customer ? bill.customer.name : 'Walk-in Patron',
-      project: bill.customer ? bill.customer.location || 'Sivakasi Yard Sale' : 'Sivakasi Yard Sale',
-      wood: bill.items[0]?.name?.split(' ')[0] ? `${bill.items[0].name.split(' ')[0]} Artisan Wood` : 'Teak Wood',
-      item: bill.items[0]?.name ? `${bill.items[0].name}${bill.items.length > 1 ? ` + ${bill.items.length - 1} more` : ''}` : 'Artisan Timber Order',
+      customer: bill.customer?.name || 'Walk-in Patron',
+      customerPhone: bill.customer?.phone || '',
+      customerAddress: bill.customer?.address || '',
+      customerGstin: bill.customer?.gstin || '',
+      project: bill.customer?.location || 'Sivakasi Yard Sale',
+      wood: items[0]?.woodSpecies || 'Teak Wood',
+      item: itemNames || 'Artisan Furniture Order',
       volume: totalVolume || 36,
       amount: grandTotal.toLocaleString('en-IN'),
       rawAmount: grandTotal,
-      status: 'Paid',
+      subtotal,
+      taxAmount: totalGst,
+      discount,
+      deliveryCharge: delivery,
+      status: bill.paymentStatus || 'Paid',
+      paymentStatus: bill.paymentStatus || 'Paid',
+      paymentMode: bill.paymentMode || 'UPI',
     }
 
     txs.unshift(newTx)
     this.saveTransactions(txs)
 
-    // Deduct stock
+    // Deduct stock locally
     const products = this.getProducts()
-    const billItems = bill.items || []
-    billItems.forEach((item) => {
-      const p = products.find((prod) => prod.sku === item.sku || prod.name === item.name)
+    items.forEach((item) => {
+      const p = products.find((prod) => prod.sku === item.sku || prod.name === (item.description || item.name))
       if (p) {
-        p.stockQuantity = Math.max(0, p.stockQuantity - item.quantity)
-        const threshold = p.lowStockThreshold || 2
-        if (p.stockQuantity <= 1) {
-          p.stockType = 'critical'
-          p.stock = `${p.stockQuantity} left (Critical)`
-        } else if (p.stockQuantity <= threshold) {
-          p.stockType = 'low'
-          p.stock = `${p.stockQuantity} in stock (Low)`
-        } else {
-          p.stockType = 'in-stock'
-          p.stock = `${p.stockQuantity} in stock`
-        }
+        p.stockQuantity = Math.max(0, (p.stockQuantity || 0) - (Number(item.quantity) || 1))
+        this.updateStock(p.id, p.stockQuantity)
       }
     })
-    this.saveProducts(products)
 
-    // Sync sale and stock deduction to MongoDB Backend
-    try {
-      const apiUrl = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) || 'http://localhost:5000'
-      fetch(`${apiUrl}/api/sales`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          invoice: bill.invoiceNumber || newTx.id,
-          customer: newTx.customer,
-          location: newTx.project,
-          items: newTx.item,
-          amount: grandTotal,
-          status: 'Paid',
-          date: new Date().toISOString(),
-        }),
-      }).catch((err) => {
-        console.warn('[dataStore] Backend /api/sales offline, preserved in local store:', err.message)
-      })
-
-      // Sync updated stock to MongoDB
-      billItems.forEach((item) => {
-        const matchingProd = products.find((prod) => prod.sku === item.sku || prod.name === item.name)
-        if (matchingProd) {
-          fetch(`${apiUrl}/api/products/${encodeURIComponent(matchingProd.sku || matchingProd.name)}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              stockQuantity: matchingProd.stockQuantity,
-            }),
-          }).catch(() => {})
-        }
-      })
-    } catch (_) {}
-
-    // Update customer stats
-    if (bill.customer) {
-      const customers = this.getCustomers()
-      const c = customers.find((cust) => cust.id === bill.customer.id || cust.name === bill.customer.name)
-      if (c) {
-        c.totalOrders += 1
-        const currentLifetime = Number(String(c.lifetimeValue).replace(/[^0-9]/g, '')) || 0
-        c.lifetimeValue = (currentLifetime + grandTotal).toLocaleString('en-IN')
-        c.recentTx.unshift({
-          id: `#KWF-2024-${newTx.id.replace('INV-', '')}`,
-          dateItem: `Today • ${newTx.item}`,
-          amount: grandTotal.toLocaleString('en-IN'),
-        })
-        this.saveCustomers(customers)
-      }
-    }
+    // Sync sale to MongoDB Backend
+    fetch(`${API_BASE}/api/sales`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        invoice: newTx.invoice,
+        customer: newTx.customer,
+        customerPhone: newTx.customerPhone,
+        customerAddress: newTx.customerAddress,
+        customerGstin: newTx.customerGstin,
+        location: newTx.project,
+        items: newTx.item,
+        itemsList: items,
+        subtotal,
+        taxAmount: totalGst,
+        discount,
+        deliveryCharge: delivery,
+        amount: grandTotal,
+        paymentStatus: bill.paymentStatus || 'Pending',
+        paymentMode: bill.paymentMode || 'UPI',
+        invoiceDate: bill.invoiceDate,
+        dueDate: bill.dueDate,
+        notes: bill.notes,
+        date: new Date().toISOString(),
+      }),
+    }).catch((err) => {
+      console.warn('[dataStore] Offline sale saved locally:', err.message)
+    })
 
     return newTx
   },
+}
+
+// Automatically trigger background sync on store load
+if (typeof window !== 'undefined') {
+  setTimeout(() => {
+    DataStore.syncFromBackend()
+  }, 100)
 }
