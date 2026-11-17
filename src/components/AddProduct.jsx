@@ -10,15 +10,30 @@ const DEFAULT_CATEGORIES = [
   'Executive Desks & Tables',
 ]
 
+// Auto-generate clean, systematic SKU code
+const generateAutoSku = (cat = 'Dining Sets & Tables') => {
+  const codeMap = {
+    'Dining Sets & Tables': 'DIN',
+    'Beds & Bedroom': 'BED',
+    'Armchairs & Seating': 'CHR',
+    'Storage & Bookcases': 'STR',
+    'Executive Desks & Tables': 'DSK',
+    'Living': 'LIV',
+  }
+  const prefix = codeMap[cat] || (cat ? cat.replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase() : 'FUR')
+  const randomNum = Math.floor(1000 + Math.random() * 9000)
+  return `KWF-${prefix}-${randomNum}`
+}
+
 export default function AddProduct({ onProductSaved }) {
   // Settings sync (for dynamic GST and Depot defaults)
   const [settings, setSettings] = useState(() => DataStore.getSettings())
 
-  // General Info states (Initialized empty for clean data entry)
+  // General Info states (SKU is automatically generated on mount)
   const [productName, setProductName] = useState('')
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES)
   const [category, setCategory] = useState(DEFAULT_CATEGORIES[0] || 'Dining Sets & Tables')
-  const [skuCode, setSkuCode] = useState('')
+  const [skuCode, setSkuCode] = useState(() => generateAutoSku('Dining Sets & Tables'))
   const [woodSpecies, setWoodSpecies] = useState('')
   const [description, setDescription] = useState('')
 
@@ -58,8 +73,9 @@ export default function AddProduct({ onProductSaved }) {
   // Reset / Clear form for fresh new product entry
   const handleAddNewProductForm = () => {
     setProductName('')
-    setCategory(categories[0] || 'Dining Sets & Tables')
-    setSkuCode('')
+    const defaultCat = categories[0] || 'Dining Sets & Tables'
+    setCategory(defaultCat)
+    setSkuCode(generateAutoSku(defaultCat))
     setWoodSpecies('')
     setDescription('')
     setLength('')
@@ -146,8 +162,7 @@ export default function AddProduct({ onProductSaved }) {
   }
 
   const handleAutoGenerateSku = () => {
-    const randomNum = Math.floor(100 + Math.random() * 900)
-    setSkuCode(`KWF-NT-${randomNum}`)
+    setSkuCode(generateAutoSku(category))
   }
 
   const handleSaveProduct = async () => {
@@ -334,7 +349,11 @@ export default function AddProduct({ onProductSaved }) {
               <select
                 className="select-styled"
                 value={category}
-                onChange={(e) => setCategory(e.target.value)}
+                onChange={(e) => {
+                  const newCat = e.target.value
+                  setCategory(newCat)
+                  setSkuCode(generateAutoSku(newCat))
+                }}
               >
                 {categories.map((cat) => (
                   <option key={cat} value={cat}>
@@ -346,19 +365,23 @@ export default function AddProduct({ onProductSaved }) {
 
             <div className="form-field-group">
               <div className="field-label-row">
-                <label className="field-label">SKU / Code *</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <label className="field-label" style={{ marginBottom: 0 }}>SKU / Code *</label>
+                  <span style={{ fontSize: '10px', fontWeight: 600, color: '#C88D58', backgroundColor: '#FEF6EE', border: '1px solid #F5D7BA', padding: '1px 6px', borderRadius: '4px' }}>Auto-Generated</span>
+                </div>
                 <button
                   type="button"
                   className="field-action-link"
                   onClick={handleAutoGenerateSku}
+                  title="Generate new SKU"
                 >
-                  🔄 Auto-gen
+                  🔄 Regenerate
                 </button>
               </div>
               <input
                 type="text"
                 className="input-styled"
-                placeholder="e.g. KWF-NT-101"
+                placeholder="e.g. KWF-DIN-1082"
                 value={skuCode}
                 onChange={(e) => setSkuCode(e.target.value)}
               />

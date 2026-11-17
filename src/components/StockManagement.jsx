@@ -3,60 +3,30 @@ import { DataStore } from '../services/dataStore'
 import './StockManagement.css'
 
 const DEFAULT_PRODUCTS = [
-  {
-    id: 1,
-    name: 'Nilambur Teak 6-Seater Dining Set',
-    sku: 'KWF-TB-NT-06 • Nilambur Teak',
-    category: 'Dining',
-    stock: '2 in stock (Low)',
-    stockType: 'low',
-    price: '₹54,000',
-  },
-  {
-    id: 2,
-    name: 'Solid Rosewood Royal King Bed',
-    sku: 'KWF-BD-RW-K01 • Sivakasi Rosewood',
-    category: 'Beds',
-    stock: '1 left (Critical)',
-    stockType: 'critical',
-    price: '₹78,000',
-  },
-  {
-    id: 3,
-    name: 'Teak Ergonomic Armchair',
-    sku: 'KWF-AC-TK-09 • Nilambur Teak',
-    category: 'Chairs',
-    stock: '3 in stock',
-    stockType: 'in-stock',
-    price: '₹14,500',
-  },
-  {
-    id: 4,
-    name: 'Handcrafted Cane Bookcase',
-    sku: 'KWF-SH-CN-03 • Bamboo & Mahogany',
-    category: 'Storage',
-    stock: '2 in stock (Low)',
-    stockType: 'low',
-    price: '₹18,500',
-  },
-  {
-    id: 5,
-    name: 'Anjili Heritage Brass Chest',
-    sku: 'KWF-CT-AN-14 • Anjili Wild Timber',
-    category: 'Storage',
-    stock: '7 in stock',
-    stockType: 'in-stock',
-    price: '₹22,500',
-  },
-  {
-    id: 6,
-    name: 'Jackfruit Live-Edge Boardroom Desk',
-    sku: 'KWF-DK-JK-02 • Old-Growth Plavu',
-    category: 'Tables',
-    stock: '4 in stock',
-    stockType: 'in-stock',
-    price: '₹95,000',
-  },
+  { id: 1, name: 'Nilambur Teak 6-Seater Dining Set', sku: 'KWF-TB-NT-06 • Nilambur Teak', category: 'Dining', stock: '2 in stock (Low)', stockType: 'low', stockQuantity: 2, price: '₹54,000' },
+  { id: 2, name: 'Solid Rosewood Royal King Bed', sku: 'KWF-BD-RW-K01 • Sivakasi Rosewood', category: 'Beds', stock: '1 left (Critical)', stockType: 'critical', stockQuantity: 1, price: '₹78,000' },
+  { id: 3, name: 'Teak Ergonomic Armchair', sku: 'KWF-AC-TK-09 • Nilambur Teak', category: 'Chairs', stock: '8 in stock', stockType: 'in-stock', stockQuantity: 8, price: '₹14,500' },
+  { id: 4, name: 'Handcrafted Cane Bookcase', sku: 'KWF-SH-CN-03 • Bamboo & Mahogany', category: 'Storage', stock: '2 in stock (Low)', stockType: 'low', stockQuantity: 2, price: '₹18,500' },
+  { id: 5, name: 'Anjili Heritage Brass Chest', sku: 'KWF-CT-AN-14 • Anjili Wild Timber', category: 'Storage', stock: '7 in stock', stockType: 'in-stock', stockQuantity: 7, price: '₹22,500' },
+  { id: 6, name: 'Jackfruit Live-Edge Boardroom Desk', sku: 'KWF-DK-JK-02 • Old-Growth Plavu', category: 'Tables', stock: '4 in stock', stockType: 'in-stock', stockQuantity: 4, price: '₹95,000' },
+  { id: 7, name: 'Rosewood 3-Door Master Wardrobe', sku: 'KWF-WD-RW-03 • Rosewood', category: 'Storage', stock: '3 in stock', stockType: 'in-stock', stockQuantity: 3, price: '₹68,000' },
+  { id: 8, name: 'Teakwood 3-Seater Living Sofa', sku: 'KWF-SF-TK-03 • Teak', category: 'Living', stock: '5 in stock', stockType: 'in-stock', stockQuantity: 5, price: '₹42,000' },
+  { id: 9, name: 'Solid Teak Coffee Table Glass Top', sku: 'KWF-CT-TK-08 • Teak', category: 'Tables', stock: '6 in stock', stockType: 'in-stock', stockQuantity: 6, price: '₹16,500' },
+  { id: 10, name: 'Teakwood Queen Hydraulic Storage Bed', sku: 'KWF-BD-TK-Q02 • Teak', category: 'Beds', stock: '4 in stock', stockType: 'in-stock', stockQuantity: 4, price: '₹62,000' },
+  { id: 11, name: 'Traditional Hand-Carved Rocking Chair', sku: 'KWF-RC-TK-01 • Teak', category: 'Chairs', stock: '9 in stock', stockType: 'in-stock', stockQuantity: 9, price: '₹12,800' },
+  { id: 12, name: 'Kerala Traditional Mandapam Pooja Unit', sku: 'KWF-PJ-TK-05 • Teak Brass', category: 'Living', stock: '3 in stock', stockType: 'in-stock', stockQuantity: 3, price: '₹34,000' },
+  { id: 13, name: 'Solid Rosewood Dressing Table with Mirror', sku: 'KWF-DT-RW-02 • Rosewood', category: 'Beds', stock: '4 in stock', stockType: 'in-stock', stockQuantity: 4, price: '₹29,500' },
+  { id: 14, name: 'Mahogany 6-Shelf Library Display Rack', sku: 'KWF-SH-MH-06 • Mahogany', category: 'Storage', stock: '5 in stock', stockType: 'in-stock', stockQuantity: 5, price: '₹21,000' },
+  { id: 15, name: 'Teakwood TV Media Entertainment Console', sku: 'KWF-TV-TK-04 • Teak', category: 'Living', stock: '7 in stock', stockType: 'in-stock', stockQuantity: 7, price: '₹26,500' },
+  { id: 16, name: 'Handcrafted Wooden Oonjal Swing with Brass Chains', sku: 'KWF-SW-TK-01 • Teak Brass', category: 'Living', stock: '2 in stock (Low)', stockType: 'low', stockQuantity: 2, price: '₹48,000' },
+  { id: 17, name: 'Teakwood 4-Seater Compact Dining Set', sku: 'KWF-TB-TK-04 • Teak', category: 'Dining', stock: '8 in stock', stockType: 'in-stock', stockQuantity: 8, price: '₹36,000' },
+  { id: 18, name: 'Solid Wood 3-Tier Louvered Shoe Rack', sku: 'KWF-SR-WD-03 • Hardwood', category: 'Storage', stock: '12 in stock', stockType: 'in-stock', stockQuantity: 12, price: '₹9,500' },
+  { id: 19, name: 'High-Back Ergonomic Teak Study Chair', sku: 'KWF-SC-TK-07 • Teak', category: 'Chairs', stock: '10 in stock', stockType: 'in-stock', stockQuantity: 10, price: '₹8,500' },
+  { id: 20, name: 'Rosewood Dual-Drawer Bedside Nightstand', sku: 'KWF-NS-RW-02 • Rosewood', category: 'Beds', stock: '11 in stock', stockType: 'in-stock', stockQuantity: 11, price: '₹7,200' },
+  { id: 21, name: 'Live-Edge Teak Entryway Console Table', sku: 'KWF-CN-TK-03 • Live Teak', category: 'Tables', stock: '4 in stock', stockType: 'in-stock', stockQuantity: 4, price: '₹19,800' },
+  { id: 22, name: 'Vintage 5-Drawer Wooden Chest', sku: 'KWF-CT-RW-05 • Rosewood', category: 'Storage', stock: '3 in stock', stockType: 'in-stock', stockQuantity: 3, price: '₹31,000' },
+  { id: 23, name: 'Teakwood Solid Dining Bench', sku: 'KWF-BN-TK-02 • Teak', category: 'Dining', stock: '6 in stock', stockType: 'in-stock', stockQuantity: 6, price: '₹11,500' },
+  { id: 24, name: 'Wooden Kitchen Bar Stool with Swivel Top', sku: 'KWF-BS-WD-01 • Teak', category: 'Chairs', stock: '14 in stock', stockType: 'in-stock', stockQuantity: 14, price: '₹6,800' },
 ]
 
 export default function StockManagement({ onAddNewProduct }) {
@@ -67,11 +37,11 @@ export default function StockManagement({ onAddNewProduct }) {
     totalStock: '3,892',
     totalValuationFormatted: '₹1.42 Cr',
     lowStockCount: '6 SKUs',
-    categoryCounts: { All: 148, Dining: 0, Beds: 0, Chairs: 0, Storage: 0 },
+    categoryCounts: { All: 24, Dining: 3, Beds: 4, Chairs: 4, Storage: 5, Tables: 3, Living: 5 },
   })
 
-  // Dynamic Pagination states
-  const [itemsPerPage, setItemsPerPage] = useState(6)
+  // Dynamic Pagination states: Minimum 20 products per page
+  const [itemsPerPage, setItemsPerPage] = useState(20)
   const [currentPage, setCurrentPage] = useState(1)
 
   // Quick Stock In / Out Modal states
@@ -609,9 +579,9 @@ export default function StockManagement({ onAddNewProduct }) {
                 setCurrentPage(1)
               }}
             >
-              <option value={6}>6 per page</option>
-              <option value={12}>12 per page</option>
-              <option value={24}>24 per page</option>
+              <option value={20}>20 per page</option>
+              <option value={50}>50 per page</option>
+              <option value={100}>100 per page</option>
             </select>
           </div>
 

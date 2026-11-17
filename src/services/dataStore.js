@@ -42,74 +42,32 @@ const INITIAL_SETTINGS = {
   systemDate: '',
 }
 
-// Products Catalog
+// Products Catalog (24 items to support minimum 20 items per ledger page)
 const INITIAL_PRODUCTS = [
-  {
-    id: 'prod-1',
-    sku: 'KWF-TB-NT-06',
-    name: 'Nilambur Teak 6-Seater Dining Table',
-    finish: 'Grade-A Matte Walnut Finish',
-    category: 'Dining Sets',
-    unitPrice: 54000,
-    stockQuantity: 4,
-    lowStockThreshold: 2,
-    woodSpecies: 'Teak',
-  },
-  {
-    id: 'prod-2',
-    sku: 'KWF-DC-TK-02',
-    name: 'Teakwood Dining Chairs with Cane Weave',
-    finish: 'Handcrafted Rattan Back',
-    category: 'Chairs',
-    unitPrice: 6500,
-    stockQuantity: 18,
-    lowStockThreshold: 4,
-    woodSpecies: 'Teak',
-  },
-  {
-    id: 'prod-3',
-    sku: 'KWF-CR-TK-01',
-    name: 'Solid Teak Side Server Credenza',
-    finish: 'Brass Pull Inlays',
-    category: 'Storage',
-    unitPrice: 24000,
-    stockQuantity: 3,
-    lowStockThreshold: 1,
-    woodSpecies: 'Teak',
-  },
-  {
-    id: 'prod-4',
-    sku: 'KWF-BD-RW-K01',
-    name: 'Solid Rosewood Royal King Bed',
-    finish: 'Hand-Carved Headboard & Natural Beeswax',
-    category: 'Beds',
-    unitPrice: 78000,
-    stockQuantity: 2,
-    lowStockThreshold: 1,
-    woodSpecies: 'Rosewood',
-  },
-  {
-    id: 'prod-5',
-    sku: 'KWF-SF-LV-08',
-    name: 'Teak Frame 3-Seater Artisan Sofa',
-    finish: 'Raw Organic Cotton & Walnut Polish',
-    category: 'Living',
-    unitPrice: 42000,
-    stockQuantity: 5,
-    lowStockThreshold: 2,
-    woodSpecies: 'Teak',
-  },
-  {
-    id: 'prod-6',
-    sku: 'KWF-SH-CN-03',
-    name: 'Handcrafted Cane Bookcase',
-    finish: 'Bamboo & Mahogany 5-Tier',
-    category: 'Storage',
-    unitPrice: 18500,
-    stockQuantity: 4,
-    lowStockThreshold: 2,
-    woodSpecies: 'Mahogany',
-  },
+  { id: 'prod-1', sku: 'KWF-TB-NT-06', name: 'Nilambur Teak 6-Seater Dining Set', finish: 'Grade-A Matte Walnut Finish', category: 'Dining Sets', unitPrice: 54000, stockQuantity: 4, lowStockThreshold: 2, woodSpecies: 'Teak' },
+  { id: 'prod-2', sku: 'KWF-DC-TK-02', name: 'Teakwood Dining Chairs with Cane Weave', finish: 'Handcrafted Rattan Back', category: 'Chairs', unitPrice: 6500, stockQuantity: 18, lowStockThreshold: 4, woodSpecies: 'Teak' },
+  { id: 'prod-3', sku: 'KWF-CR-TK-01', name: 'Solid Teak Side Server Credenza', finish: 'Brass Pull Inlays', category: 'Storage', unitPrice: 24000, stockQuantity: 3, lowStockThreshold: 1, woodSpecies: 'Teak' },
+  { id: 'prod-4', sku: 'KWF-BD-RW-K01', name: 'Solid Rosewood Royal King Bed', finish: 'Hand-Carved Headboard & Natural Beeswax', category: 'Beds', unitPrice: 78000, stockQuantity: 2, lowStockThreshold: 1, woodSpecies: 'Rosewood' },
+  { id: 'prod-5', sku: 'KWF-SF-LV-08', name: 'Teak Frame 3-Seater Artisan Sofa', finish: 'Raw Organic Cotton & Walnut Polish', category: 'Living', unitPrice: 42000, stockQuantity: 5, lowStockThreshold: 2, woodSpecies: 'Teak' },
+  { id: 'prod-6', sku: 'KWF-SH-CN-03', name: 'Handcrafted Cane Bookcase', finish: 'Bamboo & Mahogany 5-Tier', category: 'Storage', unitPrice: 18500, stockQuantity: 4, lowStockThreshold: 2, woodSpecies: 'Mahogany' },
+  { id: 'prod-7', sku: 'KWF-CT-AN-14', name: 'Anjili Heritage Brass Chest', finish: 'Antique Brass Studded', category: 'Storage', unitPrice: 22500, stockQuantity: 7, lowStockThreshold: 2, woodSpecies: 'Anjili' },
+  { id: 'prod-8', sku: 'KWF-DK-JK-02', name: 'Jackfruit Live-Edge Boardroom Desk', finish: 'Natural Plavu Oil Polish', category: 'Tables', unitPrice: 95000, stockQuantity: 4, lowStockThreshold: 1, woodSpecies: 'Jackfruit' },
+  { id: 'prod-9', sku: 'KWF-WD-RW-03', name: 'Rosewood 3-Door Master Wardrobe', finish: 'Hand-Polished Rosewood Finish', category: 'Storage', unitPrice: 68000, stockQuantity: 3, lowStockThreshold: 1, woodSpecies: 'Rosewood' },
+  { id: 'prod-10', sku: 'KWF-CT-TK-08', name: 'Solid Teak Coffee Table Glass Top', finish: 'Tempered Glass with Teak Base', category: 'Tables', unitPrice: 16500, stockQuantity: 6, lowStockThreshold: 2, woodSpecies: 'Teak' },
+  { id: 'prod-11', sku: 'KWF-BD-TK-Q02', name: 'Teakwood Queen Hydraulic Storage Bed', finish: 'Warm Honey Teak Polish', category: 'Beds', unitPrice: 62000, stockQuantity: 4, lowStockThreshold: 1, woodSpecies: 'Teak' },
+  { id: 'prod-12', sku: 'KWF-RC-TK-01', name: 'Traditional Hand-Carved Rocking Chair', finish: 'Ergonomic Curved Slats', category: 'Chairs', unitPrice: 12800, stockQuantity: 9, lowStockThreshold: 3, woodSpecies: 'Teak' },
+  { id: 'prod-13', sku: 'KWF-PJ-TK-05', name: 'Kerala Traditional Mandapam Pooja Unit', finish: 'Carved Gopuram & Brass Bells', category: 'Living', unitPrice: 34000, stockQuantity: 3, lowStockThreshold: 1, woodSpecies: 'Teak' },
+  { id: 'prod-14', sku: 'KWF-DT-RW-02', name: 'Solid Rosewood Dressing Table with Mirror', finish: 'Beveled Belgian Mirror & Velvet Drawers', category: 'Beds', unitPrice: 29500, stockQuantity: 4, lowStockThreshold: 1, woodSpecies: 'Rosewood' },
+  { id: 'prod-15', sku: 'KWF-SH-MH-06', name: 'Mahogany 6-Shelf Library Display Rack', finish: 'Gloss Mahogany Polish', category: 'Storage', unitPrice: 21000, stockQuantity: 5, lowStockThreshold: 2, woodSpecies: 'Mahogany' },
+  { id: 'prod-16', sku: 'KWF-TV-TK-04', name: 'Teakwood TV Media Entertainment Console', finish: 'Cable Ports & Louvered Slats', category: 'Living', unitPrice: 26500, stockQuantity: 7, lowStockThreshold: 2, woodSpecies: 'Teak' },
+  { id: 'prod-17', sku: 'KWF-SW-TK-01', name: 'Handcrafted Wooden Oonjal Swing with Brass Chains', finish: 'Heavy Cast Brass Carved Chains', category: 'Living', unitPrice: 48000, stockQuantity: 2, lowStockThreshold: 1, woodSpecies: 'Teak' },
+  { id: 'prod-18', sku: 'KWF-TB-TK-04', name: 'Teakwood 4-Seater Compact Dining Set', finish: 'Space-Saving Tuck-in Chairs', category: 'Dining Sets', unitPrice: 36000, stockQuantity: 8, lowStockThreshold: 2, woodSpecies: 'Teak' },
+  { id: 'prod-19', sku: 'KWF-SR-WD-03', name: 'Solid Wood 3-Tier Louvered Shoe Rack', finish: 'Ventilated Louver Doors', category: 'Storage', unitPrice: 9500, stockQuantity: 12, lowStockThreshold: 3, woodSpecies: 'Hardwood' },
+  { id: 'prod-20', sku: 'KWF-SC-TK-07', name: 'High-Back Ergonomic Teak Study Chair', finish: 'Cushioned Leatherette Seat', category: 'Chairs', unitPrice: 8500, stockQuantity: 10, lowStockThreshold: 3, woodSpecies: 'Teak' },
+  { id: 'prod-21', sku: 'KWF-NS-RW-02', name: 'Rosewood Dual-Drawer Bedside Nightstand', finish: 'Brass Knob Hardware', category: 'Beds', unitPrice: 7200, stockQuantity: 11, lowStockThreshold: 3, woodSpecies: 'Rosewood' },
+  { id: 'prod-22', sku: 'KWF-CN-TK-03', name: 'Live-Edge Teak Entryway Console Table', finish: 'Natural Edge Black Hairpin Legs', category: 'Tables', unitPrice: 19800, stockQuantity: 4, lowStockThreshold: 1, woodSpecies: 'Teak' },
+  { id: 'prod-23', sku: 'KWF-CT-RW-05', name: 'Vintage 5-Drawer Wooden Chest', finish: 'Antiqued Hand-Waxed Rosewood', category: 'Storage', unitPrice: 31000, stockQuantity: 3, lowStockThreshold: 1, woodSpecies: 'Rosewood' },
+  { id: 'prod-24', sku: 'KWF-BN-TK-02', name: 'Teakwood Solid Dining Bench', finish: 'Chamfered Edge Minimalist Legs', category: 'Dining Sets', unitPrice: 11500, stockQuantity: 6, lowStockThreshold: 2, woodSpecies: 'Teak' },
 ]
 
 const INITIAL_CUSTOMERS = [
@@ -643,7 +601,20 @@ export const DataStore = {
     const targetCust = preselectedCustomer || emptyCustomer
     const seq = bills.length + 1
     const newId = `bill-${Date.now()}`
-    const randomInv = `INV-${Math.floor(1000 + Math.random() * 9000)}`
+
+    // Auto-generate next sequential invoice number like INV-1004, INV-1005
+    const existingInvoices = [
+      ...bills.map((b) => b.invoiceNumber || ''),
+      ...this.getTransactions().map((t) => t.invoice || t.id || ''),
+    ]
+    const extractedNums = existingInvoices
+      .map((inv) => {
+        const m = String(inv).match(/INV-(\d+)/i)
+        return m ? parseInt(m[1], 10) : 0
+      })
+      .filter((n) => !isNaN(n) && n > 0)
+    const nextSeq = extractedNums.length > 0 ? Math.max(...extractedNums) + 1 : 1001
+    const autoInv = `INV-${nextSeq}`
 
     // Today's date formatted as YYYY-MM-DD
     const today = new Date().toISOString().split('T')[0]
@@ -652,7 +623,7 @@ export const DataStore = {
 
     const newBill = {
       id: newId,
-      invoiceNumber: randomInv,
+      invoiceNumber: autoInv,
       invoiceDate: today,
       dueDate: due,
       name: targetCust.name ? `Bill #${seq} • ${targetCust.name}` : `Bill #${seq}`,

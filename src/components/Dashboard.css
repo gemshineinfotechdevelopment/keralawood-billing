@@ -239,14 +239,11 @@
   color: #8A7B72;
 }
 
-/* Middle 2-Column Section */
+/* Middle Section: Low Stock */
 .dashboard-middle-row {
-  display: grid;
-  grid-template-columns: 1.15fr 0.85fr;
-  gap: 16px;
+  display: block;
 }
 
-.actions-card,
 .low-stock-card {
   background-color: #FFFFFF;
   border-radius: 10px;
@@ -341,8 +338,8 @@
 
 /* Low Stock Item List */
 .low-stock-list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 12px;
 }
 
@@ -350,13 +347,15 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-bottom: 8px;
-  border-bottom: 1px solid #FAF2EE;
+  padding: 10px 14px;
+  background-color: #FEF9F6;
+  border: 1px solid #F2E4DB;
+  border-radius: 8px;
 }
 
 .low-stock-row:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
+  border-bottom: 1px solid #F2E4DB;
+  padding-bottom: 10px;
 }
 
 .item-info {

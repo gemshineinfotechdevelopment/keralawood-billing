@@ -391,66 +391,9 @@ export default function ReportsAnalytics() {
         </div>
       </div>
 
-      {/* Row 2: Two Middle Analytics Cards */}
+      {/* Row 2: Annual Performance Snapshot */}
       <div className="reports-middle-grid">
-        {/* Card Left: Top Selling Wood Species */}
-        <div className="reports-panel-card">
-          <div className="panel-card-header">
-            <div>
-              <h2 className="panel-card-title">Top Selling Wood Species</h2>
-              <p className="panel-card-subtitle">
-                Volume share and gross realization by species ({selectedYear === 'all' ? 'All-Time' : `Year ${selectedYear}`}).
-              </p>
-            </div>
-            <div className="panel-card-icon">
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#5C3A21"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <polygon points="12 2 7 9 10 9 5 16 19 16 14 9 17 9 12 2" />
-                <line x1="12" y1="16" x2="12" y2="22" />
-              </svg>
-            </div>
-          </div>
-
-          <div className="species-progress-list">
-            {speciesList.map((spec) => (
-              <div key={spec.name} className="species-progress-item">
-                <div className="species-item-header">
-                  <div className="species-name-wrap">
-                    <span className="species-dot" style={{ backgroundColor: spec.color }} />
-                    <span className="species-name">{spec.name}</span>
-                  </div>
-                  <div className="species-stat-wrap">
-                    <span className="species-percent">{spec.percent}%</span>
-                    <span className="species-rev">
-                      <span className="straight-rupee">₹</span>
-                      {spec.raw === 0
-                        ? '0'
-                        : spec.raw >= 100000
-                        ? `${(spec.raw / 100000).toFixed(1)}L`
-                        : spec.raw.toLocaleString('en-IN')}
-                    </span>
-                  </div>
-                </div>
-                <div className="species-progress-track">
-                  <div
-                    className="species-progress-bar"
-                    style={{ width: `${spec.percent}%`, backgroundColor: spec.color }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Card Right: Annual Performance Snapshot */}
+        {/* Annual Performance Snapshot */}
         <div className="reports-panel-card">
           <div className="panel-card-header">
             <div>

@@ -259,12 +259,10 @@
 }
 
 /* ===================================================
-   Row 2: Two Middle Analytics Cards
+   Row 2: Middle Analytics Card
    =================================================== */
 .reports-middle-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  display: block;
 }
 
 .reports-panel-card {
@@ -379,10 +377,10 @@
 
 /* Monthly Performance Snapshot Stack */
 .snapshot-cards-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 11px;
-  margin-top: 4px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+  margin-top: 8px;
 }
 
 .snapshot-item {
