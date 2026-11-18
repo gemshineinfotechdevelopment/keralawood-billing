@@ -27,7 +27,31 @@
 
 .sidebar-brand {
   display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sidebar-brand-text-col {
+  display: flex;
   flex-direction: column;
+}
+
+.sidebar-custom-logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  object-fit: contain;
+  background: #FFFFFF;
+  padding: 2px;
+}
+
+.sidebar-custom-logo-mini {
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
+  object-fit: contain;
+  background: #FFFFFF;
+  padding: 1px;
 }
 
 .sidebar-brand-title {

@@ -30,6 +30,7 @@ const settingsSchema = new mongoose.Schema(
       default:
         'Natural variations in teak & rosewood grain are organic characteristics. Claims accepted within 7 days of yard delivery.',
     },
+    logoUrl: { type: String, default: '' },
     systemTime: { type: String, default: '10:30 AM' },
     systemDate: { type: String, default: '' },
   },

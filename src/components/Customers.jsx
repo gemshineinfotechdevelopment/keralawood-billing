@@ -41,7 +41,7 @@ export default function Customers({ onNavigateToBilling }) {
     fetch('/api/customers')
       .then((res) => res.json())
       .then((data) => {
-        if (data?.success && Array.isArray(data.customers) && data.customers.length >= 20) {
+        if (data?.success && Array.isArray(data.customers)) {
           const formatted = data.customers.map((c) => ({
             id: c._id || c.id,
             initials: c.initials || getInitials(c),
@@ -559,8 +559,14 @@ export default function Customers({ onNavigateToBilling }) {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="5" className="no-patrons-cell">
-                      No customers found matching &quot;{searchQuery}&quot;
+                    <td colSpan="5" className="no-patrons-cell" style={{ textAlign: 'center', padding: '40px 20px', color: '#8C7E74' }}>
+                      <div style={{ fontSize: '1.8rem', marginBottom: '8px' }}>👥</div>
+                      <div style={{ fontWeight: 600, fontSize: '0.95rem', color: '#2C1810', marginBottom: '4px' }}>
+                        {searchQuery ? `No customers found matching "${searchQuery}"` : 'No customers registered yet'}
+                      </div>
+                      <div style={{ fontSize: '0.85rem' }}>
+                        Click &quot;+ Register Customer&quot; above to create your first client dossier.
+                      </div>
                     </td>
                   </tr>
                 )}

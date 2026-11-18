@@ -146,6 +146,16 @@ export default function Products() {
     return `KWF-${prod?.id || '101'}`
   }
 
+  const getProductInitials = (prod) => {
+    if (!prod) return 'KW'
+    const name = String(prod.name || prod.productName || 'Timber Product').trim()
+    const parts = name.split(/\s+/)
+    if (parts.length >= 2 && parts[0] && parts[1]) {
+      return (parts[0][0] + parts[1][0]).toUpperCase()
+    }
+    return name.slice(0, 2).toUpperCase() || 'KW'
+  }
+
   // Reliable cross-browser catalog print
   const handlePrintCatalog = () => {
     const printEl = document.getElementById('printable-products-catalog')
@@ -538,8 +548,14 @@ export default function Products() {
                 })
               ) : (
                 <tr>
-                  <td colSpan="5" className="products-no-results">
-                    No products found matching "{searchQuery}"
+                  <td colSpan="5" className="products-no-results" style={{ textAlign: 'center', padding: '48px 20px', color: '#8C7E74' }}>
+                    <div style={{ fontSize: '2rem', marginBottom: '8px' }}>🪵</div>
+                    <div style={{ fontWeight: 700, fontSize: '1rem', color: '#2C1810', marginBottom: '4px' }}>
+                      {searchQuery ? `No products found matching "${searchQuery}"` : 'No timber products cataloged yet'}
+                    </div>
+                    <div style={{ fontSize: '0.85rem' }}>
+                      Click &quot;+ Add Product&quot; to catalog your first timber item or import inventory.
+                    </div>
                   </td>
                 </tr>
               )}
@@ -834,25 +850,33 @@ export default function Products() {
                   </tr>
                 </thead>
                 <tbody>
-                  {products.map((p, idx) => {
-                    const numPrice = Number(String(p.sellingPrice || p.unitPrice || p.price || 0).replace(/[^0-9.]/g, '')) || 0
-                    return (
-                      <tr key={p.id || p.sku || idx}>
-                        <td className="catalog-print-num">{idx + 1}</td>
-                        <td className="catalog-print-code">
-                          <code>{getProductCode(p)}</code>
-                        </td>
-                        <td className="catalog-print-name">
-                          <strong>{p.name}</strong>
-                        </td>
-                        <td className="catalog-print-cat">{p.category || '-'}</td>
-                        <td className="catalog-print-wood">{p.woodSpecies || '-'}</td>
-                        <td className="catalog-print-price" style={{ textAlign: 'right' }}>
-                          ₹{numPrice.toLocaleString('en-IN')}
-                        </td>
-                      </tr>
-                    )
-                  })}
+                  {products.length === 0 ? (
+                    <tr>
+                      <td colSpan="6" style={{ textAlign: 'center', padding: '28px', color: '#7D6C63' }}>
+                        No timber products cataloged in depot inventory yet.
+                      </td>
+                    </tr>
+                  ) : (
+                    products.map((p, idx) => {
+                      const numPrice = Number(String(p.sellingPrice || p.unitPrice || p.price || 0).replace(/[^0-9.]/g, '')) || 0
+                      return (
+                        <tr key={p.id || p.sku || idx}>
+                          <td className="catalog-print-num">{idx + 1}</td>
+                          <td className="catalog-print-code">
+                            <code>{getProductCode(p)}</code>
+                          </td>
+                          <td className="catalog-print-name">
+                            <strong>{p.name}</strong>
+                          </td>
+                          <td className="catalog-print-cat">{p.category || '-'}</td>
+                          <td className="catalog-print-wood">{p.woodSpecies || '-'}</td>
+                          <td className="catalog-print-price" style={{ textAlign: 'right' }}>
+                            ₹{numPrice.toLocaleString('en-IN')}
+                          </td>
+                        </tr>
+                      )
+                    })
+                  )}
                 </tbody>
               </table>
 

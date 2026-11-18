@@ -440,3 +440,136 @@
     gap: 12px;
   }
 }
+
+/* Logo Uploader Section */
+.settings-logo-uploader-card {
+  background: #FDF9F6;
+  border: 1px dashed #D3C4B8;
+  border-radius: 9px;
+  padding: 16px 18px;
+  margin-bottom: 8px;
+}
+
+.settings-logo-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-top: 8px;
+}
+
+.settings-logo-preview-frame {
+  width: 90px;
+  height: 90px;
+  min-width: 90px;
+  border-radius: 10px;
+  background: #FFFFFF;
+  border: 1.5px solid #E4D8CE;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(49, 25, 11, 0.08);
+}
+
+.settings-logo-preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 4px;
+}
+
+.settings-logo-empty-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: #8C7E74;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.settings-logo-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settings-logo-hint-text {
+  margin: 0;
+  font-size: 12.5px;
+  color: #6C5547;
+  line-height: 1.4;
+}
+
+.settings-logo-actions-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn-settings-choose-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 16px;
+  background: #31190B;
+  color: #FFFFFF;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.btn-settings-choose-logo:hover {
+  background: #4A2E18;
+  transform: translateY(-1px);
+}
+
+.btn-settings-remove-logo {
+  padding: 7px 12px;
+  background: #FFF2F0;
+  border: 1px solid #FFCCC7;
+  color: #CF1322;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-settings-remove-logo:hover {
+  background: #FFEBE8;
+  border-color: #FFA39E;
+}
+
+.settings-logo-url-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.settings-logo-url-label {
+  font-size: 11.5px;
+  color: #8C7E74;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.settings-logo-url-input {
+  flex: 1;
+  padding: 6px 10px;
+  font-size: 12px;
+  height: 32px;
+}
+
+@media (max-width: 768px) {
+  .settings-logo-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

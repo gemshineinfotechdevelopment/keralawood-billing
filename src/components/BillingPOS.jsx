@@ -67,7 +67,14 @@ const getCustomerInitials = (name) => {
   return String(name).trim().slice(0, 2).toUpperCase() || 'WC'
 }
 
-export default function BillingPOS({ onNavigateToProducts }) {
+export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'list' }) {
+  const [viewMode, setViewMode] = useState(initialViewMode) // 'list' | 'editor'
+  const [billsSearch, setBillsSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState('All')
+  const [savedBills, setSavedBills] = useState(() => DataStore.getTransactions())
+  const [previewBill, setPreviewBill] = useState(null)
+  const [deleteModalBill, setDeleteModalBill] = useState(null)
+
   const [bills, setBills] = useState(() => DataStore.getBills())
   const [activeBillId, setActiveBillId] = useState(() => DataStore.getActiveBillId())
   const [customers, setCustomers] = useState(() => DataStore.getCustomers())
@@ -82,6 +89,12 @@ export default function BillingPOS({ onNavigateToProducts }) {
   const [additionalOptionsOpen, setAdditionalOptionsOpen] = useState(false)
   const [expandedItemDetails, setExpandedItemDetails] = useState({}) // { [itemId]: boolean }
 
+  useEffect(() => {
+    if (initialViewMode) {
+      setViewMode(initialViewMode)
+    }
+  }, [initialViewMode])
+
   // Listen to store updates
   useEffect(() => {
     const handleUpdate = () => {
@@ -90,8 +103,20 @@ export default function BillingPOS({ onNavigateToProducts }) {
       setCustomers(DataStore.getCustomers())
       setProducts(DataStore.getProducts())
       setSettings(DataStore.getSettings())
+      setSavedBills(DataStore.getTransactions())
     }
     window.addEventListener('timber_store_updated', handleUpdate)
+
+    // Pull live sales from MongoDB Atlas on mount
+    fetch('/api/sales')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.success && Array.isArray(data.sales)) {
+          setSavedBills(data.sales)
+          DataStore.saveTransactions(data.sales)
+        }
+      })
+      .catch(() => {})
 
     // Pull live data from MongoDB Atlas on mount
     fetch('/api/products')
@@ -420,6 +445,164 @@ export default function BillingPOS({ onNavigateToProducts }) {
   }
 
   // -------------------------------------------------------------
+  // Filtered Saved Bills & List Actions
+  // -------------------------------------------------------------
+  const filteredSavedBills = useMemo(() => {
+    return savedBills.filter((bill) => {
+      const q = billsSearch.toLowerCase().trim()
+      const invMatch = !q || (bill.invoice && bill.invoice.toLowerCase().includes(q))
+      const custMatch = !q || (bill.customer && bill.customer.toLowerCase().includes(q))
+      const itemMatch =
+        !q ||
+        (bill.items && bill.items.toLowerCase().includes(q)) ||
+        (bill.item && bill.item.toLowerCase().includes(q))
+      const matchesSearch = invMatch || custMatch || itemMatch
+
+      if (!matchesSearch) return false
+
+      if (statusFilter === 'All') return true
+      const s = (bill.status || bill.paymentStatus || '').toLowerCase()
+      return s.includes(statusFilter.toLowerCase())
+    })
+  }, [savedBills, billsSearch, statusFilter])
+
+  const handleStartNewBill = () => {
+    const fresh = DataStore.createNewDraft()
+    setBills(DataStore.getBills())
+    setActiveBillId(fresh.id)
+    setSaveCustomerToDirectory(false)
+    setViewMode('editor')
+  }
+
+  const handleBackToList = () => {
+    setViewMode('list')
+  }
+
+  const handleViewBill = (bill) => {
+    setPreviewBill(bill)
+    setInvoiceModalOpen(true)
+  }
+
+  const handlePrintBill = (bill) => {
+    setPreviewBill(bill)
+    setInvoiceModalOpen(true)
+    setTimeout(() => {
+      window.print()
+    }, 350)
+  }
+
+  const handleDeleteBillClick = (bill) => {
+    setDeleteModalBill(bill)
+  }
+
+  const handleConfirmDeleteBill = () => {
+    if (!deleteModalBill) return
+    const inv = deleteModalBill.invoice || deleteModalBill.id
+    DataStore.deleteTransaction(inv)
+    setSavedBills((prev) => prev.filter((b) => b.invoice !== inv && b.id !== inv))
+    setPrintSuccessToast(`✓ Deleted Bill ${inv} successfully!`)
+    setDeleteModalBill(null)
+    setTimeout(() => setPrintSuccessToast(''), 3000)
+  }
+
+  const handleCloseInvoiceModal = () => {
+    setInvoiceModalOpen(false)
+    setPreviewBill(null)
+  }
+
+  // Values to display in invoice modal: use previewBill if set, else current editor bill
+  const modalBillData = useMemo(() => {
+    if (!previewBill) {
+      return {
+        invoiceNumber,
+        invoiceDate,
+        dueDate,
+        paymentStatus,
+        paymentMode,
+        customer,
+        items,
+        notes,
+        itemsSubtotal,
+        discount,
+        deliveryCharge,
+        totalGst,
+        grandTotal,
+        balanceDue,
+      }
+    }
+    const inv = previewBill.invoice || previewBill.invoiceNumber || previewBill.id || 'INV-000'
+    const dt = previewBill.date || new Date().toLocaleDateString('en-GB')
+    const due = previewBill.dueDate || '15 Days Net'
+    const st = previewBill.paymentStatus || previewBill.status || 'Paid'
+    const md = previewBill.paymentMode || 'UPI'
+    const cust = {
+      name: previewBill.customer || 'Walk-in Patron',
+      phone: previewBill.customerPhone || previewBill.phone || 'N/A',
+      address: previewBill.customerAddress || previewBill.address || previewBill.location || 'Sivakasi Yard Sale',
+      gstin: previewBill.customerGstin || previewBill.gstin || 'Unregistered / Personal',
+    }
+    const itms =
+      Array.isArray(previewBill.itemDetails) && previewBill.itemDetails.length > 0
+        ? previewBill.itemDetails
+        : [
+            {
+              id: 'item-prev-1',
+              description: previewBill.items || previewBill.item || 'Timber Furniture Order',
+              quantity: 1,
+              price:
+                previewBill.rawAmount ||
+                Number(String(previewBill.amount || 0).replace(/[^0-9.]/g, '')) ||
+                0,
+              gstRate: 0,
+              woodSpecies: previewBill.wood || 'Artisan Timber',
+            },
+          ]
+    const gTotal =
+      previewBill.rawAmount !== undefined
+        ? previewBill.rawAmount
+        : Number(String(previewBill.amount || 0).replace(/[^0-9.]/g, '')) || 0
+    const sub = previewBill.subtotal !== undefined ? previewBill.subtotal : gTotal
+    const disc = previewBill.discount || 0
+    const deliv = previewBill.deliveryCharge || 0
+    const gstAmt = previewBill.taxAmount || 0
+    const bal = st === 'Paid' ? 0 : previewBill.balanceDue || 0
+    const nt = previewBill.notes || ''
+
+    return {
+      invoiceNumber: inv,
+      invoiceDate: dt,
+      dueDate: due,
+      paymentStatus: st,
+      paymentMode: md,
+      customer: cust,
+      items: itms,
+      notes: nt,
+      itemsSubtotal: sub,
+      discount: disc,
+      deliveryCharge: deliv,
+      totalGst: gstAmt,
+      grandTotal: gTotal,
+      balanceDue: bal,
+    }
+  }, [
+    previewBill,
+    invoiceNumber,
+    invoiceDate,
+    dueDate,
+    paymentStatus,
+    paymentMode,
+    customer,
+    items,
+    notes,
+    itemsSubtotal,
+    discount,
+    deliveryCharge,
+    totalGst,
+    grandTotal,
+    balanceDue,
+  ])
+
+  // -------------------------------------------------------------
   // Save & Print Actions
   // -------------------------------------------------------------
   const handleSaveBill = (showModalAfter = false) => {
@@ -459,11 +642,14 @@ export default function BillingPOS({ onNavigateToProducts }) {
 
     DataStore.recordSaleFromBill(billToRecord)
     setBills(DataStore.getBills())
+    setSavedBills(DataStore.getTransactions())
 
     if (showModalAfter) {
+      setPreviewBill(billToRecord)
       setInvoiceModalOpen(true)
     } else {
       setPrintSuccessToast(`✓ Bill ${invoiceNumber} saved successfully to MongoDB!`)
+      setViewMode('list')
       setTimeout(() => setPrintSuccessToast(''), 3000)
     }
   }
@@ -477,8 +663,228 @@ export default function BillingPOS({ onNavigateToProducts }) {
       {/* Toast Notification */}
       {printSuccessToast && <div className="pos-floating-toast">{printSuccessToast}</div>}
 
-      {/* Top Bar with Concurrent Draft Tabs */}
-      <div className="pos-drafts-topbar">
+      {/* Conditional View: Bills Ledger List vs Bill Editor */}
+      {viewMode === 'list' ? (
+        <div className="pos-bills-list-container">
+          {/* List Header */}
+          <div className="pos-bills-list-header">
+            <div>
+              <h2 className="pos-bills-list-title">Billing & POS Invoices</h2>
+              <p className="pos-bills-list-subtitle">
+                Official billing ledger • {savedBills.length} recorded invoices & customer receipts
+              </p>
+            </div>
+            <button
+              type="button"
+              className="pos-btn-new-bill-primary"
+              onClick={handleStartNewBill}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              <span>+ New Bill</span>
+            </button>
+          </div>
+
+          {/* Search & Filter Bar */}
+          <div className="pos-bills-filter-bar">
+            <div className="pos-bills-search-wrap">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8C7E74" strokeWidth="2">
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+              <input
+                type="text"
+                className="pos-bills-search-input"
+                placeholder="Search by Invoice #, Customer name, phone, or item..."
+                value={billsSearch}
+                onChange={(e) => setBillsSearch(e.target.value)}
+              />
+              {billsSearch && (
+                <button
+                  type="button"
+                  className="pos-bills-clear-search"
+                  onClick={() => setBillsSearch('')}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            <div className="pos-bills-status-filter">
+              <span className="pos-filter-label">Status:</span>
+              <select
+                className="pos-status-select"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+              >
+                <option value="All">All Invoices</option>
+                <option value="Paid">Paid</option>
+                <option value="Pending">Pending</option>
+                <option value="Partial">Partial</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Bills Table */}
+          <div className="pos-bills-table-card">
+            <div className="pos-bills-table-wrap">
+              <table className="pos-bills-table">
+                <thead>
+                  <tr>
+                    <th>INVOICE #</th>
+                    <th>DATE</th>
+                    <th>CUSTOMER</th>
+                    <th>ITEMS ORDERED</th>
+                    <th>AMOUNT</th>
+                    <th>STATUS</th>
+                    <th style={{ textAlign: 'center' }}>ACTIONS</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredSavedBills.length === 0 ? (
+                    <tr>
+                      <td colSpan="7" className="pos-bills-empty-cell">
+                        <div className="pos-bills-empty-wrap">
+                          <span className="pos-bills-empty-icon">🧾</span>
+                          <h3 className="pos-bills-empty-title">
+                            {billsSearch ? `No invoices found matching "${billsSearch}"` : 'No bills generated yet'}
+                          </h3>
+                          <p className="pos-bills-empty-desc">
+                            {billsSearch
+                              ? 'Try adjusting your search criteria or filter.'
+                              : 'Click "+ New Bill" above to create and print your first customer timber invoice.'}
+                          </p>
+                          {!billsSearch && (
+                            <button
+                              type="button"
+                              className="pos-btn-new-bill-primary"
+                              style={{ marginTop: '12px' }}
+                              onClick={handleStartNewBill}
+                            >
+                              + Create First Bill
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredSavedBills.map((bill, idx) => {
+                      const inv = bill.invoice || bill.invoiceNumber || bill.id || `INV-${idx + 1}`
+                      const rawAmt = bill.rawAmount !== undefined
+                        ? bill.rawAmount
+                        : Number(String(bill.amount || 0).replace(/[^0-9.]/g, '')) || 0
+                      const status = bill.status || bill.paymentStatus || 'Paid'
+                      const statusLower = status.toLowerCase()
+                      const statusClass = statusLower.includes('paid')
+                        ? 'status-paid'
+                        : statusLower.includes('partial')
+                        ? 'status-partial'
+                        : 'status-pending'
+
+                      return (
+                        <tr key={bill.id || bill.invoice || idx} className="pos-bills-table-row">
+                          <td className="pos-col-invoice">
+                            <span className="pos-invoice-pill">{inv}</span>
+                          </td>
+                          <td className="pos-col-date">
+                            <span className="pos-bill-date">{bill.date || 'Today'}</span>
+                          </td>
+                          <td className="pos-col-customer">
+                            <span className="pos-bill-cust-name">{bill.customer || 'Walk-in Patron'}</span>
+                            {(bill.location || bill.customerPhone) && (
+                              <span className="pos-bill-cust-sub">
+                                {[bill.customerPhone, bill.location].filter(Boolean).join(' • ')}
+                              </span>
+                            )}
+                          </td>
+                          <td className="pos-col-items">
+                            <span className="pos-bill-items-text" title={bill.items || bill.item}>
+                              {bill.items || bill.item || 'Timber Furniture Order'}
+                            </span>
+                          </td>
+                          <td className="pos-col-amount">
+                            <span className="pos-bill-rupee">₹</span>
+                            <span className="pos-bill-amt-val">{rawAmt.toLocaleString('en-IN')}</span>
+                          </td>
+                          <td className="pos-col-status">
+                            <span className={`pos-bill-status-badge ${statusClass}`}>
+                              {status}
+                            </span>
+                          </td>
+                          <td className="pos-col-actions" style={{ textAlign: 'center' }}>
+                            <div className="pos-bill-actions-wrap">
+                              <button
+                                type="button"
+                                className="btn-bill-action btn-bill-view"
+                                onClick={() => handleViewBill(bill)}
+                                title="View Tax Invoice"
+                                aria-label="View Invoice"
+                              >
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                  <circle cx="12" cy="12" r="3" />
+                                </svg>
+                              </button>
+
+                              <button
+                                type="button"
+                                className="btn-bill-action btn-bill-print"
+                                onClick={() => handlePrintBill(bill)}
+                                title="Print Invoice"
+                                aria-label="Print Invoice"
+                              >
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <polyline points="6 9 6 2 18 2 18 9" />
+                                  <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                                  <rect x="6" y="14" width="12" height="8" />
+                                </svg>
+                              </button>
+
+                              <button
+                                type="button"
+                                className="btn-bill-action btn-bill-delete"
+                                onClick={() => handleDeleteBillClick(bill)}
+                                title="Delete Bill"
+                                aria-label="Delete Bill"
+                              >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <polyline points="3 6 5 6 21 6" />
+                                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                </svg>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="pos-bills-footer-info">
+              <span>Showing {filteredSavedBills.length} of {savedBills.length} invoices</span>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="pos-editor-full-container">
+          {/* Back to Bills List Header in Editor */}
+          <div className="pos-editor-return-bar">
+            <button
+              type="button"
+              className="pos-btn-return-list"
+              onClick={handleBackToList}
+            >
+              ← Back to Bills List
+            </button>
+            <span className="pos-editor-mode-label">Editing Customer Bill • {invoiceNumber}</span>
+          </div>
+
+          {/* Top Bar with Concurrent Draft Tabs */}
+          <div className="pos-drafts-topbar">
         <div className="pos-drafts-tabs-scroll">
           {bills.map((b, idx) => (
             <button
@@ -1176,10 +1582,44 @@ export default function BillingPOS({ onNavigateToProducts }) {
           </div>
         </div>
       )}
+        </div>
+      )}
+
+      {/* Delete Bill Confirmation Modal */}
+      {deleteModalBill && (
+        <div className="pos-modal-overlay" onClick={() => setDeleteModalBill(null)}>
+          <div className="pos-delete-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="pos-delete-modal-icon">⚠️</div>
+            <h3 className="pos-delete-modal-title">
+              Delete Bill {deleteModalBill.invoice || deleteModalBill.id}?
+            </h3>
+            <p className="pos-delete-modal-desc">
+              Are you sure you want to permanently delete this bill for{' '}
+              <strong>{deleteModalBill.customer || 'Walk-in Patron'}</strong>? This will remove the transaction record from sales history and recent sales.
+            </p>
+            <div className="pos-delete-modal-actions">
+              <button
+                type="button"
+                className="pos-btn-modal-cancel"
+                onClick={() => setDeleteModalBill(null)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="pos-btn-modal-delete-confirm"
+                onClick={handleConfirmDeleteBill}
+              >
+                🗑️ Delete Bill
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Printable Invoice Modal Dossier */}
       {invoiceModalOpen && (
-        <div className="pos-modal-overlay" onClick={() => setInvoiceModalOpen(false)}>
+        <div className="pos-modal-overlay" onClick={handleCloseInvoiceModal}>
           <div className="pos-invoice-modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="pos-modal-header">
               <div className="pos-modal-header-info">
@@ -1190,7 +1630,7 @@ export default function BillingPOS({ onNavigateToProducts }) {
                 <button type="button" className="pos-btn-print-now" onClick={handlePrint}>
                   🖨️ Print Invoice
                 </button>
-                <button type="button" className="pos-btn-modal-close" onClick={() => setInvoiceModalOpen(false)}>
+                <button type="button" className="pos-btn-modal-close" onClick={handleCloseInvoiceModal}>
                   ✕
                 </button>
               </div>
@@ -1200,6 +1640,9 @@ export default function BillingPOS({ onNavigateToProducts }) {
               {/* Invoice Header */}
               <div className="pos-print-top">
                 <div className="pos-print-brand">
+                  {settings.logoUrl && (
+                    <img src={settings.logoUrl} alt="Logo" className="pos-print-custom-logo" />
+                  )}
                   <h2>{settings.depotName || 'Kerala Wood Furniture — Sivakasi Depot'}</h2>
                   <p>{settings.address || 'Sivakasi Central Depot & Mill Yard, Sivakasi'}</p>
                   <p>
@@ -1209,16 +1652,16 @@ export default function BillingPOS({ onNavigateToProducts }) {
                 <div className="pos-print-meta">
                   <div className="pos-print-badge">TAX INVOICE</div>
                   <p>
-                    <strong>Invoice #:</strong> {invoiceNumber}
+                    <strong>Invoice #:</strong> {modalBillData.invoiceNumber}
                   </p>
                   <p>
-                    <strong>Invoice Date:</strong> {invoiceDate}
+                    <strong>Invoice Date:</strong> {modalBillData.invoiceDate}
                   </p>
                   <p>
-                    <strong>Due Date:</strong> {dueDate}
+                    <strong>Due Date:</strong> {modalBillData.dueDate}
                   </p>
                   <p>
-                    <strong>Payment:</strong> {paymentStatus} ({paymentMode})
+                    <strong>Payment:</strong> {modalBillData.paymentStatus} ({modalBillData.paymentMode})
                   </p>
                 </div>
               </div>
@@ -1227,10 +1670,10 @@ export default function BillingPOS({ onNavigateToProducts }) {
               <div className="pos-print-customer-box">
                 <div className="pos-print-col">
                   <h4>Billed To:</h4>
-                  <p className="pos-print-cust-name">{customer.name || 'Walk-in Customer'}</p>
-                  <p>{customer.address || 'Sivakasi Yard Destination'}</p>
-                  <p>Phone: {customer.phone || 'N/A'}</p>
-                  <p>GSTIN: {customer.gstin || 'Unregistered / Personal'}</p>
+                  <p className="pos-print-cust-name">{modalBillData.customer.name || 'Walk-in Customer'}</p>
+                  <p>{modalBillData.customer.address || 'Sivakasi Yard Destination'}</p>
+                  <p>Phone: {modalBillData.customer.phone || 'N/A'}</p>
+                  <p>GSTIN: {modalBillData.customer.gstin || 'Unregistered / Personal'}</p>
                 </div>
                 <div className="pos-print-col">
                   <h4>Depot & Mill Yard:</h4>
@@ -1253,13 +1696,13 @@ export default function BillingPOS({ onNavigateToProducts }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {items.map((it, idx) => {
-                    const rowLine = (Number(it.quantity) || 0) * (Number(it.price) || 0)
+                  {modalBillData.items.map((it, idx) => {
+                    const rowLine = (Number(it.quantity) || 1) * (Number(it.price) || 0)
                     return (
                       <tr key={it.id || idx}>
                         <td>{idx + 1}</td>
                         <td>
-                          <strong>{it.description || 'Timber Item'}</strong>
+                          <strong>{it.description || it.name || 'Timber Item'}</strong>
                           {it.woodSpecies && (
                             <span className="pos-print-subspec">
                               {' '}
@@ -1267,8 +1710,8 @@ export default function BillingPOS({ onNavigateToProducts }) {
                             </span>
                           )}
                         </td>
-                        <td>{it.quantity}</td>
-                        <td>₹{Number(it.price).toLocaleString('en-IN')}</td>
+                        <td>{it.quantity || 1}</td>
+                        <td>₹{Number(it.price || 0).toLocaleString('en-IN')}</td>
                         <td>{it.gstRate || 0}%</td>
                         <td>₹{rowLine.toLocaleString('en-IN')}</td>
                       </tr>
@@ -1283,10 +1726,10 @@ export default function BillingPOS({ onNavigateToProducts }) {
                   <p>
                     <strong>Amount in Words:</strong>
                   </p>
-                  <p className="pos-print-italic-words">{numberToWordsINR(grandTotal)}</p>
-                  {notes && (
+                  <p className="pos-print-italic-words">{numberToWordsINR(modalBillData.grandTotal)}</p>
+                  {modalBillData.notes && (
                     <p className="pos-print-note">
-                      <strong>Note:</strong> {notes}
+                      <strong>Note:</strong> {modalBillData.notes}
                     </p>
                   )}
                   <p className="pos-print-disclaimer">{settings.disclaimer}</p>
@@ -1295,34 +1738,34 @@ export default function BillingPOS({ onNavigateToProducts }) {
                 <div className="pos-print-summary-totals">
                   <div className="pos-print-line">
                     <span>Items Subtotal:</span>
-                    <span>₹{itemsSubtotal.toLocaleString('en-IN')}</span>
+                    <span>₹{modalBillData.itemsSubtotal.toLocaleString('en-IN')}</span>
                   </div>
-                  {discount > 0 && (
+                  {modalBillData.discount > 0 && (
                     <div className="pos-print-line">
                       <span>Trade Discount:</span>
-                      <span>-₹{discount.toLocaleString('en-IN')}</span>
+                      <span>-₹{modalBillData.discount.toLocaleString('en-IN')}</span>
                     </div>
                   )}
-                  {deliveryCharge > 0 && (
+                  {modalBillData.deliveryCharge > 0 && (
                     <div className="pos-print-line">
                       <span>Delivery Logistics:</span>
-                      <span>+₹{deliveryCharge.toLocaleString('en-IN')}</span>
+                      <span>+₹{modalBillData.deliveryCharge.toLocaleString('en-IN')}</span>
                     </div>
                   )}
-                  {totalGst > 0 && (
+                  {modalBillData.totalGst > 0 && (
                     <div className="pos-print-line">
                       <span>GST Amount:</span>
-                      <span>+₹{totalGst.toLocaleString('en-IN')}</span>
+                      <span>+₹{modalBillData.totalGst.toLocaleString('en-IN')}</span>
                     </div>
                   )}
                   <div className="pos-print-line pos-print-grand">
                     <strong>Grand Total:</strong>
-                    <strong>₹{grandTotal.toLocaleString('en-IN')}</strong>
+                    <strong>₹{modalBillData.grandTotal.toLocaleString('en-IN')}</strong>
                   </div>
-                  {paymentStatus === 'Partial' && (
+                  {modalBillData.paymentStatus === 'Partial' && (
                     <div className="pos-print-line pos-print-balance">
                       <span>Balance Due:</span>
-                      <span>₹{balanceDue.toLocaleString('en-IN')}</span>
+                      <span>₹{modalBillData.balanceDue.toLocaleString('en-IN')}</span>
                     </div>
                   )}
                   <div className="pos-print-sign-box">

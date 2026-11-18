@@ -166,12 +166,21 @@ export default function Sidebar({
       <div className="sidebar-header">
         {!isCollapsed ? (
           <div className="sidebar-brand">
-            <span className="sidebar-brand-title">Kerala Wood Furniture</span>
-            <span className="sidebar-brand-subtitle">Sivakasi Branch</span>
+            {settings.logoUrl && (
+              <img src={settings.logoUrl} alt="Logo" className="sidebar-custom-logo" />
+            )}
+            <div className="sidebar-brand-text-col">
+              <span className="sidebar-brand-title">{settings.depotName ? settings.depotName.split('-')[0].trim() : 'Kerala Wood Furniture'}</span>
+              <span className="sidebar-brand-subtitle">Sivakasi Branch</span>
+            </div>
           </div>
         ) : (
-          <div className="sidebar-brand-mini" title="Kerala Wood Furniture">
-            <span className="mini-emblem-text">KWF</span>
+          <div className="sidebar-brand-mini" title={settings.depotName || 'Kerala Wood Furniture'}>
+            {settings.logoUrl ? (
+              <img src={settings.logoUrl} alt="Logo" className="sidebar-custom-logo-mini" />
+            ) : (
+              <span className="mini-emblem-text">KWF</span>
+            )}
           </div>
         )}
 

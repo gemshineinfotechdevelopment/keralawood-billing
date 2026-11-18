@@ -7,6 +7,7 @@ export default function Settings() {
 
   // General Depot Profile
   const [depotName, setDepotName] = useState(initial.depotName || 'Kerala Wood Furniture - Sivakasi Depot')
+  const [logoUrl, setLogoUrl] = useState(initial.logoUrl || '')
   const [contactPhone, setContactPhone] = useState(initial.contactPhone || '+91 484 289 1204')
   const [contactEmail, setContactEmail] = useState(initial.contactEmail || 'depot@keralawood.in')
   const [address, setAddress] = useState(initial.address || 'Sivakasi Central Depot & Mill Yard, Sivakasi')
@@ -43,6 +44,7 @@ export default function Settings() {
         if (data?.success && data.settings) {
           const s = data.settings
           if (s.depotName) setDepotName(s.depotName)
+          if (s.logoUrl !== undefined) setLogoUrl(s.logoUrl)
           if (s.contactPhone) setContactPhone(s.contactPhone)
           if (s.contactEmail) setContactEmail(s.contactEmail)
           if (s.address) setAddress(s.address)
@@ -65,10 +67,30 @@ export default function Settings() {
       .catch(() => {})
   }, [])
 
+  const handleLogoUpload = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 2 * 1024 * 1024) {
+      alert('Logo image should be under 2MB')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const res = event.target?.result
+      if (res) setLogoUrl(res)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleRemoveLogo = () => {
+    setLogoUrl('')
+  }
+
   const handleSaveSettings = () => {
     const updated = {
       ...initial,
       depotName,
+      logoUrl,
       contactPhone,
       contactEmail,
       address,
@@ -162,6 +184,71 @@ export default function Settings() {
         </div>
 
         <div className="settings-form-col">
+          {/* Brand Logo Upload Section */}
+          <div className="settings-logo-uploader-card">
+            <label className="settings-field-label">Official Depot Logo</label>
+            <div className="settings-logo-row">
+              <div className="settings-logo-preview-frame">
+                {logoUrl ? (
+                  <img src={logoUrl} alt="Depot Logo Preview" className="settings-logo-preview-img" />
+                ) : (
+                  <div className="settings-logo-empty-box">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#8C7E74" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                      <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+                      <circle cx="9" cy="9" r="2" />
+                      <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+                    </svg>
+                    <span>No Logo</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="settings-logo-details">
+                <p className="settings-logo-hint-text">
+                  Upload an image for Kerala Wood Furniture. This logo appears on your bills, tax invoices, and header.
+                </p>
+                <div className="settings-logo-actions-bar">
+                  <label className="btn-settings-choose-logo">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="17 8 12 3 7 8" />
+                      <line x1="12" y1="3" x2="12" y2="15" />
+                    </svg>
+                    <span>Upload Logo Image</span>
+                    <input
+                      type="file"
+                      accept="image/png, image/jpeg, image/jpg, image/svg+xml, image/webp"
+                      style={{ display: 'none' }}
+                      onChange={handleLogoUpload}
+                    />
+                  </label>
+
+                  {logoUrl && (
+                    <button
+                      type="button"
+                      className="btn-settings-remove-logo"
+                      onClick={handleRemoveLogo}
+                      title="Remove custom logo"
+                    >
+                      ✕ Remove
+                    </button>
+                  )}
+                </div>
+
+                <div className="settings-logo-url-row">
+                  <span className="settings-logo-url-label">Or Image URL:</span>
+                  <input
+                    type="text"
+                    className="settings-input settings-logo-url-input"
+                    placeholder="https://.../logo.png"
+                    value={logoUrl.startsWith('data:') ? '' : logoUrl}
+                    onChange={(e) => setLogoUrl(e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div className="settings-field-group">
             <label className="settings-field-label">Depot Name</label>
             <input

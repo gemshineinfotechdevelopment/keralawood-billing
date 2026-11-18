@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import treeLogo from './assets/tree-logo.png'
 import Sidebar from './components/Sidebar'
 import Dashboard from './components/Dashboard'
@@ -14,12 +14,20 @@ import './App.css'
 function App() {
   const [view, setView] = useState(() => (sessionStorage.getItem('kwf_auth') === 'true' ? 'billing' : 'login'))
   const [activeNav, setActiveNav] = useState('Billing & POS')
+  const [billingInitialMode, setBillingInitialMode] = useState('list')
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [email, setEmail] = useState('rajesh.s@keralawood.in')
   const [password, setPassword] = useState('password123')
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(true)
+  const [settings, setSettings] = useState(() => DataStore.getSettings())
+
+  useEffect(() => {
+    const handleUpdate = () => setSettings(DataStore.getSettings())
+    window.addEventListener('timber_store_updated', handleUpdate)
+    return () => window.removeEventListener('timber_store_updated', handleUpdate)
+  }, [])
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -44,6 +52,9 @@ function App() {
         <Sidebar
           activeItem={activeNav}
           onItemSelect={(name) => {
+            if (name === 'Billing & POS') {
+              setBillingInitialMode('list')
+            }
             setActiveNav(name)
             setMobileSidebarOpen(false)
           }}
@@ -90,22 +101,33 @@ function App() {
             <Dashboard
               onNavigateToNewBill={() => {
                 DataStore.createNewDraft()
+                setBillingInitialMode('editor')
                 setActiveNav('Billing & POS')
               }}
               onNavigateToNewInvoice={() => {
                 DataStore.createNewDraft()
+                setBillingInitialMode('editor')
                 setActiveNav('Billing & POS')
               }}
-              onNavigate={(nav) => setActiveNav(nav)}
+              onNavigate={(nav) => {
+                if (nav === 'Billing & POS') setBillingInitialMode('list')
+                setActiveNav(nav)
+              }}
             />
           ) : activeNav === 'Settings' ? (
             <Settings />
           ) : activeNav === 'Reports & Analytics' ? (
             <ReportsAnalytics />
           ) : activeNav === 'Billing & POS' ? (
-            <BillingPOS onNavigateToProducts={() => setActiveNav('Products')} />
+            <BillingPOS
+              initialViewMode={billingInitialMode}
+              onNavigateToProducts={() => setActiveNav('Products')}
+            />
           ) : activeNav === 'Customers' ? (
-            <Customers onNavigateToBilling={() => setActiveNav('Billing & POS')} />
+            <Customers onNavigateToBilling={() => {
+              setBillingInitialMode('editor')
+              setActiveNav('Billing & POS')
+            }} />
           ) : (
             <div className="module-placeholder">
               <div className="placeholder-card">
@@ -132,7 +154,7 @@ function App() {
       {/* Top Header */}
       <header className="login-header">
         <div className="brand-section">
-          <img src={treeLogo} alt="Kerala Wood Furniture" className="header-logo" />
+          <img src={settings.logoUrl || treeLogo} alt="Kerala Wood Furniture" className="header-logo" />
           <div className="brand-text">
             <span className="brand-title">Kerala Wood Furniture</span>
             <span className="brand-subtitle">Sivakasi</span>
@@ -166,7 +188,7 @@ function App() {
       {/* Main Login Card */}
       <main className="login-main">
         <div className="login-card">
-          <img src={treeLogo} alt="Kerala Wood Furniture" className="card-logo" />
+          <img src={settings.logoUrl || treeLogo} alt="Kerala Wood Furniture" className="card-logo" />
           <h2 className="card-brand-title">Kerala Wood Furniture</h2>
           <div className="card-brand-subtitle">Billing & Inventory</div>
 

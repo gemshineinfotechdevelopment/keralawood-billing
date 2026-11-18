@@ -1818,3 +1818,473 @@
     justify-content: center;
   }
 }
+
+/* ==========================================================================
+   BILLS LIST LEDGER VIEW & ACTIONS STYLING
+   ========================================================================== */
+
+.pos-bills-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.pos-bills-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 4px 0 8px 0;
+  border-bottom: 1.5px solid #EFE4DC;
+  flex-wrap: wrap;
+}
+
+.pos-bills-list-title {
+  margin: 0 0 4px 0;
+  font-size: 22px;
+  font-weight: 800;
+  color: #31190B;
+  letter-spacing: -0.02em;
+}
+
+.pos-bills-list-subtitle {
+  margin: 0;
+  font-size: 13px;
+  color: #7D6C63;
+}
+
+.pos-btn-new-bill-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #31190B 0%, #4A2E18 100%);
+  color: #FFFFFF;
+  border: 1px solid #221208;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(49, 25, 11, 0.22);
+  transition: all 0.2s ease;
+}
+
+.pos-btn-new-bill-primary:hover {
+  background: linear-gradient(135deg, #4A2E18 0%, #5C3A21 100%);
+  box-shadow: 0 5px 14px rgba(49, 25, 11, 0.32);
+  transform: translateY(-1px);
+}
+
+.pos-btn-new-bill-primary:active {
+  transform: translateY(0);
+}
+
+/* Filters & Search */
+.pos-bills-filter-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.pos-bills-search-wrap {
+  flex: 1;
+  min-width: 260px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #FFFFFF;
+  border: 1px solid #DCCBC0;
+  border-radius: 8px;
+  padding: 0 14px;
+  height: 42px;
+  box-shadow: 0 1px 3px rgba(49, 25, 11, 0.04);
+}
+
+.pos-bills-search-wrap:focus-within {
+  border-color: #31190B;
+  box-shadow: 0 0 0 3px rgba(49, 25, 11, 0.1);
+}
+
+.pos-bills-search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 13px;
+  color: #31190B;
+  background: transparent;
+}
+
+.pos-bills-search-input::placeholder {
+  color: #9C8C82;
+}
+
+.pos-bills-clear-search {
+  background: none;
+  border: none;
+  color: #9C8C82;
+  cursor: pointer;
+  padding: 4px;
+  font-size: 12px;
+  border-radius: 4px;
+}
+
+.pos-bills-clear-search:hover {
+  color: #31190B;
+}
+
+.pos-bills-status-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pos-filter-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #6C5547;
+}
+
+.pos-status-select {
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid #DCCBC0;
+  border-radius: 8px;
+  background: #FFFFFF;
+  color: #31190B;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+}
+
+.pos-status-select:focus {
+  border-color: #31190B;
+}
+
+/* Bills Table Card */
+.pos-bills-table-card {
+  background: #FFFFFF;
+  border: 1px solid #EAE0D8;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(49, 25, 11, 0.05);
+}
+
+.pos-bills-table-wrap {
+  overflow-x: auto;
+}
+
+.pos-bills-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.pos-bills-table thead {
+  background: #F8EFE9;
+  border-bottom: 1.5px solid #D3C4B8;
+}
+
+.pos-bills-table th {
+  padding: 13px 16px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 800;
+  color: #5C4537;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.pos-bills-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid #F2E8E1;
+  color: #31190B;
+  vertical-align: middle;
+}
+
+.pos-bills-table-row:hover {
+  background: #FAF4F0;
+}
+
+.pos-invoice-pill {
+  display: inline-block;
+  font-family: monospace;
+  font-weight: 700;
+  font-size: 12px;
+  color: #5C3A21;
+  background: #F6EFEA;
+  border: 1px solid #E5D5C8;
+  padding: 3px 8px;
+  border-radius: 5px;
+}
+
+.pos-bill-date {
+  font-size: 12.5px;
+  color: #6C5547;
+  white-space: nowrap;
+}
+
+.pos-bill-cust-name {
+  font-weight: 700;
+  color: #31190B;
+  display: block;
+}
+
+.pos-bill-cust-sub {
+  font-size: 11.5px;
+  color: #8C7E74;
+  margin-top: 2px;
+  display: block;
+}
+
+.pos-bill-items-text {
+  font-size: 12.5px;
+  color: #5C4537;
+  max-width: 280px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+}
+
+.pos-col-amount {
+  font-weight: 700;
+  color: #31190B;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.pos-bill-rupee {
+  color: #8C5325;
+  margin-right: 2px;
+}
+
+.pos-bill-status-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.pos-bill-status-badge.status-paid {
+  background: #E8F5E9;
+  color: #2E7D32;
+  border: 1px solid #C8E6C9;
+}
+
+.pos-bill-status-badge.status-partial {
+  background: #FFF8E1;
+  color: #F57F17;
+  border: 1px solid #FFE082;
+}
+
+.pos-bill-status-badge.status-pending {
+  background: #FDE8E4;
+  color: #C62828;
+  border: 1px solid #FFCDD2;
+}
+
+/* Action Icons */
+.pos-bill-actions-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+}
+
+.btn-bill-action {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid #E4D8CE;
+  background: #FFFFFF;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  color: #5C4537;
+}
+
+.btn-bill-action:hover {
+  transform: translateY(-1px);
+}
+
+.btn-bill-view:hover {
+  background: #EBF3FF;
+  border-color: #ADC6FF;
+  color: #1D39C4;
+}
+
+.btn-bill-print:hover {
+  background: #F6FFED;
+  border-color: #B7EB8F;
+  color: #389E0D;
+}
+
+.btn-bill-delete:hover {
+  background: #FFF1F0;
+  border-color: #FFA39E;
+  color: #CF1322;
+}
+
+/* Empty State */
+.pos-bills-empty-cell {
+  text-align: center;
+  padding: 56px 20px !important;
+}
+
+.pos-bills-empty-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+.pos-bills-empty-icon {
+  font-size: 2.6rem;
+  margin-bottom: 12px;
+}
+
+.pos-bills-empty-title {
+  margin: 0 0 6px 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: #31190B;
+}
+
+.pos-bills-empty-desc {
+  margin: 0;
+  font-size: 13px;
+  color: #7D6C63;
+  line-height: 1.45;
+}
+
+.pos-bills-footer-info {
+  padding: 12px 18px;
+  border-top: 1px solid #F0E6DE;
+  font-size: 12px;
+  color: #8C7E74;
+  background: #FAF5F2;
+}
+
+/* Return Bar in Editor */
+.pos-editor-return-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: #FEF9F6;
+  border: 1px solid #EFE4DC;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.pos-btn-return-list {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  background: #FFFFFF;
+  border: 1px solid #D3C4B8;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #31190B;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pos-btn-return-list:hover {
+  background: #F6EFEA;
+  border-color: #31190B;
+}
+
+.pos-editor-mode-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #8C5325;
+}
+
+/* Delete Modal */
+.pos-delete-modal-card {
+  background: #FFFFFF;
+  width: 100%;
+  max-width: 440px;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 20px 40px rgba(49, 25, 11, 0.35);
+  text-align: center;
+}
+
+.pos-delete-modal-icon {
+  font-size: 2.2rem;
+  margin-bottom: 12px;
+}
+
+.pos-delete-modal-title {
+  margin: 0 0 8px 0;
+  font-size: 17px;
+  font-weight: 800;
+  color: #31190B;
+}
+
+.pos-delete-modal-desc {
+  margin: 0 0 20px 0;
+  font-size: 13px;
+  color: #6C5547;
+  line-height: 1.5;
+}
+
+.pos-delete-modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.pos-btn-modal-cancel {
+  padding: 9px 20px;
+  background: #FFFFFF;
+  border: 1px solid #D3C4B8;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #5C4537;
+  cursor: pointer;
+}
+
+.pos-btn-modal-cancel:hover {
+  background: #F6EFEA;
+}
+
+.pos-btn-modal-delete-confirm {
+  padding: 9px 20px;
+  background: #CF1322;
+  border: 1px solid #A8071A;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #FFFFFF;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pos-btn-modal-delete-confirm:hover {
+  background: #A8071A;
+}
+
+.pos-print-custom-logo {
+  max-height: 48px;
+  max-width: 120px;
+  object-fit: contain;
+  margin-bottom: 8px;
+}
+

@@ -544,11 +544,15 @@ app.get('/api/sales', async (req, res) => {
   }
 });
 
-app.delete('/api/sales', async (req, res) => {
+app.delete('/api/sales/:invoice', async (req, res) => {
   try {
-    await Sale.deleteMany({});
-    res.json({ success: true, message: 'All sales deleted' });
+    const { invoice } = req.params;
+    await Sale.deleteMany({
+      $or: [{ invoice: invoice }, { _id: invoice.match(/^[0-9a-fA-F]{24}$/) ? invoice : null }]
+    });
+    res.json({ success: true, message: `Sale ${invoice} deleted successfully` });
   } catch (err) {
+    console.error('[API] /api/sales/:invoice DELETE error:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
