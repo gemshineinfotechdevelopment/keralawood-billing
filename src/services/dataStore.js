@@ -179,15 +179,20 @@ export const DataStore = {
         const data = await resSales.json()
         if (data && Array.isArray(data.sales)) {
           const formatted = data.sales.map((s) => ({
-            id: s.invoice,
+            id: s.invoice || s._id,
             invoice: s.invoice,
             date: s.date ? new Date(s.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '',
+            rawDate: s.createdAt ? s.createdAt.split('T')[0] : (s.date ? String(s.date).split('T')[0] : new Date().toISOString().split('T')[0]),
+            createdAt: s.createdAt || s.date || new Date().toISOString(),
             year: s.year || '2026',
             monthYear: s.monthYear || '',
             customer: s.customer,
-            project: s.location || 'Sivakasi Yard Sale',
+            location: s.location || s.project || 'Sivakasi Yard Sale',
+            project: s.location || s.project || 'Sivakasi Yard Sale',
             wood: s.wood || 'Artisan Timber',
             item: s.items,
+            items: s.items,
+            itemDetails: s.itemDetails || [],
             amount: Number(s.amount || 0).toLocaleString('en-IN'),
             rawAmount: Number(s.amount || 0),
             status: s.paymentStatus || s.status || 'Paid',
@@ -671,12 +676,23 @@ export const DataStore = {
       'INV-1001', 'INV-1002', 'INV-1003', 'INV-1004', 'INV-1005', 'INV-1006',
       'INV-1007', 'INV-1008', 'INV-1009', 'INV-1010', 'INV-1011', 'INV-1012',
       'INV-1013', 'INV-1014', 'INV-1015', 'INV-1016', 'INV-1017', 'INV-1018',
-      'INV-1019', 'INV-1020', 'INV-1021', 'INV-1022', 'INV-1023', 'INV-1024'
+      'INV-1019', 'INV-1020', 'INV-1021', 'INV-1022', 'INV-1023', 'INV-1024',
+      'INV-2001', 'INV-2002'
     ])
     const filtered = (Array.isArray(raw) ? raw : []).filter(
       (t) => !DUMMY_INVOICES.has(t.invoice || t.id)
     )
-    return filtered
+    // Deduplicate by invoice number / id
+    const seen = new Set()
+    const unique = []
+    for (const t of filtered) {
+      const key = t.invoice || t.id
+      if (key && !seen.has(key)) {
+        seen.add(key)
+        unique.push(t)
+      }
+    }
+    return unique
   },
   saveTransactions(txs) {
     saveToStorage(STORAGE_KEYS.TRANSACTIONS, txs)
@@ -733,6 +749,7 @@ export const DataStore = {
       id: bill.invoiceNumber || `INV-${Date.now().toString().slice(-4)}`,
       invoice: bill.invoiceNumber || `INV-${Date.now().toString().slice(-4)}`,
       date: `${txDateStr}, ${txTimeStr}`,
+      rawDate: new Date().toISOString().split('T')[0],
       year: txYear,
       createdAt: new Date().toISOString(),
       monthYear: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
@@ -758,7 +775,14 @@ export const DataStore = {
       paymentMode: bill.paymentMode || 'UPI',
     }
 
-    txs.unshift(newTx)
+    const existingIdx = txs.findIndex(
+      (t) => (t.invoice && t.invoice === newTx.invoice) || (t.id && t.id === newTx.id)
+    )
+    if (existingIdx !== -1) {
+      txs[existingIdx] = { ...txs[existingIdx], ...newTx }
+    } else {
+      txs.unshift(newTx)
+    }
     this.saveTransactions(txs)
 
     // Deduct stock locally and increment stockOut

@@ -81,20 +81,58 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
     return recentSales.map((s, idx) => normalizeSaleItem(s, idx))
   }, [recentSales])
 
-  // Dynamic calculations from live data
-  const totalSalesSum = useMemo(() => {
-    return normalizedSales.reduce((acc, s) => acc + (s.rawAmount || 0), 0)
+  // Today's Sales only (Exact real-time filter for current day)
+  const todaySalesList = useMemo(() => {
+    const now = new Date()
+    const todayY = now.getFullYear()
+    const todayM = now.getMonth()
+    const todayD = now.getDate()
+    const todayISO = now.toISOString().split('T')[0]
+    const todayLocale = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+    const todayGB = now.toLocaleDateString('en-GB')
+
+    return normalizedSales.filter((sale) => {
+      const raw = sale.original || sale
+      if (raw.rawDate && raw.rawDate === todayISO) return true
+      if (typeof raw.invoiceDate === 'string' && raw.invoiceDate.startsWith(todayISO)) return true
+      if (typeof raw.createdAt === 'string' && raw.createdAt.startsWith(todayISO)) return true
+
+      const sDate = raw.createdAt || raw.date || raw.rawDate
+      if (sDate) {
+        const d = new Date(sDate)
+        if (!isNaN(d.getTime())) {
+          if (d.getFullYear() === todayY && d.getMonth() === todayM && d.getDate() === todayD) {
+            return true
+          }
+        }
+      }
+
+      const str = String(raw.date || '')
+      return str.includes(todayLocale) || str.includes(todayISO) || str.includes(todayGB)
+    })
   }, [normalizedSales])
 
-  const totalStockCount = products.reduce((acc, p) => acc + (Number(p.stockQuantity) || 0), 0)
+  // Dynamic calculations from live data
+  const totalSalesSum = useMemo(() => {
+    return todaySalesList.reduce((acc, s) => acc + (s.rawAmount || 0), 0)
+  }, [todaySalesList])
 
-  // Dynamic low stock items (Requirement 3)
-  const dynamicLowStock = products.filter(
-    (p) => Number(p.stockQuantity) <= Number(p.lowStockThreshold || 3)
-  )
-  const displayLowStock = dynamicLowStock.length > 0
-    ? dynamicLowStock
-    : [...products].sort((a, b) => a.stockQuantity - b.stockQuantity).slice(0, 3)
+  const todayOrdersCount = todaySalesList.length
+
+  const totalStockCount = useMemo(() => {
+    return products.reduce((acc, p) => acc + (Number(p.stockQuantity) || 0), 0)
+  }, [products])
+
+  // Real live low stock items from Stock / Products output (No fake slice(0, 3) fallback)
+  const dynamicLowStock = useMemo(() => {
+    return products.filter((p) => {
+      const qty = Number(p.stockQuantity)
+      const threshold = Number(p.lowStockThreshold || 2)
+      return !isNaN(qty) && qty <= threshold
+    })
+  }, [products])
+
+  const displayLowStock = dynamicLowStock
 
   // Dynamic Reorder action (Requirement 3)
   const handleReorder = (prod) => {
@@ -132,7 +170,8 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
       'INV-1001', 'INV-1002', 'INV-1003', 'INV-1004', 'INV-1005', 'INV-1006',
       'INV-1007', 'INV-1008', 'INV-1009', 'INV-1010', 'INV-1011', 'INV-1012',
       'INV-1013', 'INV-1014', 'INV-1015', 'INV-1016', 'INV-1017', 'INV-1018',
-      'INV-1019', 'INV-1020', 'INV-1021', 'INV-1022', 'INV-1023', 'INV-1024'
+      'INV-1019', 'INV-1020', 'INV-1021', 'INV-1022', 'INV-1023', 'INV-1024',
+      'INV-2001', 'INV-2002'
     ])
     fetch('/api/sales')
       .then((res) => {
@@ -178,8 +217,8 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
 
   const filteredSales = useMemo(() => {
     const q = salesSearch.toLowerCase().trim()
-    if (!q) return normalizedSales
-    return normalizedSales.filter((sale) => {
+    if (!q) return todaySalesList
+    return todaySalesList.filter((sale) => {
       return (
         sale.customer.toLowerCase().includes(q) ||
         sale.invoice.toLowerCase().includes(q) ||
@@ -188,7 +227,7 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
         sale.status.toLowerCase().includes(q)
       )
     })
-  }, [normalizedSales, salesSearch])
+  }, [todaySalesList, salesSearch])
 
   const totalSalesPages = Math.ceil(filteredSales.length / salesPerPage) || 1
   const displayedSales = filteredSales.slice(
@@ -238,35 +277,43 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
         <div className="kpi-card">
           <span className="kpi-label">TODAY'S SALES</span>
           <div className="kpi-value">₹{totalSalesSum.toLocaleString('en-IN')}</div>
-          <span className="kpi-subtext">{recentSales.length} orders processed today</span>
+          <span className="kpi-subtext">
+            {todayOrdersCount} {todayOrdersCount === 1 ? 'order' : 'orders'} processed today
+          </span>
         </div>
 
         <div className="kpi-card">
           <span className="kpi-label">TOTAL ITEMS IN STOCK</span>
           <div className="kpi-value">{totalStockCount.toLocaleString('en-IN')}</div>
-          <span className="kpi-subtext">Across Sivakasi master timber yards</span>
+          <span className="kpi-subtext">{products.length} catalog wood products tracked</span>
         </div>
 
         <div className="kpi-card">
-          <span className="kpi-label alert">
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
-              <line x1="12" y1="9" x2="12" y2="13" />
-              <line x1="12" y1="17" x2="12.01" y2="17" />
-            </svg>
+          <span className={`kpi-label ${displayLowStock.length > 0 ? 'alert' : ''}`}>
+            {displayLowStock.length > 0 && (
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                <line x1="12" y1="9" x2="12" y2="13" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg>
+            )}
             LOW STOCK ALERTS
           </span>
-          <div className="kpi-value alert">{displayLowStock.length} items</div>
-          <span className="kpi-subtext">Urgent reorders required</span>
+          <div className={`kpi-value ${displayLowStock.length > 0 ? 'alert' : ''}`}>
+            {displayLowStock.length} {displayLowStock.length === 1 ? 'item' : 'items'}
+          </div>
+          <span className="kpi-subtext">
+            {displayLowStock.length > 0 ? 'Urgent reorders required' : 'Stock levels optimal'}
+          </span>
         </div>
       </div>
 
@@ -276,28 +323,45 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
         <div className="low-stock-card">
           <div className="card-top-row">
             <span className="card-heading">Low Stock Items</span>
-            <span className="count-badge-red">{displayLowStock.length} ITEMS</span>
+            <span className={displayLowStock.length > 0 ? 'count-badge-red' : 'count-badge-green'}>
+              {displayLowStock.length} ITEMS
+            </span>
           </div>
 
           <div className="low-stock-list">
-            {displayLowStock.map((item) => {
-              const isReordered = reorderedMap[item.sku]
-              return (
-                <div key={item.sku} className="low-stock-row">
-                  <div className="item-info">
-                    <span className="item-name">{item.name}</span>
-                    <span className="item-category">
-                      {item.category} • {item.woodSpecies || 'Hardwood'}
-                    </span>
+            {displayLowStock.length === 0 ? (
+              <div className="low-stock-empty" style={{ padding: '24px 12px', textAlign: 'center', color: '#6B7280', fontSize: '13px' }}>
+                <p style={{ fontWeight: 600, color: '#166534', marginBottom: '4px' }}>✓ All Timber Stock Levels Optimal</p>
+                <p style={{ margin: 0, fontSize: '12px' }}>No catalog products are currently below their minimum threshold.</p>
+              </div>
+            ) : (
+              displayLowStock.map((item) => {
+                const isReordered = reorderedMap[item.sku]
+                return (
+                  <div key={item.sku} className="low-stock-row">
+                    <div className="item-info">
+                      <span className="item-name">{item.name}</span>
+                      <span className="item-category">
+                        {item.category} • {item.woodSpecies || 'Hardwood'}
+                      </span>
+                    </div>
+                    <div className="item-action-wrap">
+                      <span className="stock-left-text">
+                        {item.stockQuantity} left
+                      </span>
+                      <button
+                        type="button"
+                        className={`btn-reorder ${isReordered ? 'reordered' : ''}`}
+                        onClick={() => handleReorder(item)}
+                        disabled={isReordered}
+                      >
+                        {isReordered ? '✓ Reordered' : '+ Reorder'}
+                      </button>
+                    </div>
                   </div>
-                  <div className="item-action-wrap">
-                    <span className="stock-left-text">
-                      {item.stockQuantity} left
-                    </span>
-                  </div>
-                </div>
-              )
-            })}
+                )
+              })
+            )}
           </div>
         </div>
       </div>
@@ -306,9 +370,9 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
       <div className="recent-sales-card">
         <div className="table-header-bar">
           <div>
-            <h2 className="table-title">Recent Sales</h2>
+            <h2 className="table-title">Recent Sales (Today's Orders)</h2>
             <p className="table-subtitle">
-              Completed customer orders and invoices
+              Completed customer orders and invoices created today
             </p>
           </div>
 
@@ -353,10 +417,10 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
                 <td colSpan="5" className="dashboard-empty-sales-cell">
                   <div className="dashboard-empty-sales-wrap">
                     <p className="dashboard-empty-title">
-                      {salesSearch ? `No sales found matching "${salesSearch}"` : 'No recent sales transactions recorded.'}
+                      {salesSearch ? `No sales found matching "${salesSearch}"` : 'No sales transactions recorded today.'}
                     </p>
                     <p className="dashboard-empty-subtitle">
-                      As bills and invoices are completed in Billing & POS, transactions will appear dynamically here.
+                      Completed customer bills created in Billing & POS today will appear automatically here.
                     </p>
                     <button type="button" className="btn-dashboard-create-bill" onClick={onNavigateToNewBill}>
                       + Create New Bill

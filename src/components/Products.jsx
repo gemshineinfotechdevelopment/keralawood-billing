@@ -14,7 +14,6 @@ export default function Products() {
   const [products, setProducts] = useState(() => DataStore.getProducts())
   const [searchQuery, setSearchQuery] = useState('')
   const [activeCategory, setActiveCategory] = useState('All')
-  const [printCatalogOpen, setPrintCatalogOpen] = useState(false)
 
   // Pagination states: minimum 20 products per page
   const [currentPage, setCurrentPage] = useState(1)
@@ -156,119 +155,6 @@ export default function Products() {
     return name.slice(0, 2).toUpperCase() || 'KW'
   }
 
-  // Reliable cross-browser catalog print
-  const handlePrintCatalog = () => {
-    const printEl = document.getElementById('printable-products-catalog')
-    if (!printEl) {
-      window.print()
-      return
-    }
-
-    const existing = document.getElementById('catalog-print-iframe')
-    if (existing) existing.remove()
-
-    const iframe = document.createElement('iframe')
-    iframe.id = 'catalog-print-iframe'
-    iframe.style.position = 'fixed'
-    iframe.style.right = '0'
-    iframe.style.bottom = '0'
-    iframe.style.width = '0'
-    iframe.style.height = '0'
-    iframe.style.border = 'none'
-    document.body.appendChild(iframe)
-
-    const doc = iframe.contentWindow.document
-    doc.open()
-    doc.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Kerala Wood Furniture — Master Products Catalog</title>
-          <style>
-            @page { size: A4 portrait; margin: 14mm 16mm; }
-            * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, 'Helvetica Neue', Arial, sans-serif; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
-            body { background: #FFFFFF; color: #31190B; padding: 0; font-size: 12px; line-height: 1.5; }
-
-            /* Header Section */
-            .catalog-print-top {
-              display: flex; justify-content: space-between; align-items: flex-start;
-              border-bottom: 3px solid #31190B; padding-bottom: 14px; margin-bottom: 20px;
-            }
-            .catalog-print-brand h2 {
-              margin: 0 0 6px 0; font-size: 20px; font-weight: 800; color: #31190B;
-              letter-spacing: -0.02em;
-            }
-            .catalog-print-brand p { margin: 3px 0; font-size: 11px; color: #5C4537; line-height: 1.4; }
-            .catalog-print-meta { text-align: right; font-size: 11px; color: #5C4537; min-width: 180px; }
-            .catalog-print-badge {
-              display: inline-block; background: #31190B !important; color: #FFFFFF !important;
-              font-size: 9.5px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
-              padding: 4px 10px; border-radius: 4px; margin-bottom: 8px;
-            }
-            .catalog-print-meta p { margin: 3px 0; }
-
-            /* Table Styling */
-            .catalog-print-table {
-              width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 11px;
-              border: 1px solid #D3C4B8;
-            }
-            .catalog-print-table th {
-              background-color: #3D2114 !important; color: #FFFFFF !important;
-              font-weight: 700; text-align: left; padding: 10px 12px;
-              border-bottom: 2px solid #31190B; font-size: 10px;
-              letter-spacing: 0.05em; text-transform: uppercase;
-            }
-            .catalog-print-table th:last-child { text-align: right; }
-            .catalog-print-table td {
-              padding: 9px 12px; border-bottom: 1px solid #EDE3DB; color: #31190B;
-              vertical-align: middle;
-            }
-            .catalog-print-table tbody tr:nth-child(even) td {
-              background-color: #FAF6F2 !important;
-            }
-            .catalog-print-table tbody tr:hover td { background-color: #F5EDE5 !important; }
-            .catalog-print-num { font-weight: 700; color: #8C5325; width: 28px; text-align: center; }
-            .catalog-print-code code {
-              font-family: 'Consolas', 'Courier New', monospace; font-weight: 700; font-size: 10.5px;
-              color: #5C3A21; background: #F3EAE2 !important; padding: 3px 7px;
-              border-radius: 4px; border: 1px solid #E2D5C9; white-space: nowrap;
-            }
-            .catalog-print-name strong { font-size: 11.5px; color: #31190B; font-weight: 600; }
-            .catalog-print-cat { color: #6D5C52; font-size: 10.5px; }
-            .catalog-print-wood { color: #5C3A21; font-weight: 600; font-size: 10.5px; }
-            .catalog-print-price {
-              font-weight: 800; color: #31190B; text-align: right; font-size: 12px;
-              font-family: 'Segoe UI', Arial, sans-serif; white-space: nowrap;
-            }
-
-            /* Footer Section */
-            .catalog-print-footer {
-              display: flex; justify-content: space-between; align-items: flex-start;
-              margin-top: 20px; border-top: 2px solid #D3C4B8;
-              padding-top: 16px; page-break-inside: avoid;
-            }
-            .catalog-print-terms { max-width: 60%; font-size: 10px; color: #7D6C63; line-height: 1.5; }
-            .catalog-print-terms strong { color: #31190B; }
-            .catalog-print-sign { text-align: right; font-size: 11px; color: #31190B; }
-            .catalog-print-sign p { margin: 2px 0; }
-            .catalog-print-sign-space { height: 40px; border-bottom: 1px solid #C4B5A8; width: 160px; margin-left: auto; margin-top: 4px; margin-bottom: 4px; }
-          </style>
-        </head>
-        <body>
-          ${printEl.innerHTML}
-        </body>
-      </html>
-    `)
-    doc.close()
-
-    setTimeout(() => {
-      iframe.contentWindow.focus()
-      iframe.contentWindow.print()
-      setTimeout(() => {
-        iframe.remove()
-      }, 1000)
-    }, 250)
-  }
 
   // Products list for pagination
   const sortedProducts = filteredProducts
@@ -312,9 +198,9 @@ export default function Products() {
         <div className="products-header-actions">
           <button
             type="button"
-            className="btn-print-catalog-main"
-            onClick={() => setPrintCatalogOpen(true)}
-            title="Print master product price & specification catalog"
+            className="btn-print-products"
+            onClick={() => window.print()}
+            title="Print products table"
           >
             <svg
               width="14"
@@ -322,7 +208,7 @@ export default function Products() {
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="2.2"
+              strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
             >
@@ -330,7 +216,7 @@ export default function Products() {
               <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
               <rect x="6" y="14" width="12" height="8" />
             </svg>
-            <span>Print Catalog</span>
+            <span>Print</span>
           </button>
 
           <button
@@ -796,104 +682,52 @@ export default function Products() {
           </div>
         </div>
       )}
-      {/* Printable Products Catalog Modal */}
-      {printCatalogOpen && (
-        <div className="catalog-modal-overlay" onClick={() => setPrintCatalogOpen(false)}>
-          <div className="catalog-modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="catalog-modal-header">
-              <div className="catalog-modal-header-info">
-                <h3>Kerala Wood Furniture — Master Products Catalog</h3>
-                <p>Official Depot Catalog • {products.length} Products with Codes, Categories, Species & Pricing</p>
-              </div>
-              <div className="catalog-modal-header-actions">
-                <button
-                  type="button"
-                  className="btn-print-catalog-now"
-                  onClick={handlePrintCatalog}
-                >
-                  🖨️ Print / Save PDF
-                </button>
-                <button
-                  type="button"
-                  className="btn-catalog-modal-close"
-                  onClick={() => setPrintCatalogOpen(false)}
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
 
-            <div className="catalog-printable-sheet" id="printable-products-catalog">
-              <div className="catalog-print-top">
-                <div className="catalog-print-brand">
-                  <h2>Kerala Wood Furniture — Sivakasi Central Depot</h2>
-                  <p>Master Timber & Artisan Furniture Product Catalog</p>
-                  <p>Depot Address: Sivakasi Central Depot & Mill Yard, Sivakasi</p>
-                  <p>Phone: +91 94431 52088 • GSTIN: 33AABCK8921M1Z5</p>
-                </div>
-                <div className="catalog-print-meta">
-                  <div className="catalog-print-badge">PRICE & SPEC CATALOG</div>
-                  <p><strong>Date:</strong> {new Date().toLocaleDateString('en-GB')}</p>
-                  <p><strong>Total Items:</strong> {products.length} Products</p>
-                </div>
-              </div>
-
-              <table className="catalog-print-table">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Product Code</th>
-                    <th>Product Name</th>
-                    <th>Category</th>
-                    <th>Wood Species</th>
-                    <th style={{ textAlign: 'right' }}>Unit Price (₹)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {products.length === 0 ? (
-                    <tr>
-                      <td colSpan="6" style={{ textAlign: 'center', padding: '28px', color: '#7D6C63' }}>
-                        No timber products cataloged in depot inventory yet.
-                      </td>
-                    </tr>
-                  ) : (
-                    products.map((p, idx) => {
-                      const numPrice = Number(String(p.sellingPrice || p.unitPrice || p.price || 0).replace(/[^0-9.]/g, '')) || 0
-                      return (
-                        <tr key={p.id || p.sku || idx}>
-                          <td className="catalog-print-num">{idx + 1}</td>
-                          <td className="catalog-print-code">
-                            <code>{getProductCode(p)}</code>
-                          </td>
-                          <td className="catalog-print-name">
-                            <strong>{p.name}</strong>
-                          </td>
-                          <td className="catalog-print-cat">{p.category || '-'}</td>
-                          <td className="catalog-print-wood">{p.woodSpecies || '-'}</td>
-                          <td className="catalog-print-price" style={{ textAlign: 'right' }}>
-                            ₹{numPrice.toLocaleString('en-IN')}
-                          </td>
-                        </tr>
-                      )
-                    })
-                  )}
-                </tbody>
-              </table>
-
-              <div className="catalog-print-footer">
-                <div className="catalog-print-terms">
-                  <p><strong>Note:</strong> Prices are ex-depot Sivakasi. Custom timber finishes and mortise-tenon joinery are subject to standard artisanal warranty.</p>
-                </div>
-                <div className="catalog-print-sign">
-                  <p>For Kerala Wood Furniture</p>
-                  <div className="catalog-print-sign-space" />
-                  <p>Authorized Depot Manager</p>
-                </div>
-              </div>
-            </div>
-          </div>
+      {/* Print-Only Products Table: hidden on screen, shows ONLY the full products table when printing */}
+      <div className="products-print-only-wrapper" aria-hidden="true">
+        <div className="printable-products-header">
+          <h2>Products Catalog & Inventory</h2>
+          <p>Total: {filteredProducts.length} Items • Date: {new Date().toLocaleDateString('en-GB')}</p>
         </div>
-      )}
+
+        <table className="printable-products-only-table">
+          <thead>
+            <tr>
+              <th style={{ width: '36px', textAlign: 'center' }}>#</th>
+              <th>Product Code</th>
+              <th>Product Name</th>
+              <th>Category</th>
+              <th>Wood Species</th>
+              <th style={{ textAlign: 'right' }}>Price (₹)</th>
+              <th style={{ textAlign: 'right' }}>Stock</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredProducts.length === 0 ? (
+              <tr>
+                <td colSpan="7" style={{ textAlign: 'center', padding: '16px' }}>
+                  No products in catalog.
+                </td>
+              </tr>
+            ) : (
+              filteredProducts.map((p, idx) => {
+                const numPrice = Number(String(p.sellingPrice || p.unitPrice || p.price || 0).replace(/[^0-9.]/g, '')) || 0
+                return (
+                  <tr key={p.id || p.sku || idx}>
+                    <td style={{ textAlign: 'center' }}>{idx + 1}</td>
+                    <td><code>{getProductCode(p)}</code></td>
+                    <td><strong>{p.name}</strong></td>
+                    <td>{p.category || '-'}</td>
+                    <td>{p.woodSpecies || '-'}</td>
+                    <td style={{ textAlign: 'right' }}>₹{numPrice.toLocaleString('en-IN')}</td>
+                    <td style={{ textAlign: 'right' }}>{p.stockQuantity !== undefined ? p.stockQuantity : '-'}</td>
+                  </tr>
+                )
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }

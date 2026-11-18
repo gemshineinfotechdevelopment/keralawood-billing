@@ -788,16 +788,28 @@ app.get('/api/dashboard', async (req, res) => {
       Product.find(),
     ]);
 
-    let totalSalesAmt = 0;
-    for (const s of sales) {
-      totalSalesAmt += Number(s.amount) || 0;
+    // Exact Today's boundaries
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+    const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+
+    // Filter sales created today only
+    const todaySales = sales.filter((s) => {
+      const d = s.createdAt ? new Date(s.createdAt) : s.date ? new Date(s.date) : null;
+      if (!d || isNaN(d.getTime())) return false;
+      return d >= startOfToday && d <= endOfToday;
+    });
+
+    let todaySalesAmt = 0;
+    for (const s of todaySales) {
+      todaySalesAmt += Number(s.amount) || 0;
     }
 
     let totalStock = 0;
     const lowStockItems = [];
     for (const p of products) {
       const qty = Number(p.stockQuantity) || 0;
-      const threshold = Number(p.lowStockThreshold) || 2;
+      const threshold = Number(p.lowStockThreshold || 2);
       totalStock += qty;
 
       if (qty <= threshold) {
@@ -809,7 +821,7 @@ app.get('/api/dashboard', async (req, res) => {
       }
     }
 
-    const formattedSales = sales.map((s) => ({
+    const formattedTodaySales = todaySales.map((s) => ({
       id: s._id || s.invoice,
       invoice: s.invoice,
       customer: s.customer,
@@ -819,6 +831,8 @@ app.get('/api/dashboard', async (req, res) => {
       rawAmount: Number(s.amount || 0),
       status: s.paymentStatus || s.status || 'Paid',
       paymentStatus: s.paymentStatus || 'Paid',
+      createdAt: s.createdAt,
+      date: s.date,
     }));
 
     // Persist live state to MongoDB Dashboard collection
@@ -826,15 +840,15 @@ app.get('/api/dashboard', async (req, res) => {
       { key: 'main_dashboard' },
       {
         $set: {
-          todaySales: totalSalesAmt,
-          todaySalesFormatted: '₹' + totalSalesAmt.toLocaleString('en-IN'),
-          ordersToday: sales.length,
-          ordersTodayText: `${sales.length} orders processed today`,
+          todaySales: todaySalesAmt,
+          todaySalesFormatted: '₹' + todaySalesAmt.toLocaleString('en-IN'),
+          ordersToday: todaySales.length,
+          ordersTodayText: `${todaySales.length} orders processed today`,
           totalStock,
           stockLocationNote: 'Across Sivakasi master timber yards',
           lowStockCount: lowStockItems.length,
           lowStockAlerts: lowStockItems,
-          recentSales: formattedSales,
+          recentSales: formattedTodaySales,
           lastUpdated: new Date(),
         },
       },
@@ -844,14 +858,14 @@ app.get('/api/dashboard', async (req, res) => {
     res.json({
       success: true,
       stats: {
-        todaySales: '₹' + totalSalesAmt.toLocaleString('en-IN'),
-        ordersToday: `${sales.length} orders processed today`,
+        todaySales: '₹' + todaySalesAmt.toLocaleString('en-IN'),
+        ordersToday: `${todaySales.length} orders processed today`,
         totalStock: totalStock.toLocaleString('en-IN'),
         stockLocationNote: 'Across Sivakasi master timber yards',
         lowStockCount: `${lowStockItems.length} items`,
       },
       lowStockItems: lowStockItems,
-      recentSales: formattedSales,
+      recentSales: formattedTodaySales,
       dashboard: dashboardDoc,
     });
   } catch (err) {

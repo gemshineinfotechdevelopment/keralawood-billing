@@ -485,10 +485,10 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
 
   const handlePrintBill = (bill) => {
     setPreviewBill(bill)
-    setInvoiceModalOpen(true)
+    // Direct print: DO NOT open modal preview on screen
     setTimeout(() => {
       window.print()
-    }, 350)
+    }, 100)
   }
 
   const handleDeleteBillClick = (bill) => {
@@ -605,7 +605,7 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
   // -------------------------------------------------------------
   // Save & Print Actions
   // -------------------------------------------------------------
-  const handleSaveBill = (showModalAfter = false) => {
+  const handleSaveBill = (showModalAfter = false, directPrintAfter = false) => {
     if (itemsSubtotal <= 0 && items.filter((i) => i.description.trim()).length === 0) {
       setPrintSuccessToast('⚠️ Please add at least one item before saving.')
       setTimeout(() => setPrintSuccessToast(''), 2500)
@@ -644,7 +644,15 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
     setBills(DataStore.getBills())
     setSavedBills(DataStore.getTransactions())
 
-    if (showModalAfter) {
+    if (directPrintAfter) {
+      setPreviewBill(billToRecord)
+      setViewMode('list')
+      setPrintSuccessToast(`✓ Bill ${invoiceNumber} saved! Opening print...`)
+      setTimeout(() => {
+        window.print()
+        setTimeout(() => setPrintSuccessToast(''), 3000)
+      }, 150)
+    } else if (showModalAfter) {
       setPreviewBill(billToRecord)
       setInvoiceModalOpen(true)
     } else {
@@ -657,6 +665,149 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
   const handlePrint = () => {
     window.print()
   }
+
+  const renderPrintableInvoiceSheet = () => (
+    <div className="pos-invoice-printable-sheet" id="pos-printable-invoice">
+      {/* Invoice Header */}
+      <div className="pos-print-top">
+        <div className="pos-print-brand">
+          {settings.logoUrl && (
+            <img src={settings.logoUrl} alt="Logo" className="pos-print-custom-logo" />
+          )}
+          <h2>{settings.depotName || 'Kerala Wood Furniture — Sivakasi Depot'}</h2>
+          <p>{settings.address || 'Sivakasi Central Depot & Mill Yard, Sivakasi'}</p>
+          <p>
+            Phone: {settings.contactPhone} • GSTIN: {settings.gstin} • HSN: {settings.hsnCode}
+          </p>
+        </div>
+        <div className="pos-print-meta">
+          <div className="pos-print-badge">TAX INVOICE</div>
+          <p>
+            <strong>Invoice #:</strong> {modalBillData.invoiceNumber}
+          </p>
+          <p>
+            <strong>Invoice Date:</strong> {modalBillData.invoiceDate}
+          </p>
+          <p>
+            <strong>Due Date:</strong> {modalBillData.dueDate}
+          </p>
+          <p>
+            <strong>Payment:</strong> {modalBillData.paymentStatus} ({modalBillData.paymentMode})
+          </p>
+        </div>
+      </div>
+
+      {/* Customer Box */}
+      <div className="pos-print-customer-box">
+        <div className="pos-print-col">
+          <h4>Billed To:</h4>
+          <p className="pos-print-cust-name">{modalBillData.customer.name || 'Walk-in Customer'}</p>
+          <p>{modalBillData.customer.address || 'Sivakasi Yard Destination'}</p>
+          <p>Phone: {modalBillData.customer.phone || 'N/A'}</p>
+          <p>GSTIN: {modalBillData.customer.gstin || 'Unregistered / Personal'}</p>
+        </div>
+        <div className="pos-print-col">
+          <h4>Depot & Mill Yard:</h4>
+          <p>{settings.depotName}</p>
+          <p>Forest Timber Transit Permit: SFD/SVK/TMR/2026-884</p>
+          <p>Payment Terms: {settings.paymentTerms || 'Immediate / POS'}</p>
+        </div>
+      </div>
+
+      {/* Items Table */}
+      <table className="pos-print-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Item Description</th>
+            <th>Qty</th>
+            <th>Price (₹)</th>
+            <th>GST</th>
+            <th>Total (₹)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {modalBillData.items.map((it, idx) => {
+            const rowLine = (Number(it.quantity) || 1) * (Number(it.price) || 0)
+            return (
+              <tr key={it.id || idx}>
+                <td>{idx + 1}</td>
+                <td>
+                  <strong>{it.description || it.name || 'Timber Item'}</strong>
+                  {it.woodSpecies && (
+                    <span className="pos-print-subspec">
+                      {' '}
+                      • {it.woodSpecies} {it.finish ? `(${it.finish})` : ''}
+                    </span>
+                  )}
+                </td>
+                <td>{it.quantity || 1}</td>
+                <td>₹{Number(it.price || 0).toLocaleString('en-IN')}</td>
+                <td>{it.gstRate || 0}%</td>
+                <td>₹{rowLine.toLocaleString('en-IN')}</td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+
+      {/* Totals & Signatures */}
+      <div className="pos-print-footer">
+        <div className="pos-print-words-and-notes">
+          <p>
+            <strong>Amount in Words:</strong>
+          </p>
+          <p className="pos-print-italic-words">{numberToWordsINR(modalBillData.grandTotal)}</p>
+          {modalBillData.notes && (
+            <p className="pos-print-note">
+              <strong>Note:</strong> {modalBillData.notes}
+            </p>
+          )}
+          <p className="pos-print-disclaimer">{settings.disclaimer}</p>
+        </div>
+
+        <div className="pos-print-summary-totals">
+          <div className="pos-print-line">
+            <span>Items Subtotal:</span>
+            <span>₹{modalBillData.itemsSubtotal.toLocaleString('en-IN')}</span>
+          </div>
+          {modalBillData.discount > 0 && (
+            <div className="pos-print-line">
+              <span>Trade Discount:</span>
+              <span>-₹{modalBillData.discount.toLocaleString('en-IN')}</span>
+            </div>
+          )}
+          {modalBillData.deliveryCharge > 0 && (
+            <div className="pos-print-line">
+              <span>Delivery Logistics:</span>
+              <span>+₹{modalBillData.deliveryCharge.toLocaleString('en-IN')}</span>
+            </div>
+          )}
+          {modalBillData.totalGst > 0 && (
+            <div className="pos-print-line">
+              <span>GST Amount:</span>
+              <span>+₹{modalBillData.totalGst.toLocaleString('en-IN')}</span>
+            </div>
+          )}
+          <div className="pos-print-line pos-print-grand">
+            <strong>Grand Total:</strong>
+            <strong>₹{modalBillData.grandTotal.toLocaleString('en-IN')}</strong>
+          </div>
+          {modalBillData.paymentStatus === 'Partial' && (
+            <div className="pos-print-line pos-print-balance">
+              <span>Balance Due:</span>
+              <span>₹{modalBillData.balanceDue.toLocaleString('en-IN')}</span>
+            </div>
+          )}
+          <div className="pos-print-sign-box">
+            <p>For {settings.depotName}</p>
+            <div className="pos-print-sign-space" />
+            <p>Authorized Signatory: {settings.signatoryName || 'Rajesh Sivan'}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
 
   return (
     <div className="pos-concept-page">
@@ -1564,11 +1715,11 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
                 type="button"
                 className="pos-btn-save-print"
                 onClick={() => {
-                  handleSaveBill(true)
+                  handleSaveBill(false, true)
                   setBillDossierOpen(false)
                 }}
               >
-                👁️ Save & Print Preview
+                🖨️ Save & Direct Print
               </button>
 
               <button
@@ -1617,7 +1768,7 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
         </div>
       )}
 
-      {/* Printable Invoice Modal Dossier */}
+      {/* Printable Invoice Modal: only displayed when user clicks View (eye icon) */}
       {invoiceModalOpen && (
         <div className="pos-modal-overlay" onClick={handleCloseInvoiceModal}>
           <div className="pos-invoice-modal-content" onClick={(e) => e.stopPropagation()}>
@@ -1636,147 +1787,15 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
               </div>
             </div>
 
-            <div className="pos-invoice-printable-sheet" id="pos-printable-invoice">
-              {/* Invoice Header */}
-              <div className="pos-print-top">
-                <div className="pos-print-brand">
-                  {settings.logoUrl && (
-                    <img src={settings.logoUrl} alt="Logo" className="pos-print-custom-logo" />
-                  )}
-                  <h2>{settings.depotName || 'Kerala Wood Furniture — Sivakasi Depot'}</h2>
-                  <p>{settings.address || 'Sivakasi Central Depot & Mill Yard, Sivakasi'}</p>
-                  <p>
-                    Phone: {settings.contactPhone} • GSTIN: {settings.gstin} • HSN: {settings.hsnCode}
-                  </p>
-                </div>
-                <div className="pos-print-meta">
-                  <div className="pos-print-badge">TAX INVOICE</div>
-                  <p>
-                    <strong>Invoice #:</strong> {modalBillData.invoiceNumber}
-                  </p>
-                  <p>
-                    <strong>Invoice Date:</strong> {modalBillData.invoiceDate}
-                  </p>
-                  <p>
-                    <strong>Due Date:</strong> {modalBillData.dueDate}
-                  </p>
-                  <p>
-                    <strong>Payment:</strong> {modalBillData.paymentStatus} ({modalBillData.paymentMode})
-                  </p>
-                </div>
-              </div>
-
-              {/* Customer Box */}
-              <div className="pos-print-customer-box">
-                <div className="pos-print-col">
-                  <h4>Billed To:</h4>
-                  <p className="pos-print-cust-name">{modalBillData.customer.name || 'Walk-in Customer'}</p>
-                  <p>{modalBillData.customer.address || 'Sivakasi Yard Destination'}</p>
-                  <p>Phone: {modalBillData.customer.phone || 'N/A'}</p>
-                  <p>GSTIN: {modalBillData.customer.gstin || 'Unregistered / Personal'}</p>
-                </div>
-                <div className="pos-print-col">
-                  <h4>Depot & Mill Yard:</h4>
-                  <p>{settings.depotName}</p>
-                  <p>Forest Timber Transit Permit: SFD/SVK/TMR/2026-884</p>
-                  <p>Payment Terms: {settings.paymentTerms || 'Immediate / POS'}</p>
-                </div>
-              </div>
-
-              {/* Items Table */}
-              <table className="pos-print-table">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Item Description</th>
-                    <th>Qty</th>
-                    <th>Price (₹)</th>
-                    <th>GST</th>
-                    <th>Total (₹)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {modalBillData.items.map((it, idx) => {
-                    const rowLine = (Number(it.quantity) || 1) * (Number(it.price) || 0)
-                    return (
-                      <tr key={it.id || idx}>
-                        <td>{idx + 1}</td>
-                        <td>
-                          <strong>{it.description || it.name || 'Timber Item'}</strong>
-                          {it.woodSpecies && (
-                            <span className="pos-print-subspec">
-                              {' '}
-                              • {it.woodSpecies} {it.finish ? `(${it.finish})` : ''}
-                            </span>
-                          )}
-                        </td>
-                        <td>{it.quantity || 1}</td>
-                        <td>₹{Number(it.price || 0).toLocaleString('en-IN')}</td>
-                        <td>{it.gstRate || 0}%</td>
-                        <td>₹{rowLine.toLocaleString('en-IN')}</td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-
-              {/* Totals & Signatures */}
-              <div className="pos-print-footer">
-                <div className="pos-print-words-and-notes">
-                  <p>
-                    <strong>Amount in Words:</strong>
-                  </p>
-                  <p className="pos-print-italic-words">{numberToWordsINR(modalBillData.grandTotal)}</p>
-                  {modalBillData.notes && (
-                    <p className="pos-print-note">
-                      <strong>Note:</strong> {modalBillData.notes}
-                    </p>
-                  )}
-                  <p className="pos-print-disclaimer">{settings.disclaimer}</p>
-                </div>
-
-                <div className="pos-print-summary-totals">
-                  <div className="pos-print-line">
-                    <span>Items Subtotal:</span>
-                    <span>₹{modalBillData.itemsSubtotal.toLocaleString('en-IN')}</span>
-                  </div>
-                  {modalBillData.discount > 0 && (
-                    <div className="pos-print-line">
-                      <span>Trade Discount:</span>
-                      <span>-₹{modalBillData.discount.toLocaleString('en-IN')}</span>
-                    </div>
-                  )}
-                  {modalBillData.deliveryCharge > 0 && (
-                    <div className="pos-print-line">
-                      <span>Delivery Logistics:</span>
-                      <span>+₹{modalBillData.deliveryCharge.toLocaleString('en-IN')}</span>
-                    </div>
-                  )}
-                  {modalBillData.totalGst > 0 && (
-                    <div className="pos-print-line">
-                      <span>GST Amount:</span>
-                      <span>+₹{modalBillData.totalGst.toLocaleString('en-IN')}</span>
-                    </div>
-                  )}
-                  <div className="pos-print-line pos-print-grand">
-                    <strong>Grand Total:</strong>
-                    <strong>₹{modalBillData.grandTotal.toLocaleString('en-IN')}</strong>
-                  </div>
-                  {modalBillData.paymentStatus === 'Partial' && (
-                    <div className="pos-print-line pos-print-balance">
-                      <span>Balance Due:</span>
-                      <span>₹{modalBillData.balanceDue.toLocaleString('en-IN')}</span>
-                    </div>
-                  )}
-                  <div className="pos-print-sign-box">
-                    <p>For {settings.depotName}</p>
-                    <div className="pos-print-sign-space" />
-                    <p>Authorized Signatory: {settings.signatoryName || 'Rajesh Sivan'}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
+            {renderPrintableInvoiceSheet()}
           </div>
+        </div>
+      )}
+
+      {/* Hidden Print-Only Container: enables direct printing without opening any preview modal */}
+      {!invoiceModalOpen && (
+        <div className="pos-print-only-wrapper" aria-hidden="true">
+          {renderPrintableInvoiceSheet()}
         </div>
       )}
     </div>

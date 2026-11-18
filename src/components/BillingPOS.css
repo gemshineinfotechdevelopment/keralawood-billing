@@ -1171,21 +1171,75 @@
   height: 40px;
 }
 
+/* Hidden Print-Only Container (completely invisible on screen, offscreen) */
+.pos-print-only-wrapper {
+  position: fixed !important;
+  left: -9999px !important;
+  top: 0 !important;
+  width: 1000px !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  z-index: -9999 !important;
+}
+
 /* Print Media Styles */
 @media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm 14mm;
+  }
+
+  *,
+  *::before,
+  *::after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+    box-sizing: border-box !important;
+  }
+
+  body {
+    background: #FFFFFF !important;
+    color: #31190B !important;
+  }
+
   body * {
     visibility: hidden;
   }
+
+  .pos-print-only-wrapper {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    z-index: 99999 !important;
+  }
+
   #pos-printable-invoice,
   #pos-printable-invoice * {
-    visibility: visible;
+    visibility: visible !important;
   }
+
   #pos-printable-invoice {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    padding: 0;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #FFFFFF !important;
+  }
+
+  .pos-modal-overlay,
+  .pos-invoice-modal-content,
+  .pos-modal-header,
+  .navbar,
+  .sidebar,
+  .depot-header,
+  .sidebar-container {
+    display: none !important;
   }
 }
 
