@@ -279,201 +279,128 @@
   color: #31190B;
 }
 
-.moisture-badge {
-  font-size: 10px;
-  color: #8C7B72;
-  font-weight: 500;
-}
-
-/* Toggle Card */
-.settings-toggle-card {
-  background-color: #FEF0ED;
-  border: 1px solid #F1DFD5;
-  border-radius: 6px;
-  padding: 12px 14px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.toggle-card-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.toggle-card-title {
-  font-size: 11.5px;
-  font-weight: 700;
-  color: #31190B;
-}
-
-.toggle-card-sub {
-  font-size: 10px;
-  color: #8C7B72;
-}
-
-.settings-toggle-pill {
-  width: 36px;
-  height: 20px;
-  border-radius: 9999px;
-  background-color: #D6CBC4;
-  position: relative;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  flex-shrink: 0;
-}
-
-.settings-toggle-pill.active {
-  background-color: #7C5230;
-}
-
-.settings-toggle-thumb {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background-color: #FFFFFF;
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  transition: transform 0.2s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-}
-
-.settings-toggle-pill.active .settings-toggle-thumb {
-  transform: translateX(16px);
-}
-
-/* Radio Cards Grid */
-.radio-options-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-top: 2px;
-}
-
-.radio-card-option {
-  background-color: #FEF0ED;
-  border: 1px solid #EAE0D8;
-  border-radius: 6px;
-  padding: 9px 12px;
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.radio-card-option.selected {
-  border-color: #D3B094;
-}
-
-.radio-custom-circle {
-  width: 13px;
-  height: 13px;
-  border-radius: 50%;
-  border: 1.5px solid #C4B5AA;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.radio-card-option.selected .radio-custom-circle {
-  border-color: #7C5230;
-}
-
-.radio-inner-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background-color: #7C5230;
-}
-
-.radio-text-wrap {
-  display: flex;
-  flex-direction: column;
-}
-
-.radio-title {
-  font-size: 11.5px;
-  font-weight: 700;
-  color: #31190B;
-  display: block;
-}
-
-.radio-subtitle {
-  font-size: 9.5px;
-  color: #8C7B72;
-  display: block;
-  margin-top: 1px;
-}
-
 /* System Time & Billing Clock Custom Styles */
+.settings-clock-card {
+  position: relative;
+}
+
 .settings-label-with-btn {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2px;
+  margin-bottom: 6px;
+  width: 100%;
 }
 
 .btn-sync-time {
-  background-color: #FEF1ED;
-  border: 1px solid #EAE0D8;
+  display: inline-flex;
+  align-items: center;
+  background-color: #FAF4EF;
+  border: 1px solid #E2CEBE;
   color: #5C3A21;
-  font-size: 10px;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 5px;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  line-height: 1.2;
 }
 
 .btn-sync-time:hover {
   background-color: #31190B;
-  color: #FFFFFF;
+  color: #C88D58;
   border-color: #31190B;
+  box-shadow: 0 2px 6px rgba(49, 25, 11, 0.18);
+}
+
+.settings-clock-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.settings-clock-icon {
+  position: absolute;
+  left: 12px;
+  pointer-events: none;
+  color: #8C7B72;
+}
+
+.settings-input.settings-clock-input {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #31190B;
+  background-color: #FFFFFF;
+  border: 1px solid #E2CEBE;
+  border-radius: 6px;
+  box-sizing: border-box;
+  font-family: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.settings-clock-input-wrap .settings-clock-icon + .settings-input.settings-clock-input {
+  padding-left: 36px;
+}
+
+.settings-input.settings-clock-input:focus {
+  border-color: #C88D58;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(200, 141, 88, 0.18);
 }
 
 .system-time-preview-box {
-  background-color: #FAF6F2;
-  border: 1px solid #EAE0D8;
+  background: linear-gradient(135deg, #FAF6F2 0%, #F5ECE3 100%);
+  border: 1px solid #E7D8CC;
   border-radius: 8px;
-  padding: 12px 14px;
+  padding: 14px 16px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-top: 4px;
+  gap: 14px;
+  margin-top: 10px;
+  box-shadow: 0 1px 3px rgba(49, 25, 11, 0.04);
 }
 
 .preview-clock-icon {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background-color: #F0E6DE;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background-color: #31190B;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(49, 25, 11, 0.2);
+}
+
+.preview-clock-icon svg {
+  stroke: #C88D58 !important;
 }
 
 .preview-meta {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
 }
 
 .preview-label {
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.06em;
   color: #8C7B72;
+  text-transform: uppercase;
 }
 
 .preview-time-val {
-  font-size: 12px;
+  font-size: 13.5px;
   font-weight: 700;
   color: #31190B;
+  letter-spacing: -0.01em;
 }
 
 /* Responsive */

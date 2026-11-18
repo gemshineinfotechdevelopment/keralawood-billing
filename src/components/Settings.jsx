@@ -24,20 +24,8 @@ export default function Settings() {
   const [ifscCode, setIfscCode] = useState(initial.ifscCode || 'SBIN0008839')
   const [upiId, setUpiId] = useState(initial.upiId || 'keralawood.depot@sbi')
 
-  // Stock Alerts & Quality Parameters
+  // Stock Alerts
   const [minStockThreshold, setMinStockThreshold] = useState(initial.minStockThreshold || '5')
-  const moistureTarget = initial.moistureTarget || '10% - 12%'
-  const [emailAlerts, setEmailAlerts] = useState(initial.emailAlerts !== undefined ? initial.emailAlerts : true)
-  const [smsNotifications, setSmsNotifications] = useState(initial.smsNotifications !== undefined ? initial.smsNotifications : true)
-
-  // Invoice, Printing & Legal Terms
-  const [printFormat, setPrintFormat] = useState(initial.printFormat || 'A4 Ledger')
-  const [paymentTerms, setPaymentTerms] = useState(initial.paymentTerms || 'Immediate / POS')
-  const [signatoryName, setSignatoryName] = useState(initial.signatoryName || 'Rajesh Sivan')
-  const [signatoryDesignation, setSignatoryDesignation] = useState(initial.signatoryDesignation || 'Depot Lead & Store Manager')
-  const [disclaimer, setDisclaimer] = useState(
-    initial.disclaimer || 'Natural variations in teak & rosewood grain are organic characteristics. Claims accepted within 7 days of yard delivery.'
-  )
 
   // System Date & Time (POS Billing Clock)
   const [systemTime, setSystemTime] = useState(
@@ -70,11 +58,6 @@ export default function Settings() {
           if (s.ifscCode) setIfscCode(s.ifscCode)
           if (s.upiId) setUpiId(s.upiId)
           if (s.minStockThreshold) setMinStockThreshold(s.minStockThreshold)
-          if (s.printFormat) setPrintFormat(s.printFormat)
-          if (s.paymentTerms) setPaymentTerms(s.paymentTerms)
-          if (s.signatoryName) setSignatoryName(s.signatoryName)
-          if (s.signatoryDesignation) setSignatoryDesignation(s.signatoryDesignation)
-          if (s.disclaimer) setDisclaimer(s.disclaimer)
           if (s.systemTime) setSystemTime(s.systemTime)
           if (s.systemDate !== undefined) setSystemDate(s.systemDate)
         }
@@ -83,7 +66,8 @@ export default function Settings() {
   }, [])
 
   const handleSaveSettings = () => {
-    DataStore.saveSettings({
+    const updated = {
+      ...initial,
       depotName,
       contactPhone,
       contactEmail,
@@ -100,17 +84,16 @@ export default function Settings() {
       ifscCode,
       upiId,
       minStockThreshold,
-      moistureTarget,
-      emailAlerts,
-      smsNotifications,
-      printFormat,
-      paymentTerms,
-      signatoryName,
-      signatoryDesignation,
-      disclaimer,
       systemTime,
       systemDate,
-    })
+    }
+    DataStore.saveSettings(updated)
+    fetch('/api/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updated),
+    }).catch(() => {})
+
     setSavedSuccess(true)
     setTimeout(() => {
       setSavedSuccess(false)
@@ -124,7 +107,7 @@ export default function Settings() {
         <div className="settings-title-wrap">
           <h1 className="settings-main-title">Settings</h1>
           <p className="settings-main-subtitle">
-            Manage store information, GST details, inventory alerts, and printing preferences.
+            Manage store information, GST details, inventory alert thresholds, and system billing clock.
           </p>
         </div>
 
@@ -372,7 +355,7 @@ export default function Settings() {
         </div>
       </section>
 
-      {/* Card 3: Stock Alerts & Timber Quality Parameters */}
+      {/* Card 3: Stock Alerts */}
       <section className="settings-card">
         <div className="settings-card-header">
           <div className="settings-icon-box">
@@ -391,77 +374,33 @@ export default function Settings() {
             </svg>
           </div>
           <div>
-            <h2 className="settings-section-title">Stock Alerts & Timber Quality Parameters</h2>
+            <h2 className="settings-section-title">Stock Alerts</h2>
             <p className="settings-section-subtitle">
-              Depot stock deficit triggers, timber seasoning standards, and dispatch notifications.
+              Depot stock deficit triggers and low inventory reorder alert settings.
             </p>
           </div>
         </div>
 
         <div className="settings-form-col">
-          <div className="settings-form-row-2col">
-            <div className="settings-field-group">
-              <label className="settings-field-label">Minimum Stock Threshold (Units)</label>
-              <span className="settings-field-hint">
-                Alert triggered when raw timber log stock falls below this quantity.
-              </span>
-              <input
-                type="number"
-                className="settings-input threshold-input"
-                value={minStockThreshold}
-                onChange={(e) => setMinStockThreshold(e.target.value)}
-              />
-            </div>
-            <div className="settings-field-group">
-              <label className="settings-field-label">Moisture Content Target Range (% EMC)</label>
-              <span className="settings-field-hint">
-                Kiln seasoning benchmark for joinery & furniture wood acceptance.
-              </span>
-              <div className="moisture-display-box">
-                <span className="moisture-val">{moistureTarget}</span>
-                <span className="moisture-badge">Target EMC</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="settings-form-row-2col">
-            {/* Email Alerts Toggle Card */}
-            <div className="settings-toggle-card">
-              <div className="toggle-card-info">
-                <span className="toggle-card-title">Email Alerts</span>
-                <span className="toggle-card-sub">Send reorder & deficit alerts to depot manager</span>
-              </div>
-              <div
-                className={`settings-toggle-pill ${emailAlerts ? 'active' : ''}`}
-                onClick={() => setEmailAlerts(!emailAlerts)}
-                role="button"
-                tabIndex={0}
-              >
-                <span className="settings-toggle-thumb"></span>
-              </div>
-            </div>
-
-            {/* SMS & WhatsApp Toggle Card */}
-            <div className="settings-toggle-card">
-              <div className="toggle-card-info">
-                <span className="toggle-card-title">SMS & WhatsApp Notifications</span>
-                <span className="toggle-card-sub">Automated billing slip & timber dispatch updates</span>
-              </div>
-              <div
-                className={`settings-toggle-pill ${smsNotifications ? 'active' : ''}`}
-                onClick={() => setSmsNotifications(!smsNotifications)}
-                role="button"
-                tabIndex={0}
-              >
-                <span className="settings-toggle-thumb"></span>
-              </div>
-            </div>
+          <div className="settings-field-group">
+            <label className="settings-field-label">Minimum Stock Threshold (Units)</label>
+            <span className="settings-field-hint">
+              Alert triggered across dashboard and stock inventory when product quantity falls below this threshold.
+            </span>
+            <input
+              type="number"
+              className="settings-input threshold-input"
+              value={minStockThreshold}
+              onChange={(e) => setMinStockThreshold(e.target.value)}
+              placeholder="e.g. 5"
+              min="1"
+            />
           </div>
         </div>
       </section>
 
-      {/* Card 4: System Date, Time & POS Billing Clock */}
-      <section className="settings-card">
+      {/* Card 4: System Time & Billing Clock */}
+      <section className="settings-card settings-clock-card">
         <div className="settings-card-header">
           <div className="settings-icon-box">
             <svg
@@ -486,236 +425,150 @@ export default function Settings() {
           </div>
         </div>
 
-        <div className="settings-form-row-2col">
-          <div className="settings-input-group">
-            <div className="settings-label-with-btn">
-              <label className="settings-label">SYSTEM BILLING TIME *</label>
-              <button
-                type="button"
-                className="btn-sync-time"
-                onClick={() => {
-                  const now = new Date()
-                  setSystemTime(
-                    now.toLocaleTimeString('en-US', {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                      hour12: true,
-                    })
-                  )
-                }}
-              >
-                Sync Device Time
-              </button>
-            </div>
-            <input
-              type="text"
-              className="settings-text-input"
-              value={systemTime}
-              onChange={(e) => setSystemTime(e.target.value)}
-              placeholder="e.g. 10:30 AM or 04:15 PM"
-            />
-            <span className="settings-hint">
-              This exact time will be printed on customer tax invoices and sales records.
-            </span>
-          </div>
-
-          <div className="settings-input-group">
-            <div className="settings-label-with-btn">
-              <label className="settings-label">SYSTEM BILLING DATE</label>
-              <button
-                type="button"
-                className="btn-sync-time"
-                onClick={() => {
-                  const now = new Date()
-                  const y = now.getFullYear()
-                  const m = String(now.getMonth() + 1).padStart(2, '0')
-                  const d = String(now.getDate()).padStart(2, '0')
-                  setSystemDate(`${y}-${m}-${d}`)
-                }}
-              >
-                Set Today
-              </button>
-            </div>
-            <input
-              type="date"
-              className="settings-text-input"
-              value={systemDate}
-              onChange={(e) => setSystemDate(e.target.value)}
-            />
-            <span className="settings-hint">
-              Leave blank to automatically use the live calendar date.
-            </span>
-          </div>
-        </div>
-
-        {/* Live Preview Box */}
-        <div className="system-time-preview-box">
-          <div className="preview-clock-icon">
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#8C5E35"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <circle cx="12" cy="12" r="10" />
-              <polyline points="12 6 12 12 16 14" />
-            </svg>
-          </div>
-          <div className="preview-meta">
-            <span className="preview-label">INVOICE TIME & DATE PREVIEW:</span>
-            <strong className="preview-time-val">
-              {systemDate
-                ? new Date(systemDate).toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                  })
-                : new Date().toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                  })}{' '}
-              • {systemTime || '10:30 AM'} • Sivakasi Standard Time
-            </strong>
-          </div>
-        </div>
-      </section>
-
-      {/* Card 5: Invoice, Printing & Legal Terms */}
-      <section className="settings-card">
-        <div className="settings-card-header">
-          <div className="settings-icon-box">
-            <svg
-              width="15"
-              height="15"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#5C4537"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polyline points="6 9 6 2 18 2 18 9" />
-              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
-              <rect x="6" y="14" width="12" height="8" />
-            </svg>
-          </div>
-          <div>
-            <h2 className="settings-section-title">Invoice, Printing & Legal Terms</h2>
-            <p className="settings-section-subtitle">
-              Format rules, authorized signatory, payment policies, and timber grain terms.
-            </p>
-          </div>
-        </div>
-
         <div className="settings-form-col">
           <div className="settings-form-row-2col">
-            {/* Default Print Format Radio */}
             <div className="settings-field-group">
-              <label className="settings-field-label">Default Print Format</label>
-              <div className="radio-options-grid">
-                <div
-                  className={`radio-card-option ${printFormat === 'A4 Ledger' ? 'selected' : ''}`}
-                  onClick={() => setPrintFormat('A4 Ledger')}
-                  role="button"
-                  tabIndex={0}
+              <div className="settings-label-with-btn">
+                <label className="settings-field-label">SYSTEM BILLING TIME *</label>
+                <button
+                  type="button"
+                  className="btn-sync-time"
+                  onClick={() => {
+                    const now = new Date()
+                    setSystemTime(
+                      now.toLocaleTimeString('en-US', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true,
+                      })
+                    )
+                  }}
                 >
-                  <span className="radio-custom-circle">
-                    {printFormat === 'A4 Ledger' && <span className="radio-inner-dot"></span>}
-                  </span>
-                  <div className="radio-text-wrap">
-                    <span className="radio-title">A4 Ledger</span>
-                    <span className="radio-subtitle">Full Invoice Sheet</span>
-                  </div>
-                </div>
-
-                <div
-                  className={`radio-card-option ${printFormat === 'Thermal Slip' ? 'selected' : ''}`}
-                  onClick={() => setPrintFormat('Thermal Slip')}
-                  role="button"
-                  tabIndex={0}
-                >
-                  <span className="radio-custom-circle">
-                    {printFormat === 'Thermal Slip' && <span className="radio-inner-dot"></span>}
-                  </span>
-                  <div className="radio-text-wrap">
-                    <span className="radio-title">Thermal Slip</span>
-                    <span className="radio-subtitle">80mm POS Roll</span>
-                  </div>
-                </div>
+                  <svg
+                    width="11"
+                    height="11"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    style={{ marginRight: '4px' }}
+                  >
+                    <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+                  </svg>
+                  Sync Device Time
+                </button>
               </div>
+              <div className="settings-clock-input-wrap">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#8C7B72"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="settings-clock-icon"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+                <input
+                  type="text"
+                  className="settings-input settings-clock-input"
+                  value={systemTime}
+                  onChange={(e) => setSystemTime(e.target.value)}
+                  placeholder="e.g. 10:30 AM or 04:15 PM"
+                />
+              </div>
+              <span className="settings-field-hint">
+                This exact time will be printed on customer tax invoices and sales records.
+              </span>
             </div>
 
-            {/* Default Payment Terms Radio */}
             <div className="settings-field-group">
-              <label className="settings-field-label">Default Payment Terms</label>
-              <div className="radio-options-grid">
-                <div
-                  className={`radio-card-option ${paymentTerms === 'Immediate / POS' ? 'selected' : ''}`}
-                  onClick={() => setPaymentTerms('Immediate / POS')}
-                  role="button"
-                  tabIndex={0}
+              <div className="settings-label-with-btn">
+                <label className="settings-field-label">SYSTEM BILLING DATE</label>
+                <button
+                  type="button"
+                  className="btn-sync-time"
+                  onClick={() => {
+                    const now = new Date()
+                    const y = now.getFullYear()
+                    const m = String(now.getMonth() + 1).padStart(2, '0')
+                    const d = String(now.getDate()).padStart(2, '0')
+                    setSystemDate(`${y}-${m}-${d}`)
+                  }}
                 >
-                  <span className="radio-custom-circle">
-                    {paymentTerms === 'Immediate / POS' && <span className="radio-inner-dot"></span>}
-                  </span>
-                  <div className="radio-text-wrap">
-                    <span className="radio-title">Immediate / POS</span>
-                    <span className="radio-subtitle">Full on dispatch</span>
-                  </div>
-                </div>
-
-                <div
-                  className={`radio-card-option ${paymentTerms === 'Net 30 Days' ? 'selected' : ''}`}
-                  onClick={() => setPaymentTerms('Net 30 Days')}
-                  role="button"
-                  tabIndex={0}
-                >
-                  <span className="radio-custom-circle">
-                    {paymentTerms === 'Net 30 Days' && <span className="radio-inner-dot"></span>}
-                  </span>
-                  <div className="radio-text-wrap">
-                    <span className="radio-title">Net 30 Days</span>
-                    <span className="radio-subtitle">Contractor credit</span>
-                  </div>
-                </div>
+                  <svg
+                    width="11"
+                    height="11"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    style={{ marginRight: '4px' }}
+                  >
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                    <line x1="16" y1="2" x2="16" y2="6" />
+                    <line x1="8" y1="2" x2="8" y2="6" />
+                    <line x1="3" y1="10" x2="21" y2="10" />
+                  </svg>
+                  Set Today
+                </button>
               </div>
+              <div className="settings-clock-input-wrap">
+                <input
+                  type="date"
+                  className="settings-input settings-clock-input"
+                  value={systemDate}
+                  onChange={(e) => setSystemDate(e.target.value)}
+                />
+              </div>
+              <span className="settings-field-hint">
+                Leave blank to automatically use the live calendar date.
+              </span>
             </div>
           </div>
 
-          <div className="settings-form-row-2col">
-            <div className="settings-field-group">
-              <label className="settings-field-label">Authorized Signatory Name</label>
-              <input
-                type="text"
-                className="settings-input"
-                value={signatoryName}
-                onChange={(e) => setSignatoryName(e.target.value)}
-              />
+          {/* Live Preview Box */}
+          <div className="system-time-preview-box">
+            <div className="preview-clock-icon">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#C88D58"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
             </div>
-            <div className="settings-field-group">
-              <label className="settings-field-label">Signatory Designation</label>
-              <input
-                type="text"
-                className="settings-input"
-                value={signatoryDesignation}
-                onChange={(e) => setSignatoryDesignation(e.target.value)}
-              />
+            <div className="preview-meta">
+              <span className="preview-label">INVOICE TIME & DATE PREVIEW</span>
+              <strong className="preview-time-val">
+                {systemDate
+                  ? new Date(systemDate).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                    })
+                  : new Date().toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                    })}{' '}
+                • {systemTime || '10:30 AM'} • Sivakasi Standard Time
+              </strong>
             </div>
-          </div>
-
-          <div className="settings-field-group">
-            <label className="settings-field-label">Invoice Terms, Conditions & Timber Grain Disclaimer</label>
-            <textarea
-              className="settings-textarea"
-              rows={2}
-              value={disclaimer}
-              onChange={(e) => setDisclaimer(e.target.value)}
-            />
           </div>
         </div>
       </section>

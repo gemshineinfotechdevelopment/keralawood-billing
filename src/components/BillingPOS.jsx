@@ -65,8 +65,9 @@ export default function BillingPOS({ onNavigateToProducts }) {
   const [products, setProducts] = useState(() => DataStore.getProducts())
   const [settings, setSettings] = useState(() => DataStore.getSettings())
 
-  // Modal & Toast States
+  // Modal, Dossier & Toast States
   const [invoiceModalOpen, setInvoiceModalOpen] = useState(false)
+  const [billDossierOpen, setBillDossierOpen] = useState(false)
   const [printSuccessToast, setPrintSuccessToast] = useState('')
   const [saveCustomerToDirectory, setSaveCustomerToDirectory] = useState(false)
   const [additionalOptionsOpen, setAdditionalOptionsOpen] = useState(false)
@@ -129,6 +130,18 @@ export default function BillingPOS({ onNavigateToProducts }) {
       .catch(() => {})
 
     return () => window.removeEventListener('timber_store_updated', handleUpdate)
+  }, [])
+
+  // Close drawer or modal on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setBillDossierOpen(false)
+        setInvoiceModalOpen(false)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
 
   // Find or create active bill

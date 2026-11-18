@@ -236,19 +236,43 @@ app.get('/api/products', async (req, res) => {
 app.put('/api/products/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { stockQuantity, lowStockThreshold, sellingPrice, depotLocation, warehouseBay } = req.body;
+    const body = req.body;
+
+    const parseNum = (val, defaultVal = 0) => {
+      if (typeof val === 'number') return val;
+      if (!val) return defaultVal;
+      const cleaned = String(val).replace(/[^0-9.]/g, '');
+      return cleaned ? Number(cleaned) : defaultVal;
+    };
 
     const updateFields = {};
-    if (stockQuantity !== undefined) updateFields.stockQuantity = Number(stockQuantity);
-    if (lowStockThreshold !== undefined) updateFields.lowStockThreshold = Number(lowStockThreshold);
-    if (sellingPrice !== undefined) {
-      updateFields.sellingPrice =
-        typeof sellingPrice === 'number'
-          ? sellingPrice
-          : Number(String(sellingPrice).replace(/[^0-9.]/g, ''));
+    if (body.name !== undefined) updateFields.name = body.name;
+    if (body.category !== undefined) updateFields.category = body.category;
+    if (body.sku !== undefined) updateFields.sku = body.sku;
+    if (body.woodSpecies !== undefined) updateFields.woodSpecies = body.woodSpecies;
+    if (body.description !== undefined) updateFields.description = body.description;
+    if (body.woodGrade !== undefined) updateFields.woodGrade = body.woodGrade;
+    if (body.surfacePolish !== undefined) updateFields.surfacePolish = body.surfacePolish;
+    if (body.joineryTechnique !== undefined) updateFields.joineryTechnique = body.joineryTechnique;
+    if (body.warranty !== undefined) updateFields.warranty = body.warranty;
+    if (body.packagingType !== undefined) updateFields.packagingType = body.packagingType;
+    if (body.shippingClass !== undefined) updateFields.shippingClass = body.shippingClass;
+    if (body.tradeDiscount !== undefined) updateFields.tradeDiscount = body.tradeDiscount;
+    if (body.depotLocation !== undefined) updateFields.depotLocation = body.depotLocation;
+    if (body.warehouseBay !== undefined) updateFields.warehouseBay = body.warehouseBay;
+    if (body.stockQuantity !== undefined) updateFields.stockQuantity = parseNum(body.stockQuantity);
+    if (body.lowStockThreshold !== undefined) updateFields.lowStockThreshold = parseNum(body.lowStockThreshold, 2);
+    if (body.sellingPrice !== undefined || body.unitPrice !== undefined) {
+      updateFields.sellingPrice = parseNum(body.sellingPrice !== undefined ? body.sellingPrice : body.unitPrice);
     }
-    if (depotLocation !== undefined) updateFields.depotLocation = depotLocation;
-    if (warehouseBay !== undefined) updateFields.warehouseBay = warehouseBay;
+    if (body.dimensions !== undefined) {
+      updateFields.dimensions = {
+        length: parseNum(body.dimensions.length),
+        width: parseNum(body.dimensions.width),
+        height: parseNum(body.dimensions.height),
+        weight: parseNum(body.dimensions.weight),
+      };
+    }
 
     let updatedProduct = null;
     if (mongoose.Types.ObjectId.isValid(id)) {
@@ -262,11 +286,29 @@ app.put('/api/products/:id', async (req, res) => {
       );
     }
 
-    console.log('[API] Updated product stock:', id, updateFields);
+    console.log('[API] Updated product:', id);
     res.json({ success: true, product: updatedProduct });
   } catch (err) {
     console.error('[API] /api/products/:id PUT error:', err);
-    res.status(500).json({ success: false, message: 'Failed to update stock', error: err.message });
+    res.status(500).json({ success: false, message: 'Failed to update product', error: err.message });
+  }
+});
+
+app.delete('/api/products/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    let deletedProduct = null;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      deletedProduct = await Product.findByIdAndDelete(id);
+    }
+    if (!deletedProduct) {
+      deletedProduct = await Product.findOneAndDelete({ $or: [{ sku: id }, { name: id }] });
+    }
+    console.log('[API] Deleted product:', id);
+    res.json({ success: true, message: 'Product deleted successfully', product: deletedProduct });
+  } catch (err) {
+    console.error('[API] /api/products/:id DELETE error:', err);
+    res.status(500).json({ success: false, message: 'Failed to delete product', error: err.message });
   }
 });
 
@@ -281,36 +323,36 @@ app.post('/api/products', async (req, res) => {
     };
 
     const newProduct = new Product({
-      name: data.name || 'Untitled Wood Product',
-      sku: data.sku || `KWF-${Date.now().toString().slice(-4)}`,
-      category: data.category || 'Dining',
-      woodSpecies: data.woodSpecies || 'Teak',
+      name: data.name || '',
+      sku: data.sku || String(Math.floor(100000 + Math.random() * 900000)),
+      category: data.category || '',
+      woodSpecies: data.woodSpecies || '',
       description: data.description || '',
-      collectionSeries: data.collectionSeries || 'Malabar Heritage Collection',
-      originZone: data.originZone || 'Nilambur Govt Timber Depot',
+      collectionSeries: data.collectionSeries || '',
+      originZone: data.originZone || '',
       searchTags: data.searchTags || '',
       dimensions: {
-        length: parseNum(data.length || (data.dimensions && data.dimensions.length)),
-        width: parseNum(data.width || (data.dimensions && data.dimensions.width)),
-        height: parseNum(data.height || (data.dimensions && data.dimensions.height)),
-        weight: parseNum(data.weight || (data.dimensions && data.dimensions.weight)),
+        length: parseNum(data.length || (data.dimensions && data.dimensions.length), 0),
+        width: parseNum(data.width || (data.dimensions && data.dimensions.width), 0),
+        height: parseNum(data.height || (data.dimensions && data.dimensions.height), 0),
+        weight: parseNum(data.weight || (data.dimensions && data.dimensions.weight), 0),
       },
-      woodGrade: data.woodGrade || 'Grade A - Nilambur Heartwood',
-      surfacePolish: data.surfacePolish || 'Natural Protective Organic-Beeswax',
-      joineryTechnique: data.joineryTechnique || 'Mortise & Tenon with Rosewood Dowels',
-      warranty: data.warranty || '5-Yr Termite & Wood',
-      stockQuantity: parseNum(data.stockQuantity, 4),
-      lowStockThreshold: parseNum(data.lowStockThreshold, 2),
-      depotLocation: data.depotLocation || 'Sivakasi Central Depot',
-      warehouseBay: data.warehouseBay || 'Bay C-04 / Shed 2',
-      leadTime: data.leadTime || 'In Stock (Ready to Ship)',
-      packagingType: data.packagingType || 'Corrugated Multi-layer Wood Wrap',
-      shippingClass: data.shippingClass || 'Class 3 - Heavy Solid Furniture (Direct Depot Truck)',
-      costPrice: parseNum(data.costPrice, 48500),
-      sellingPrice: parseNum(data.sellingPrice || data.unitPrice, 78500),
-      gstSlab: data.gstSlab || '18% GST (HSN 9403 - Wooden Furniture)',
-      tradeDiscount: data.tradeDiscount || 'Architect / Builder Tier 1 (12% Off)',
-      transitPass: data.transitPass !== undefined ? Boolean(data.transitPass) : true,
+      woodGrade: data.woodGrade || '',
+      surfacePolish: data.surfacePolish || '',
+      joineryTechnique: data.joineryTechnique || '',
+      warranty: data.warranty || '',
+      stockQuantity: parseNum(data.stockQuantity, 0),
+      lowStockThreshold: parseNum(data.lowStockThreshold, 0),
+      depotLocation: data.depotLocation || '',
+      warehouseBay: data.warehouseBay || '',
+      leadTime: data.leadTime || '',
+      packagingType: data.packagingType || '',
+      shippingClass: data.shippingClass || '',
+      costPrice: parseNum(data.costPrice, 0),
+      sellingPrice: parseNum(data.sellingPrice || data.unitPrice, 0),
+      gstSlab: data.gstSlab || '',
+      tradeDiscount: data.tradeDiscount || '',
+      transitPass: data.transitPass !== undefined ? Boolean(data.transitPass) : false,
     });
 
     const saved = await newProduct.save();

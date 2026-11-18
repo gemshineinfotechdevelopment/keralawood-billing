@@ -16,6 +16,19 @@ export default defineConfig(({ mode }) => {
         '/api': {
           target: 'http://localhost:5000',
           changeOrigin: true,
+          configure: (proxy) => {
+            proxy.on('error', (err, _req, res) => {
+              if (res && !res.headersSent && typeof res.writeHead === 'function') {
+                res.writeHead(502, { 'Content-Type': 'application/json' })
+                res.end(
+                  JSON.stringify({
+                    success: false,
+                    message: 'Backend server offline (run: npm run dev:backend or npm run dev:all)',
+                  })
+                )
+              }
+            })
+          },
         },
       },
     },

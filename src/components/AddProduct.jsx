@@ -10,32 +10,35 @@ const DEFAULT_CATEGORIES = [
   'Executive Desks & Tables',
 ]
 
-// Auto-generate clean, systematic SKU code
-const generateAutoSku = (cat = 'Dining Sets & Tables') => {
-  const codeMap = {
-    'Dining Sets & Tables': 'DIN',
-    'Beds & Bedroom': 'BED',
-    'Armchairs & Seating': 'CHR',
-    'Storage & Bookcases': 'STR',
-    'Executive Desks & Tables': 'DSK',
-    'Living': 'LIV',
-  }
-  const prefix = codeMap[cat] || (cat ? cat.replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase() : 'FUR')
-  const randomNum = Math.floor(1000 + Math.random() * 9000)
-  return `KWF-${prefix}-${randomNum}`
+// Auto-generate strictly numeric SKU code (digits only, strictly no letters)
+const generateAutoSku = () => {
+  return String(Math.floor(100000 + Math.random() * 900000))
 }
 
-export default function AddProduct({ onProductSaved }) {
-  // Settings sync (for dynamic GST and Depot defaults)
+export default function AddProduct({ onProductSaved, onCancel, editProduct = null }) {
+  // Settings sync (for Depot defaults)
   const [settings, setSettings] = useState(() => DataStore.getSettings())
 
-  // General Info states (SKU is automatically generated on mount)
-  const [productName, setProductName] = useState('')
-  const [categories, setCategories] = useState(DEFAULT_CATEGORIES)
-  const [category, setCategory] = useState(DEFAULT_CATEGORIES[0] || 'Dining Sets & Tables')
-  const [skuCode, setSkuCode] = useState(() => generateAutoSku('Dining Sets & Tables'))
-  const [woodSpecies, setWoodSpecies] = useState('')
-  const [description, setDescription] = useState('')
+  // General Info states (Numeric SKU is auto-generated on mount or loaded from editProduct)
+  const [productName, setProductName] = useState(editProduct?.name || '')
+  const [categories, setCategories] = useState(() => {
+    const fromProds = Array.from(new Set(DataStore.getProducts().map((p) => p.category).filter(Boolean)))
+    return fromProds.length > 0 ? fromProds : DEFAULT_CATEGORIES
+  })
+  const [category, setCategory] = useState(() => {
+    if (editProduct?.category) return editProduct.category
+    const fromProds = Array.from(new Set(DataStore.getProducts().map((p) => p.category).filter(Boolean)))
+    return fromProds[0] || DEFAULT_CATEGORIES[0] || ''
+  })
+  const [skuCode, setSkuCode] = useState(() => {
+    if (editProduct?.sku) {
+      const digitsOnly = String(editProduct.sku).replace(/\D/g, '')
+      return digitsOnly || generateAutoSku()
+    }
+    return generateAutoSku()
+  })
+  const [woodSpecies, setWoodSpecies] = useState(editProduct?.woodSpecies || '')
+  const [description, setDescription] = useState(editProduct?.description || '')
 
   // Category Modal states
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false)
@@ -45,27 +48,28 @@ export default function AddProduct({ onProductSaved }) {
   const [catError, setCatError] = useState('')
 
   // Craft Specs states
-  const [length, setLength] = useState('')
-  const [width, setWidth] = useState('')
-  const [height, setHeight] = useState('')
-  const [weight, setWeight] = useState('')
-  const [woodGrade, setWoodGrade] = useState('')
-  const [surfacePolish, setSurfacePolish] = useState('')
-  const [joineryTechnique, setJoineryTechnique] = useState('')
-  const [warranty, setWarranty] = useState('')
+  const [length, setLength] = useState(editProduct?.dimensions?.length ?? '')
+  const [width, setWidth] = useState(editProduct?.dimensions?.width ?? '')
+  const [height, setHeight] = useState(editProduct?.dimensions?.height ?? '')
+  const [weight, setWeight] = useState(editProduct?.dimensions?.weight ?? '')
+  const [woodGrade, setWoodGrade] = useState(editProduct?.woodGrade || '')
+  const [surfacePolish, setSurfacePolish] = useState(editProduct?.surfacePolish || editProduct?.finish || '')
+  const [warranty, setWarranty] = useState(editProduct?.warranty || '')
 
   // Inventory & Logistics states
-  const [stockQuantity, setStockQuantity] = useState('')
-  const [lowStockThreshold, setLowStockThreshold] = useState('')
-  const [depotLocation, setDepotLocation] = useState('Sivakasi Central Depot')
-  const [packagingType, setPackagingType] = useState('')
-  const [shippingClass, setShippingClass] = useState(
-    'Class 3 - Heavy Solid Furniture (Direct Depot Truck)'
+  const [stockQuantity, setStockQuantity] = useState(editProduct?.stockQuantity !== undefined ? editProduct.stockQuantity : '')
+  const [lowStockThreshold, setLowStockThreshold] = useState(editProduct?.lowStockThreshold ?? '')
+  const [depotLocation, setDepotLocation] = useState(
+    () => editProduct?.depotLocation || settings.depotLocation || settings.yardLocation || ''
   )
+  const [packagingType, setPackagingType] = useState(editProduct?.packagingType || '')
 
-  // Pricing & Statutory GST
-  const [unitPrice, setUnitPrice] = useState('')
-  const [tradeDiscount, setTradeDiscount] = useState('')
+  // Pricing
+  const [unitPrice, setUnitPrice] = useState(() => {
+    if (!editProduct) return ''
+    const val = editProduct.unitPrice !== undefined ? editProduct.unitPrice : editProduct.sellingPrice || editProduct.price || ''
+    return String(val).replace(/[^0-9.]/g, '')
+  })
   const [isSaving, setIsSaving] = useState(false)
   const [savedSuccess, setSavedSuccess] = useState(false)
   const [toastMsg, setToastMsg] = useState('')
@@ -75,7 +79,7 @@ export default function AddProduct({ onProductSaved }) {
     setProductName('')
     const defaultCat = categories[0] || 'Dining Sets & Tables'
     setCategory(defaultCat)
-    setSkuCode(generateAutoSku(defaultCat))
+    setSkuCode(generateAutoSku())
     setWoodSpecies('')
     setDescription('')
     setLength('')
@@ -84,15 +88,12 @@ export default function AddProduct({ onProductSaved }) {
     setWeight('')
     setWoodGrade('')
     setSurfacePolish('')
-    setJoineryTechnique('')
     setWarranty('')
     setStockQuantity('')
     setLowStockThreshold('')
     setDepotLocation('Sivakasi Central Depot')
     setPackagingType('')
-    setShippingClass('Class 3 - Heavy Solid Furniture (Direct Depot Truck)')
     setUnitPrice('')
-    setTradeDiscount('')
     setSavedSuccess(false)
     setToastMsg('Form cleared for new product entry')
     setTimeout(() => setToastMsg(''), 2200)
@@ -162,7 +163,7 @@ export default function AddProduct({ onProductSaved }) {
   }
 
   const handleAutoGenerateSku = () => {
-    setSkuCode(generateAutoSku(category))
+    setSkuCode(generateAutoSku())
   }
 
   const handleSaveProduct = async () => {
@@ -182,49 +183,63 @@ export default function AddProduct({ onProductSaved }) {
       },
       woodGrade,
       surfacePolish,
-      joineryTechnique,
       warranty,
       stockQuantity: Number(stockQuantity) || 0,
       lowStockThreshold: Number(lowStockThreshold) || 2,
       depotLocation,
       packagingType,
-      shippingClass,
       unitPrice: numericPrice,
       sellingPrice: String(numericPrice),
       costPrice: '',
-      gstSlab: dynamicGstLabel,
-      tradeDiscount,
+      gstSlab: '',
+      tradeDiscount: '',
       transitPass: true,
     }
 
-    // Add to centralized dynamic data store
-    DataStore.addProduct(productPayload)
-    localStorage.removeItem('kwf_product_draft')
-
-    try {
-      const apiUrl = import.meta.env.VITE_API_URL || ''
-      const response = await fetch(`${apiUrl}/api/products`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(productPayload),
-      })
-      if (response.ok) {
-        setSavedSuccess(true)
-        setTimeout(() => {
-          setSavedSuccess(false)
-          if (onProductSaved) {
-            onProductSaved()
-          }
-        }, 1000)
+    if (editProduct) {
+      const updatedPayload = {
+        ...editProduct,
+        ...productPayload,
+        id: editProduct.id || editProduct._id,
+        _id: editProduct._id,
       }
-    } catch (err) {
-      console.warn('[AddProduct] Error saving product to backend API:', err.message)
-      if (onProductSaved) {
-        onProductSaved()
+      DataStore.updateProduct(updatedPayload)
+      try {
+        const apiUrl = import.meta.env.VITE_API_URL || ''
+        const idToSync = editProduct._id || editProduct.id || editProduct.sku
+        await fetch(`${apiUrl}/api/products/${encodeURIComponent(idToSync)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedPayload),
+        })
+      } catch (err) {
+        console.warn('[AddProduct] Error updating product in backend API:', err.message)
       }
-    } finally {
-      setIsSaving(false)
+      setSavedSuccess(true)
+      setTimeout(() => {
+        setSavedSuccess(false)
+        if (onProductSaved) onProductSaved()
+      }, 700)
+    } else {
+      DataStore.addProduct(productPayload)
+      try {
+        const apiUrl = import.meta.env.VITE_API_URL || ''
+        await fetch(`${apiUrl}/api/products`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(productPayload),
+        })
+      } catch (err) {
+        console.warn('[AddProduct] Error saving product to backend API:', err.message)
+      }
+      setSavedSuccess(true)
+      setTimeout(() => {
+        setSavedSuccess(false)
+        if (onProductSaved) onProductSaved()
+      }, 700)
     }
+    localStorage.removeItem('kwf_product_draft')
+    setIsSaving(false)
   }
 
   return (
@@ -237,42 +252,75 @@ export default function AddProduct({ onProductSaved }) {
 
       {/* Top Breadcrumb */}
       <nav className="product-breadcrumb">
-        <span>Products</span>
+        <span
+          style={{ cursor: onCancel ? 'pointer' : 'default', textDecoration: onCancel ? 'underline' : 'none' }}
+          onClick={onCancel ? onCancel : undefined}
+        >
+          Products
+        </span>
         <span className="breadcrumb-slash">/</span>
-        <span className="breadcrumb-active">Add Product</span>
+        <span className="breadcrumb-active">{editProduct ? 'Edit Product' : 'Add Product'}</span>
       </nav>
 
       {/* Page Header */}
       <div className="add-product-header">
         <div className="product-title-wrap">
-          <h1 className="product-page-title">Add New Product</h1>
+          <h1 className="product-page-title">{editProduct ? 'Edit Wood Product' : 'Add New Product'}</h1>
           <p className="product-page-subtitle">
-            Enter product details, pricing, and initial stock.
+            {editProduct
+              ? `Update specifications, pricing, and yard inventory for SKU: ${editProduct.sku}`
+              : 'Enter product details, pricing, and initial stock.'}
           </p>
         </div>
 
         <div className="product-header-actions">
-          <button
-            type="button"
-            className="btn-add-new-product"
-            onClick={handleAddNewProductForm}
-            title="Clear all fields and start entering another new product"
-          >
-            <svg
-              width="13"
-              height="13"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+          {onCancel && (
+            <button
+              type="button"
+              className="btn-add-new-product"
+              onClick={onCancel}
+              title="Return to products catalog"
             >
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            <span>+ Add New Product</span>
-          </button>
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <line x1="19" y1="12" x2="5" y2="12" />
+                <polyline points="12 19 5 12 12 5" />
+              </svg>
+              <span>← Back to Products</span>
+            </button>
+          )}
+
+          {!editProduct && (
+            <button
+              type="button"
+              className="btn-add-new-product"
+              onClick={handleAddNewProductForm}
+              title="Clear all fields and start entering another new product"
+            >
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              <span>+ Clear Form</span>
+            </button>
+          )}
 
           <button
             type="button"
@@ -292,15 +340,15 @@ export default function AddProduct({ onProductSaved }) {
             >
               <polyline points="20 6 9 17 4 12" />
             </svg>
-            <span>{savedSuccess ? '✓ Saved!' : isSaving ? 'Saving...' : 'Save Product'}</span>
+            <span>{savedSuccess ? '✓ Saved!' : isSaving ? 'Saving...' : editProduct ? 'Update Product' : 'Save Product'}</span>
           </button>
         </div>
       </div>
 
-      {/* 2x2 Form Cards Grid */}
-      <div className="product-form-grid">
-        {/* Card 1: General Information */}
-        <section className="form-section-card">
+      {/* Single Unified Form Container */}
+      <div className="add-product-single-card">
+        {/* Section 1: General Information */}
+        <div className="form-section-block">
           <div className="card-section-header">
             <div className="card-title-group">
               <span className="card-icon">
@@ -328,7 +376,7 @@ export default function AddProduct({ onProductSaved }) {
             <input
               type="text"
               className="input-styled"
-              placeholder="e.g. Nilambur Teak Dining Table"
+              placeholder="e.g. Solid Rosewood Dressing Table with Mirror"
               value={productName}
               onChange={(e) => setProductName(e.target.value)}
             />
@@ -349,11 +397,7 @@ export default function AddProduct({ onProductSaved }) {
               <select
                 className="select-styled"
                 value={category}
-                onChange={(e) => {
-                  const newCat = e.target.value
-                  setCategory(newCat)
-                  setSkuCode(generateAutoSku(newCat))
-                }}
+                onChange={(e) => setCategory(e.target.value)}
               >
                 {categories.map((cat) => (
                   <option key={cat} value={cat}>
@@ -367,23 +411,25 @@ export default function AddProduct({ onProductSaved }) {
               <div className="field-label-row">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <label className="field-label" style={{ marginBottom: 0 }}>SKU / Code *</label>
-                  <span style={{ fontSize: '10px', fontWeight: 600, color: '#C88D58', backgroundColor: '#FEF6EE', border: '1px solid #F5D7BA', padding: '1px 6px', borderRadius: '4px' }}>Auto-Generated</span>
+                  <span className="sku-numeric-tag">Numeric Only</span>
                 </div>
                 <button
                   type="button"
                   className="field-action-link"
                   onClick={handleAutoGenerateSku}
-                  title="Generate new SKU"
+                  title="Generate new numeric code"
                 >
                   🔄 Regenerate
                 </button>
               </div>
               <input
                 type="text"
-                className="input-styled"
-                placeholder="e.g. KWF-DIN-1082"
+                className="input-styled input-readonly-code"
+                placeholder="e.g. 583921"
                 value={skuCode}
-                onChange={(e) => setSkuCode(e.target.value)}
+                readOnly
+                tabIndex={-1}
+                title="Numeric SKU code (Read-only)"
               />
             </div>
           </div>
@@ -404,15 +450,17 @@ export default function AddProduct({ onProductSaved }) {
             <textarea
               className="textarea-styled"
               rows="3"
-              placeholder="Seasoned solid Nilambur teak dining table crafted with traditional mortise and tenon joinery..."
+              placeholder="Seasoned solid Nilambur teak furniture handcrafted with traditional artisan care..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />
           </div>
-        </section>
+        </div>
 
-        {/* Card 2: Craft Specifications & Seasoning */}
-        <section className="form-section-card">
+        <div className="form-section-separator" />
+
+        {/* Section 2: Craft Specifications & Seasoning */}
+        <div className="form-section-block">
           <div className="card-section-header">
             <div className="card-title-group">
               <span className="card-icon">
@@ -499,31 +547,22 @@ export default function AddProduct({ onProductSaved }) {
               />
             </div>
             <div className="form-field-group">
-              <label className="field-label">Joinery Technique</label>
+              <label className="field-label">Warranty & Craft Guarantee</label>
               <input
                 type="text"
                 className="input-styled"
-                placeholder="e.g. Mortise & Tenon with Rosewood Dowels"
-                value={joineryTechnique}
-                onChange={(e) => setJoineryTechnique(e.target.value)}
+                placeholder="e.g. 5-Yr Termite & Woodcraft Guarantee"
+                value={warranty}
+                onChange={(e) => setWarranty(e.target.value)}
               />
             </div>
           </div>
+        </div>
 
-          <div className="form-field-group">
-            <label className="field-label">Warranty & Craft Guarantee</label>
-            <input
-              type="text"
-              className="input-styled"
-              placeholder="e.g. 5-Yr Termite & Woodcraft Guarantee"
-              value={warranty}
-              onChange={(e) => setWarranty(e.target.value)}
-            />
-          </div>
-        </section>
+        <div className="form-section-separator" />
 
-        {/* Card 3: Inventory, Logistics & Packaging */}
-        <section className="form-section-card">
+        {/* Section 3: Inventory & Stock */}
+        <div className="form-section-block">
           <div className="card-section-header">
             <div className="card-title-group">
               <span className="card-icon">
@@ -590,27 +629,12 @@ export default function AddProduct({ onProductSaved }) {
               />
             </div>
           </div>
+        </div>
 
-          <div className="form-field-group">
-            <label className="field-label">Shipping & Transport Class</label>
-            <select
-              className="select-styled"
-              value={shippingClass}
-              onChange={(e) => setShippingClass(e.target.value)}
-            >
-              <option value="Class 3 - Heavy Solid Furniture (Direct Depot Truck)">
-                Class 3 - Heavy Solid Furniture (Direct Depot Truck)
-              </option>
-              <option value="Class 2 - Medium Parcel (Flat Pack / Courier)">
-                Class 2 - Medium Parcel (Flat Pack / Courier)
-              </option>
-              <option value="Class 1 - Fragile Artisan Decor">Class 1 - Fragile Artisan Decor</option>
-            </select>
-          </div>
-        </section>
+        <div className="form-section-separator" />
 
-        {/* Card 4: Pricing, Margins & Statutory GST */}
-        <section className="form-section-card">
+        {/* Section 4: Pricing */}
+        <div className="form-section-block">
           <div className="card-section-header">
             <div className="card-title-group">
               <span className="card-icon">
@@ -629,7 +653,7 @@ export default function AddProduct({ onProductSaved }) {
                   <line x1="9" y1="21" x2="9" y2="9" />
                 </svg>
               </span>
-              <h2 className="card-section-title">Pricing & GST</h2>
+              <h2 className="card-section-title">Pricing</h2>
             </div>
           </div>
 
@@ -638,36 +662,12 @@ export default function AddProduct({ onProductSaved }) {
             <input
               type="text"
               className="input-styled"
-              placeholder="e.g. ₹ 78,500"
+              placeholder="e.g. 29500"
               value={unitPrice}
               onChange={(e) => setUnitPrice(e.target.value)}
             />
           </div>
-
-          <div className="form-row-2col">
-            <div className="form-field-group">
-              <label className="field-label">Statutory GST Slab (from System Settings)</label>
-              <input
-                type="text"
-                className="input-styled"
-                value={dynamicGstLabel}
-                readOnly
-                style={{ backgroundColor: '#FDFBF7', color: '#5C4537', cursor: 'default' }}
-              />
-            </div>
-
-            <div className="form-field-group">
-              <label className="field-label">Contractor / Trade Discount Tier</label>
-              <input
-                type="text"
-                className="input-styled"
-                placeholder="e.g. Architect / Builder Tier 1 (12% Off)"
-                value={tradeDiscount}
-                onChange={(e) => setTradeDiscount(e.target.value)}
-              />
-            </div>
-          </div>
-        </section>
+        </div>
       </div>
 
       {/* Add New Category Modal */}

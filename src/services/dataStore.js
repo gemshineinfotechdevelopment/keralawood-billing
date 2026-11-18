@@ -887,15 +887,26 @@ export const DataStore = {
       id: `prod-${Date.now()}`,
       sku: item.sku || `KWF-${Date.now().toString().slice(-4)}`,
       name: item.name || 'Artisan Timber Furniture',
-      finish: item.surfacePolish || 'Matte Natural Wax Finish',
+      finish: item.surfacePolish || item.finish || 'Matte Natural Wax Finish',
       category: item.category || 'Dining Sets',
       unitPrice: numPrice,
       price: '₹' + numPrice.toLocaleString('en-IN'),
+      sellingPrice: numPrice,
       stockQuantity: qty,
       stock: stockLabel,
       stockType,
       lowStockThreshold: threshold,
       woodSpecies: item.woodSpecies || 'Teak',
+      description: item.description || '',
+      dimensions: item.dimensions || { length: 0, width: 0, height: 0, weight: 0 },
+      woodGrade: item.woodGrade || 'Grade A - Nilambur Heartwood',
+      surfacePolish: item.surfacePolish || 'Natural Protective Organic-Beeswax',
+      joineryTechnique: item.joineryTechnique || 'Mortise & Tenon with Rosewood Dowels',
+      warranty: item.warranty || '5-Yr Termite & Wood',
+      depotLocation: item.depotLocation || 'Sivakasi Central Depot',
+      packagingType: item.packagingType || 'Corrugated Multi-layer Wood Wrap',
+      shippingClass: item.shippingClass || 'Class 3 - Heavy Solid Furniture (Direct Depot Truck)',
+      tradeDiscount: item.tradeDiscount || 'Standard Builder Tier (10% Off)',
     }
     list.unshift(newProduct)
     this.saveProducts(list)
@@ -908,6 +919,88 @@ export const DataStore = {
     }).catch(() => {})
 
     return newProduct
+  },
+  updateProduct(item) {
+    const list = this.getProducts()
+    const targetId = item.id || item._id || item.sku
+    const numPrice = Number(item.sellingPrice || item.unitPrice || 0) || 45000
+    const qty = Number(item.stockQuantity !== undefined ? item.stockQuantity : 4)
+    const threshold = Number(item.lowStockThreshold || 2)
+
+    let stockType = 'in-stock'
+    let stockLabel = `${qty} in stock`
+    if (qty <= 1) {
+      stockType = 'critical'
+      stockLabel = `${qty} left (Critical)`
+    } else if (qty <= threshold) {
+      stockType = 'low'
+      stockLabel = `${qty} in stock (Low)`
+    }
+
+    let updatedItem = null
+    const updated = list.map((p) => {
+      if (p.id === targetId || p._id === targetId || p.sku === item.sku || p.name === item.name) {
+        updatedItem = {
+          ...p,
+          ...item,
+          id: p.id || targetId,
+          sku: item.sku || p.sku,
+          name: item.name || p.name,
+          category: item.category || p.category,
+          woodSpecies: item.woodSpecies || p.woodSpecies,
+          finish: item.surfacePolish || item.finish || p.finish,
+          unitPrice: numPrice,
+          price: '₹' + numPrice.toLocaleString('en-IN'),
+          sellingPrice: numPrice,
+          stockQuantity: qty,
+          stock: stockLabel,
+          stockType,
+          lowStockThreshold: threshold,
+          description: item.description !== undefined ? item.description : p.description,
+          dimensions: item.dimensions || p.dimensions,
+          woodGrade: item.woodGrade || p.woodGrade,
+          surfacePolish: item.surfacePolish || p.surfacePolish,
+          joineryTechnique: item.joineryTechnique || p.joineryTechnique,
+          warranty: item.warranty || p.warranty,
+          depotLocation: item.depotLocation || p.depotLocation,
+          packagingType: item.packagingType || p.packagingType,
+          shippingClass: item.shippingClass || p.shippingClass,
+          tradeDiscount: item.tradeDiscount || p.tradeDiscount,
+        }
+        return updatedItem
+      }
+      return p
+    })
+
+    if (!updatedItem) {
+      updatedItem = { ...item, id: targetId, price: '₹' + numPrice.toLocaleString('en-IN'), stock: stockLabel, stockType }
+      updated.unshift(updatedItem)
+    }
+
+    this.saveProducts(updated)
+
+    // Sync update to MongoDB
+    fetch(`${API_BASE}/api/products/${encodeURIComponent(item._id || item.id || item.sku || item.name)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedItem),
+    }).catch(() => {})
+
+    return updatedItem
+  },
+  deleteProduct(productId) {
+    const list = this.getProducts()
+    const target = list.find((p) => p.id === productId || p._id === productId || p.sku === productId)
+    const filtered = list.filter((p) => p.id !== productId && p._id !== productId && p.sku !== productId)
+    this.saveProducts(filtered)
+
+    // Sync delete to MongoDB
+    const idToSync = (target && (target._id || target.id || target.sku)) || productId
+    fetch(`${API_BASE}/api/products/${encodeURIComponent(idToSync)}`, {
+      method: 'DELETE',
+    }).catch(() => {})
+
+    return filtered
   },
   updateStock(productId, newQty) {
     const list = this.getProducts()

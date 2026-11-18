@@ -3,7 +3,7 @@ import treeLogo from './assets/tree-logo.png'
 import Sidebar from './components/Sidebar'
 import Dashboard from './components/Dashboard'
 import StockManagement from './components/StockManagement'
-import AddProduct from './components/AddProduct'
+import Products from './components/Products'
 import Settings from './components/Settings'
 import ReportsAnalytics from './components/ReportsAnalytics'
 import BillingPOS from './components/BillingPOS'
@@ -83,7 +83,7 @@ function App() {
           </div>
 
           {activeNav === 'Products' ? (
-            <AddProduct onProductSaved={() => setActiveNav('Stock Management')} />
+            <Products />
           ) : activeNav === 'Stock Management' ? (
             <StockManagement onAddNewProduct={() => setActiveNav('Products')} />
           ) : activeNav === 'Dashboard' ? (

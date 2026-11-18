@@ -29,6 +29,14 @@ const DEFAULT_PRODUCTS = [
   { id: 24, name: 'Wooden Kitchen Bar Stool with Swivel Top', sku: 'KWF-BS-WD-01 • Teak', category: 'Chairs', stock: '14 in stock', stockType: 'in-stock', stockQuantity: 14, price: '₹6,800' },
 ]
 
+const getProductInitials = (prod) => {
+  const name = prod?.name || ''
+  const parts = name.trim().split(/\s+/)
+  if (parts.length >= 2 && parts[0] && parts[1]) return (parts[0][0] + parts[1][0]).toUpperCase()
+  if (name.length >= 2) return name.slice(0, 2).toUpperCase()
+  return 'KW'
+}
+
 export default function StockManagement({ onAddNewProduct }) {
   const [activeTab, setActiveTab] = useState('All')
   const [searchQuery, setSearchQuery] = useState('')
@@ -553,6 +561,9 @@ export default function StockManagement({ onAddNewProduct }) {
                 >
                   <td>
                     <div className="product-cell">
+                      <div className="product-avatar-sq">
+                        {getProductInitials(p)}
+                      </div>
                       <div className="product-details">
                         <span className="product-title">{p.name}</span>
                         <span className="product-sku-wood">{p.sku}</span>
