@@ -9,6 +9,8 @@ import { Sale } from './models/Sale.js';
 import { Category } from './models/Category.js';
 import { Customer } from './models/Customer.js';
 import { Settings } from './models/Settings.js';
+import { Dashboard } from './models/Dashboard.js';
+import { Stock } from './models/Stock.js';
 import { seedInitialData } from './seed.js';
 
 // Resolve __dirname for ES modules
@@ -22,6 +24,14 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const FRONTEND_URL = process.env.FRONTEND_URL || 'https://keralawood-billing.vercel.app,http://localhost:5173';
 const MONGODB_URI = process.env.MONGODB_URI;
+
+// Global process error handlers to prevent silent crashes
+process.on('unhandledRejection', (reason) => {
+  console.error('[Server] Unhandled Promise Rejection:', reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('[Server] Uncaught Exception:', err.message);
+});
 
 // Allowed CORS origins (supports comma-separated URLs and wildcards)
 const allowedOrigins = FRONTEND_URL.split(',').map((u) => u.trim().replace(/\/$/, ''));
@@ -190,6 +200,9 @@ app.get('/api/products', async (req, res) => {
         stockType = 'low';
       }
 
+      const stockOut = Number(p.stockOut) || 0;
+      const stockIn = p.stockIn !== undefined ? Number(p.stockIn) : (qty + stockOut);
+
       return {
         id: p._id.toString(),
         name: p.name,
@@ -201,6 +214,8 @@ app.get('/api/products', async (req, res) => {
         stock,
         stockType,
         stockQuantity: qty,
+        stockIn,
+        stockOut,
         lowStockThreshold: threshold,
         price: '₹' + Number(p.sellingPrice || 0).toLocaleString('en-IN'),
         rawPrice: p.sellingPrice,
@@ -261,6 +276,8 @@ app.put('/api/products/:id', async (req, res) => {
     if (body.depotLocation !== undefined) updateFields.depotLocation = body.depotLocation;
     if (body.warehouseBay !== undefined) updateFields.warehouseBay = body.warehouseBay;
     if (body.stockQuantity !== undefined) updateFields.stockQuantity = parseNum(body.stockQuantity);
+    if (body.stockIn !== undefined) updateFields.stockIn = parseNum(body.stockIn);
+    if (body.stockOut !== undefined) updateFields.stockOut = parseNum(body.stockOut);
     if (body.lowStockThreshold !== undefined) updateFields.lowStockThreshold = parseNum(body.lowStockThreshold, 2);
     if (body.sellingPrice !== undefined || body.unitPrice !== undefined) {
       updateFields.sellingPrice = parseNum(body.sellingPrice !== undefined ? body.sellingPrice : body.unitPrice);
@@ -512,11 +529,27 @@ app.get('/api/sales', async (req, res) => {
       const reg = new RegExp(search.trim(), 'i');
       query.$or = [{ invoice: reg }, { customer: reg }, { items: reg }, { location: reg }];
     }
+    const DUMMY_INVOICES = [
+      'INV-1001', 'INV-1002', 'INV-1003', 'INV-1004', 'INV-1005', 'INV-1006',
+      'INV-1007', 'INV-1008', 'INV-1009', 'INV-1010', 'INV-1011', 'INV-1012',
+      'INV-1013', 'INV-1014', 'INV-1015', 'INV-1016', 'INV-1017', 'INV-1018',
+      'INV-1019', 'INV-1020', 'INV-1021', 'INV-1022', 'INV-1023', 'INV-1024'
+    ];
+    query.invoice = { $nin: DUMMY_INVOICES };
     const sales = await Sale.find(query).sort({ createdAt: -1 });
     res.json({ success: true, count: sales.length, sales });
   } catch (err) {
     console.error('[API] /api/sales GET error:', err);
     res.status(500).json({ success: false, message: 'Failed to fetch sales', error: err.message });
+  }
+});
+
+app.delete('/api/sales', async (req, res) => {
+  try {
+    await Sale.deleteMany({});
+    res.json({ success: true, message: 'All sales deleted' });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
@@ -536,14 +569,51 @@ app.post('/api/sales', async (req, res) => {
       ? data.items
       : [];
 
-    // Deduct stock for each line item in MongoDB Product collection
+    // Deduct stock for each line item in MongoDB Product collection and record in Stock collection
     for (const item of lineItems) {
       const qtyToDeduct = Number(item.quantity) || 1;
-      if (item.sku || item.name) {
-        await Product.findOneAndUpdate(
-          { $or: [{ sku: item.sku }, { name: item.name }] },
-          { $inc: { stockQuantity: -qtyToDeduct, stockOut: qtyToDeduct } }
-        );
+      const itemDesc = (item.description || item.name || '').trim();
+      const itemSku = (item.sku || '').trim();
+      const itemProdId = item.productId || item.id;
+
+      // Find product by SKU, ID, or description/name
+      const queryOr = [];
+      if (itemSku) queryOr.push({ sku: itemSku });
+      if (itemProdId && mongoose.isValidObjectId(itemProdId)) queryOr.push({ _id: itemProdId });
+      if (itemDesc) queryOr.push({ name: new RegExp(`^${itemDesc.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') });
+
+      let matchedProduct = null;
+      if (queryOr.length > 0) {
+        matchedProduct = await Product.findOne({ $or: queryOr });
+      }
+      if (!matchedProduct && itemDesc) {
+        matchedProduct = await Product.findOne({ name: new RegExp(itemDesc.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') });
+      }
+
+      if (matchedProduct) {
+        const prevStock = Number(matchedProduct.stockQuantity) || 0;
+        const newStock = Math.max(0, prevStock - qtyToDeduct);
+        matchedProduct.stockQuantity = newStock;
+        matchedProduct.stockOut = (Number(matchedProduct.stockOut) || 0) + qtyToDeduct;
+        if (matchedProduct.stockIn === undefined || matchedProduct.stockIn === 0) {
+          matchedProduct.stockIn = prevStock + (Number(matchedProduct.stockOut) || 0);
+        }
+        await matchedProduct.save();
+
+        // Create Stock audit log in MongoDB Stock collection
+        await Stock.create({
+          productId: matchedProduct._id?.toString() || matchedProduct.id || '',
+          productSku: matchedProduct.sku,
+          productName: matchedProduct.name,
+          type: 'OUT',
+          quantity: qtyToDeduct,
+          previousStock: prevStock,
+          currentStock: newStock,
+          reason: `Bill Order #${invNo}`,
+          invoice: invNo,
+          customer: data.customer || 'Walk-in Patron',
+          notes: `POS Bill allocation for ${qtyToDeduct} unit(s)`,
+        });
       }
     }
 
@@ -624,12 +694,93 @@ app.post('/api/sales', async (req, res) => {
 });
 
 // -------------------------------------------------------------
+// STOCK MOVEMENTS & AUDIT API
+// -------------------------------------------------------------
+app.get('/api/stocks', async (req, res) => {
+  try {
+    const { type, search } = req.query;
+    const query = {};
+    if (type && type !== 'All') {
+      query.type = type.toUpperCase();
+    }
+    if (search && search.trim()) {
+      const reg = new RegExp(search.trim(), 'i');
+      query.$or = [{ productName: reg }, { productSku: reg }, { invoice: reg }, { reason: reg }];
+    }
+    const stocks = await Stock.find(query).sort({ createdAt: -1 });
+    res.json({ success: true, count: stocks.length, stocks });
+  } catch (err) {
+    console.error('[API] /api/stocks GET error:', err);
+    res.status(500).json({ success: false, message: 'Failed to fetch stock records', error: err.message });
+  }
+});
+
+app.post('/api/stocks', async (req, res) => {
+  try {
+    const { productId, productSku, productName, type, quantity, reason, invoice, customer, notes } = req.body;
+    const qty = Math.max(1, Number(quantity) || 1);
+    const movType = (type || 'IN').toUpperCase();
+
+    // Find and update Product
+    let product = null;
+    if (productId && mongoose.isValidObjectId(productId)) {
+      product = await Product.findById(productId);
+    }
+    if (!product && (productSku || productName)) {
+      product = await Product.findOne({ $or: [{ sku: productSku }, { name: productName }] });
+    }
+
+    let prevStock = 0;
+    let newStock = 0;
+
+    if (product) {
+      prevStock = Number(product.stockQuantity) || 0;
+      if (movType === 'IN') {
+        newStock = prevStock + qty;
+        product.stockQuantity = newStock;
+        product.stockIn = (Number(product.stockIn) || 0) + qty;
+      } else {
+        newStock = Math.max(0, prevStock - qty);
+        product.stockQuantity = newStock;
+        product.stockOut = (Number(product.stockOut) || 0) + qty;
+      }
+      await product.save();
+    }
+
+    const stockRecord = await Stock.create({
+      productId: product?._id?.toString() || productId || '',
+      productSku: product?.sku || productSku || '',
+      productName: product?.name || productName || 'Artisan Furniture Item',
+      type: movType,
+      quantity: qty,
+      previousStock: prevStock,
+      currentStock: newStock,
+      reason: reason || (movType === 'IN' ? 'Mill Yard Inflow' : 'POS Stock Out'),
+      invoice: invoice || '',
+      customer: customer || '',
+      notes: notes || '',
+    });
+
+    res.status(201).json({ success: true, stock: stockRecord, product });
+  } catch (err) {
+    console.error('[API] /api/stocks POST error:', err);
+    res.status(500).json({ success: false, message: 'Failed to record stock movement', error: err.message });
+  }
+});
+
+// -------------------------------------------------------------
 // DASHBOARD API
 // -------------------------------------------------------------
 app.get('/api/dashboard', async (req, res) => {
   try {
+    const DUMMY_INVOICES = [
+      'INV-1001', 'INV-1002', 'INV-1003', 'INV-1004', 'INV-1005', 'INV-1006',
+      'INV-1007', 'INV-1008', 'INV-1009', 'INV-1010', 'INV-1011', 'INV-1012',
+      'INV-1013', 'INV-1014', 'INV-1015', 'INV-1016', 'INV-1017', 'INV-1018',
+      'INV-1019', 'INV-1020', 'INV-1021', 'INV-1022', 'INV-1023', 'INV-1024'
+    ];
     const [sales, products] = await Promise.all([
-      Sale.find().sort({ createdAt: -1 }),
+      Sale.find({ invoice: { $nin: DUMMY_INVOICES } }).sort({ createdAt: -1 }),
       Product.find(),
     ]);
 
@@ -666,6 +817,26 @@ app.get('/api/dashboard', async (req, res) => {
       paymentStatus: s.paymentStatus || 'Paid',
     }));
 
+    // Persist live state to MongoDB Dashboard collection
+    const dashboardDoc = await Dashboard.findOneAndUpdate(
+      { key: 'main_dashboard' },
+      {
+        $set: {
+          todaySales: totalSalesAmt,
+          todaySalesFormatted: '₹' + totalSalesAmt.toLocaleString('en-IN'),
+          ordersToday: sales.length,
+          ordersTodayText: `${sales.length} orders processed today`,
+          totalStock,
+          stockLocationNote: 'Across Sivakasi master timber yards',
+          lowStockCount: lowStockItems.length,
+          lowStockAlerts: lowStockItems,
+          recentSales: formattedSales,
+          lastUpdated: new Date(),
+        },
+      },
+      { upsert: true, new: true }
+    );
+
     res.json({
       success: true,
       stats: {
@@ -677,6 +848,7 @@ app.get('/api/dashboard', async (req, res) => {
       },
       lowStockItems: lowStockItems,
       recentSales: formattedSales,
+      dashboard: dashboardDoc,
     });
   } catch (err) {
     console.error('[API] /api/dashboard error:', err);

@@ -136,7 +136,21 @@ export default function StockManagement({ onAddNewProduct }) {
       })
       .then((data) => {
         if (data?.success && Array.isArray(data.products) && data.products.length > 0) {
-          setProducts(data.products)
+          const localList = DataStore.getProducts()
+          const merged = data.products.map((rp) => {
+            const lp = localList.find((p) => p.id === rp.id || p.sku === rp.sku || p.name === rp.name)
+            const stockOut = Math.max(Number(rp.stockOut) || 0, Number(lp?.stockOut) || 0)
+            const stockQty = rp.stockQuantity !== undefined ? Number(rp.stockQuantity) : (lp?.stockQuantity || 0)
+            const stockIn = rp.stockIn !== undefined ? Number(rp.stockIn) : (stockQty + stockOut)
+            return {
+              ...rp,
+              stockQuantity: stockQty,
+              stockOut,
+              stockIn,
+            }
+          })
+          setProducts(merged)
+          DataStore.saveProducts(merged)
           if (data.metrics) {
             setMetrics(data.metrics)
           }

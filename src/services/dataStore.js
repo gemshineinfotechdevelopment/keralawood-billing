@@ -12,6 +12,22 @@ const STORAGE_KEYS = {
 
 const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) || ''
 
+// One-time cache clear to remove old hardcoded seed data
+const DATA_VERSION_KEY = 'sivakasi_wood_data_version'
+const CURRENT_DATA_VERSION = '4'
+;(function clearOldSeedData() {
+  try {
+    const storedVersion = localStorage.getItem(DATA_VERSION_KEY)
+    if (storedVersion !== CURRENT_DATA_VERSION) {
+      localStorage.removeItem('sivakasi_wood_customers')
+      localStorage.removeItem('sivakasi_wood_transactions')
+      localStorage.setItem('sivakasi_wood_customers', JSON.stringify([]))
+      localStorage.setItem('sivakasi_wood_transactions', JSON.stringify([]))
+      localStorage.setItem(DATA_VERSION_KEY, CURRENT_DATA_VERSION)
+    }
+  } catch (e) { /* ignore */ }
+})()
+
 // System Settings (Company: Kerala Wood Furniture, Location: Sivakasi)
 const INITIAL_SETTINGS = {
   depotName: 'Kerala Wood Furniture - Sivakasi Depot',
@@ -72,32 +88,7 @@ const INITIAL_PRODUCTS = [
 
 const INITIAL_CUSTOMERS = []
 
-const INITIAL_TRANSACTIONS = [
-  { id: 'INV-1024', date: 'Nov 17, 2026, 05:45 PM', monthYear: 'November 2026', year: '2026', customer: 'Suresh Kumar & Sons', project: 'Sivakasi Town', wood: 'Nilambur Teak', item: '1x Teak Dining Table, 6x Chairs', volume: 42, amount: '60,500', rawAmount: 60500, status: 'Paid' },
-  { id: 'INV-1023', date: 'Nov 17, 2026, 04:15 PM', monthYear: 'November 2026', year: '2026', customer: 'Dr. Thomas Varghese', project: 'Sivakasi Division', wood: 'Rosewood Timber', item: '1x Solid Rosewood King Bed, 2x Nightstands', volume: 54, amount: '85,200', rawAmount: 85200, status: 'Paid' },
-  { id: 'INV-1022', date: 'Nov 16, 2026, 03:30 PM', monthYear: 'November 2026', year: '2026', customer: 'Priya Lakshmi Textiles', project: 'Kamaraj Road, Sivakasi', wood: 'Nilambur Teak', item: '1x Teakwood 3-Seater Sofa, 1x Coffee Table', volume: 38, amount: '58,500', rawAmount: 58500, status: 'Paid' },
-  { id: 'INV-1021', date: 'Nov 16, 2026, 01:20 PM', monthYear: 'November 2026', year: '2026', customer: 'Deepak Kurian & Architects', project: 'Sivakasi Guild', wood: 'Jackfruit Plavu', item: '1x Jackfruit Live-Edge Boardroom Desk', volume: 68, amount: '95,000', rawAmount: 95000, status: 'Paid' },
-  { id: 'INV-1020', date: 'Nov 15, 2026, 05:10 PM', monthYear: 'November 2026', year: '2026', customer: 'Rajeshwari Ammal', project: 'Main Bazaar, Sivakasi', wood: 'Nilambur Teak', item: '1x Kerala Traditional Mandapam Pooja Unit', volume: 32, amount: '34,000', rawAmount: 34000, status: 'Paid' },
-  { id: 'INV-1019', date: 'Nov 15, 2026, 02:45 PM', monthYear: 'November 2026', year: '2026', customer: 'Anoop Menon', project: 'Sivakasi Colony', wood: 'Nilambur Teak', item: '1x Teakwood Queen Hydraulic Storage Bed', volume: 46, amount: '62,000', rawAmount: 62000, status: 'Paid' },
-  { id: 'INV-1018', date: 'Nov 14, 2026, 04:00 PM', monthYear: 'November 2026', year: '2026', customer: 'Sri Meenakshi Printers', project: 'Industrial Area, Sivakasi', wood: 'Rosewood Timber', item: '1x Rosewood 3-Door Master Wardrobe', volume: 58, amount: '68,000', rawAmount: 68000, status: 'Paid' },
-  { id: 'INV-1017', date: 'Nov 14, 2026, 11:30 AM', monthYear: 'November 2026', year: '2026', customer: 'Murugan Modern Furnishings', project: 'Bypass Road, Sivakasi', wood: 'Nilambur Teak', item: '4x High-Back Ergonomic Teak Study Chairs', volume: 24, amount: '34,000', rawAmount: 34000, status: 'Paid' },
-  { id: 'INV-1016', date: 'Nov 13, 2026, 03:15 PM', monthYear: 'November 2026', year: '2026', customer: 'Senthil Nathan', project: 'Police Station Rd, Sivakasi', wood: 'Nilambur Teak', item: '1x Handcrafted Wooden Oonjal Swing', volume: 40, amount: '48,000', rawAmount: 48000, status: 'Paid' },
-  { id: 'INV-1015', date: 'Nov 13, 2026, 10:45 AM', monthYear: 'November 2026', year: '2026', customer: 'Dr. K. Radhakrishnan', project: 'Gandhi Nagar, Sivakasi', wood: 'Rosewood Timber', item: '1x Solid Rosewood Dressing Table with Mirror', volume: 28, amount: '29,500', rawAmount: 29500, status: 'Paid' },
-  { id: 'INV-1014', date: 'Nov 12, 2026, 04:30 PM', monthYear: 'November 2026', year: '2026', customer: 'Anandha Bhavan Residency', project: 'Station Rd, Sivakasi', wood: 'Nilambur Teak', item: '1x Teakwood 4-Seater Dining Set', volume: 34, amount: '36,000', rawAmount: 36000, status: 'Paid' },
-  { id: 'INV-1013', date: 'Nov 12, 2026, 01:15 PM', monthYear: 'November 2026', year: '2026', customer: 'Vignesh Construction Co.', project: 'Ring Road, Sivakasi', wood: 'Mahogany', item: '1x Mahogany 6-Shelf Library Display Rack', volume: 36, amount: '21,000', rawAmount: 21000, status: 'Paid' },
-  { id: 'INV-1012', date: 'Nov 11, 2026, 05:00 PM', monthYear: 'November 2026', year: '2026', customer: 'Karthik Raja', project: 'Teachers Colony, Sivakasi', wood: 'Nilambur Teak', item: '1x Teakwood TV Media Entertainment Console', volume: 26, amount: '26,500', rawAmount: 26500, status: 'Paid' },
-  { id: 'INV-1011', date: 'Nov 11, 2026, 11:20 AM', monthYear: 'November 2026', year: '2026', customer: 'Selvi Thirumalai', project: 'Sankarankovil Rd, Sivakasi', wood: 'Nilambur Teak', item: '1x Traditional Hand-Carved Rocking Chair', volume: 18, amount: '12,800', rawAmount: 12800, status: 'Paid' },
-  { id: 'INV-1010', date: 'Nov 10, 2026, 03:45 PM', monthYear: 'November 2026', year: '2026', customer: 'Vijayalakshmi Sweets', project: 'South Car Street, Sivakasi', wood: 'Nilambur Teak', item: '2x Teak Ergonomic Armchairs', volume: 22, amount: '29,000', rawAmount: 29000, status: 'Paid' },
-  { id: 'INV-1009', date: 'Nov 10, 2026, 10:30 AM', monthYear: 'November 2026', year: '2026', customer: 'Jayaram Brothers', project: 'Thirutangal Rd, Sivakasi', wood: 'Mahogany', item: '1x Handcrafted Cane Bookcase', volume: 25, amount: '18,500', rawAmount: 18500, status: 'Paid' },
-  { id: 'INV-1008', date: 'Nov 09, 2026, 04:15 PM', monthYear: 'November 2026', year: '2026', customer: 'Dr. N. Soundararajan', project: 'Hospital Road, Sivakasi', wood: 'Wild Anjili', item: '1x Anjili Heritage Brass Chest', volume: 30, amount: '22,500', rawAmount: 22500, status: 'Paid' },
-  { id: 'INV-1007', date: 'Nov 09, 2026, 11:00 AM', monthYear: 'November 2026', year: '2026', customer: 'Malarvizhi Interiors', project: 'North Car Street, Sivakasi', wood: 'Nilambur Teak', item: '1x Live-Edge Teak Entryway Console Table', volume: 24, amount: '19,800', rawAmount: 19800, status: 'Paid' },
-  { id: 'INV-1006', date: 'Nov 08, 2026, 03:00 PM', monthYear: 'November 2026', year: '2026', customer: 'Balaji Agency', project: 'Sattur Road, Sivakasi', wood: 'Hardwood', item: '1x Solid Wood 3-Tier Louvered Shoe Rack', volume: 16, amount: '9,500', rawAmount: 9500, status: 'Paid' },
-  { id: 'INV-1005', date: 'Nov 08, 2026, 09:45 AM', monthYear: 'November 2026', year: '2026', customer: 'Manickam & Sons Traders', project: 'Market Yard, Sivakasi', wood: 'Rosewood Timber', item: '1x Vintage 5-Drawer Wooden Chest', volume: 35, amount: '31,000', rawAmount: 31000, status: 'Paid' },
-  { id: 'INV-1004', date: 'Nov 07, 2026, 04:30 PM', monthYear: 'November 2026', year: '2026', customer: 'Sree Saravana Match Works', project: 'Sivakasi Depot', wood: 'Nilambur Teak', item: '2x Teakwood Solid Dining Benches', volume: 28, amount: '23,000', rawAmount: 23000, status: 'Paid' },
-  { id: 'INV-1003', date: 'Nov 07, 2026, 01:15 PM', monthYear: 'November 2026', year: '2026', customer: 'K. Vasanth Kumar', project: 'Velayutham Colony, Sivakasi', wood: 'Nilambur Teak', item: '2x Wooden Bar Stools with Swivel Top', volume: 15, amount: '13,600', rawAmount: 13600, status: 'Paid' },
-  { id: 'INV-1002', date: 'Nov 06, 2026, 03:50 PM', monthYear: 'November 2026', year: '2026', customer: 'Gowri Shankar Mills', project: 'Vembakottai Rd, Sivakasi', wood: 'Nilambur Teak', item: '1x Solid Teak Side Server Credenza', volume: 29, amount: '24,000', rawAmount: 24000, status: 'Paid' },
-  { id: 'INV-1001', date: 'Nov 05, 2026, 11:30 AM', monthYear: 'November 2026', year: '2026', customer: 'Shanmuga Priya', project: 'Alagappan Nagar, Sivakasi', wood: 'Rosewood Timber', item: '2x Rosewood Dual-Drawer Bedside Nightstands', volume: 20, amount: '14,400', rawAmount: 14400, status: 'Paid' },
-]
+const INITIAL_TRANSACTIONS = []
 
 const EMPTY_INITIAL_CUSTOMER = {
   id: 'cust-empty-1',
@@ -504,7 +495,16 @@ export const DataStore = {
 
   // CUSTOMERS
   getCustomers() {
-    return loadFromStorage(STORAGE_KEYS.CUSTOMERS, INITIAL_CUSTOMERS)
+    const raw = loadFromStorage(STORAGE_KEYS.CUSTOMERS, [])
+    const DUMMY_NAMES = new Set([
+      'Mathew Philip', 'Deepak Kurian & Architects', 'Anoop Menon', 'Dr. Thomas Varghese',
+      'Lakshmi Nair', 'Suresh Kumar & Sons', 'Rajesh Packaging Ind.', 'Dr. K. Radhakrishnan',
+      'Murugan Modern Furnishings', 'Senthil Nathan', 'Anandha Bhavan Residency',
+      'Vignesh Construction Co.', 'Karthik Raja', 'Selvi Thirumalai', 'Vijayalakshmi Sweets',
+      'Jayaram Brothers', 'Dr. N. Soundararajan', 'Malarvizhi Interiors', 'Balaji Agency',
+      'Manickam & Sons Traders', 'Sree Saravana Match Works', 'K. Vasanth Kumar', 'Gowri Shankar Mills', 'Shanmuga Priya'
+    ])
+    return (Array.isArray(raw) ? raw : []).filter(c => !DUMMY_NAMES.has(c.name))
   },
   saveCustomers(list) {
     saveToStorage(STORAGE_KEYS.CUSTOMERS, list)
@@ -687,12 +687,17 @@ export const DataStore = {
 
   // TRANSACTIONS / SALES
   getTransactions() {
-    const raw = loadFromStorage(STORAGE_KEYS.TRANSACTIONS, null)
-    if (raw && Array.isArray(raw)) {
-      return raw
-    }
-    saveToStorage(STORAGE_KEYS.TRANSACTIONS, INITIAL_TRANSACTIONS)
-    return INITIAL_TRANSACTIONS
+    const raw = loadFromStorage(STORAGE_KEYS.TRANSACTIONS, [])
+    const DUMMY_INVOICES = new Set([
+      'INV-1001', 'INV-1002', 'INV-1003', 'INV-1004', 'INV-1005', 'INV-1006',
+      'INV-1007', 'INV-1008', 'INV-1009', 'INV-1010', 'INV-1011', 'INV-1012',
+      'INV-1013', 'INV-1014', 'INV-1015', 'INV-1016', 'INV-1017', 'INV-1018',
+      'INV-1019', 'INV-1020', 'INV-1021', 'INV-1022', 'INV-1023', 'INV-1024'
+    ])
+    const filtered = (Array.isArray(raw) ? raw : []).filter(
+      (t) => !DUMMY_INVOICES.has(t.invoice || t.id)
+    )
+    return filtered
   },
   saveTransactions(txs) {
     saveToStorage(STORAGE_KEYS.TRANSACTIONS, txs)
@@ -768,13 +773,32 @@ export const DataStore = {
     // Deduct stock locally and increment stockOut
     const products = this.getProducts()
     items.forEach((item) => {
-      const p = products.find((prod) => (item.sku && prod.sku === item.sku) || prod.name === (item.description || item.name))
+      const itemDesc = String(item.description || item.name || '').trim().toLowerCase()
+      const itemSku = String(item.sku || '').trim().toLowerCase()
+      const itemProdId = String(item.productId || item.id || '').trim().toLowerCase()
+
+      const p = products.find((prod) => {
+        const prodSku = String(prod.sku || '').trim().toLowerCase()
+        const prodName = String(prod.name || '').trim().toLowerCase()
+        const prodId = String(prod.id || prod._id || '').trim().toLowerCase()
+
+        return (
+          (itemSku && prodSku === itemSku) ||
+          (itemProdId && prodId === itemProdId) ||
+          (itemDesc && prodName === itemDesc) ||
+          (itemDesc && prodName.includes(itemDesc)) ||
+          (prodName && itemDesc.includes(prodName)) ||
+          (prodSku && itemDesc.includes(prodSku))
+        )
+      })
+
       if (p) {
         const qtySold = Number(item.quantity) || 1
-        p.stockQuantity = Math.max(0, (Number(p.stockQuantity) || 0) - qtySold)
+        const prevQty = Number(p.stockQuantity) || 0
+        p.stockQuantity = Math.max(0, prevQty - qtySold)
         p.stockOut = (Number(p.stockOut) || 0) + qtySold
-        if (p.stockIn === undefined) {
-          p.stockIn = p.stockQuantity + p.stockOut
+        if (p.stockIn === undefined || p.stockIn === 0) {
+          p.stockIn = prevQty + (Number(p.stockOut) || 0)
         }
       }
     })

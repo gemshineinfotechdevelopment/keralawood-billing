@@ -321,7 +321,9 @@ export default function BillingPOS({ onNavigateToProducts }) {
 
     const newRow = {
       id: `item-${Date.now()}-${items.length + 1}`,
+      productId: prod.id || prod._id,
       sku: prod.sku,
+      name: prod.name,
       description: prod.name,
       quantity: 1,
       unit: 'Pieces (Nos)',
@@ -350,7 +352,26 @@ export default function BillingPOS({ onNavigateToProducts }) {
   const handleItemChange = (index, field, value) => {
     const updated = items.map((item, idx) => {
       if (idx === index) {
-        return { ...item, [field]: value }
+        const nextItem = { ...item, [field]: value }
+        if (field === 'description' && typeof value === 'string' && value.trim()) {
+          const valTrim = value.trim().toLowerCase()
+          const matched = products.find(
+            (p) =>
+              (p.name && p.name.toLowerCase() === valTrim) ||
+              (p.sku && p.sku.toLowerCase() === valTrim)
+          )
+          if (matched) {
+            nextItem.productId = matched.id || matched._id
+            nextItem.sku = matched.sku
+            nextItem.name = matched.name
+            if (!nextItem.price || Number(nextItem.price) === 0) {
+              nextItem.price = Number(matched.sellingPrice || matched.unitPrice || 0)
+            }
+            if (matched.woodSpecies) nextItem.woodSpecies = matched.woodSpecies
+            if (matched.surfacePolish || matched.finish) nextItem.finish = matched.surfacePolish || matched.finish
+          }
+        }
+        return nextItem
       }
       return item
     })
@@ -684,6 +705,7 @@ export default function BillingPOS({ onNavigateToProducts }) {
                         <div className="pos-col-desc">
                           <input
                             type="text"
+                            list="pos-catalog-datalist"
                             className="pos-input pos-item-desc-input"
                             value={item.description || ''}
                             onChange={(e) => handleItemChange(index, 'description', e.target.value)}
@@ -831,6 +853,13 @@ export default function BillingPOS({ onNavigateToProducts }) {
                 })}
               </div>
             </div>
+            <datalist id="pos-catalog-datalist">
+              {products.map((p) => (
+                <option key={p.id || p.sku} value={p.name}>
+                  {p.sku} • ₹{Number(p.sellingPrice || p.unitPrice || 0).toLocaleString('en-IN')}
+                </option>
+              ))}
+            </datalist>
           </div>
 
           {/* Prominent Bill Dossier & Checkout Trigger Bar */}
@@ -843,14 +872,24 @@ export default function BillingPOS({ onNavigateToProducts }) {
                 ₹{grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
             </div>
-            <button
-              type="button"
-              className="pos-btn-open-dossier-prominent"
-              onClick={() => setBillDossierOpen(true)}
-            >
-              <span>View Bill Dossier & Checkout</span>
-              <span className="pos-arrow-symbol">→</span>
-            </button>
+            <div className="pos-checkout-actions-inline">
+              <button
+                type="button"
+                className="pos-btn-direct-save"
+                onClick={() => handleSaveBill(false)}
+                title="Save bill and deduct stock immediately"
+              >
+                <span>💾 Save & Deduct Stock</span>
+              </button>
+              <button
+                type="button"
+                className="pos-btn-open-dossier-prominent"
+                onClick={() => setBillDossierOpen(true)}
+              >
+                <span>View Bill Dossier</span>
+                <span className="pos-arrow-symbol">→</span>
+              </button>
+            </div>
           </div>
 
           {/* Discount & Delivery Options (Inline, No Dropdown) */}

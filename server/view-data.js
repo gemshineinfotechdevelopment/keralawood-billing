@@ -7,6 +7,8 @@ import { Sale } from './models/Sale.js';
 import { Category } from './models/Category.js';
 import { Customer } from './models/Customer.js';
 import { Settings } from './models/Settings.js';
+import { Dashboard } from './models/Dashboard.js';
+import { Stock } from './models/Stock.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -23,12 +25,14 @@ async function viewData() {
   await mongoose.connect(uri, { dbName: 'kerala_wood_billing' });
   console.log('✓ Connected to Database: kerala_wood_billing\n');
 
-  const [products, sales, categories, customers, settings] = await Promise.all([
+  const [products, sales, categories, customers, settings, dashboard, stocks] = await Promise.all([
     Product.find().lean(),
     Sale.find().lean(),
     Category.find().lean(),
     Customer.find().lean(),
     Settings.findOne().lean(),
+    Dashboard.findOne().lean(),
+    Stock.find().sort({ createdAt: -1 }).limit(20).lean(),
   ]);
 
   console.log('====================================================');
@@ -98,6 +102,37 @@ async function viewData() {
     console.log(`System Time: ${settings.systemTime} | Phone: ${settings.contactPhone}`);
   } else {
     console.log('No settings found in MongoDB.');
+  }
+
+  console.log('\n====================================================');
+  console.log(`📊 DASHBOARD COLLECTION in MongoDB:`);
+  console.log('====================================================');
+  if (dashboard) {
+    console.log(`Today's Sales: ${dashboard.todaySalesFormatted || '₹' + dashboard.todaySales}`);
+    console.log(`Orders Today: ${dashboard.ordersTodayText || dashboard.ordersToday}`);
+    console.log(`Total Stock: ${dashboard.totalStock} units`);
+    console.log(`Low Stock Alerts: ${dashboard.lowStockCount} items`);
+    console.log(`Recent Sales Count: ${dashboard.recentSales?.length || 0}`);
+  } else {
+    console.log('No dashboard record found in MongoDB yet.');
+  }
+
+  console.log('\n====================================================');
+  console.log(`📦 STOCK COLLECTION (${stocks.length} records in MongoDB):`);
+  console.log('====================================================');
+  if (stocks.length > 0) {
+    console.table(
+      stocks.map((s) => ({
+        Product: s.productName?.slice(0, 28),
+        Type: s.type,
+        Qty: s.quantity,
+        Prev: s.previousStock,
+        Curr: s.currentStock,
+        Reason: s.reason?.slice(0, 24),
+      }))
+    );
+  } else {
+    console.log('No stock movement records in MongoDB yet.');
   }
 
   await mongoose.disconnect();
