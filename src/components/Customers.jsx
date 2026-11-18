@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { DataStore } from '../services/dataStore'
 import './Customers.css'
 
@@ -20,6 +20,8 @@ export default function Customers({ onNavigateToBilling }) {
     return list[0] ? list[0].id : 1
   })
   const [registerModalOpen, setRegisterModalOpen] = useState(false)
+  const [editingPatron, setEditingPatron] = useState(null)
+  const [deleteModalPatron, setDeleteModalPatron] = useState(null)
   const [toastMessage, setToastMessage] = useState('')
 
   // New Patron Form States
@@ -81,6 +83,7 @@ export default function Customers({ onNavigateToBilling }) {
       if (e.key === 'Escape') {
         setDossierOpen(false)
         setRegisterModalOpen(false)
+        setDeleteModalPatron(null)
       }
     }
     window.addEventListener('keydown', handleKeyDown)
@@ -96,6 +99,37 @@ export default function Customers({ onNavigateToBilling }) {
     setDossierOpen(false)
   }
 
+  const handleOpenAddCustomer = () => {
+    setEditingPatron(null)
+    setNewName('')
+    setNewPhone('')
+    setNewGstin('')
+    setNewAddress('')
+    setRegisterModalOpen(true)
+  }
+
+  const handleOpenEditPatron = (patron) => {
+    setEditingPatron(patron)
+    setNewName(patron.name || patron.personName || '')
+    setNewPhone(patron.phone || '')
+    setNewGstin(patron.gstin && patron.gstin !== 'Unregistered / Personal' ? patron.gstin : '')
+    setNewAddress(patron.address || patron.deliveryAddress || patron.location || '')
+    setRegisterModalOpen(true)
+  }
+
+  const handleDeleteConfirm = () => {
+    if (!deleteModalPatron) return
+    DataStore.deleteCustomer(deleteModalPatron.id)
+    const updated = DataStore.getCustomers()
+    setPatronsList(updated)
+    showToast(`Deleted customer: ${deleteModalPatron.name}`)
+    if (selectedCustomerId === deleteModalPatron.id) {
+      setSelectedCustomerId(updated[0]?.id || null)
+      setDossierOpen(false)
+    }
+    setDeleteModalPatron(null)
+  }
+
   const filtered = patronsList.filter((p) => {
     const q = searchQuery.toLowerCase().trim()
     return (
@@ -108,9 +142,38 @@ export default function Customers({ onNavigateToBilling }) {
     )
   })
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage))
+  const [sortBy, setSortBy] = useState('amount-desc')
+
+  const sortedPatrons = useMemo(() => {
+    const list = [...filtered]
+    list.sort((a, b) => {
+      const getAmt = (p) => Number(String(p.lifetimeValue || p.amount || 0).replace(/[^0-9.]/g, '')) || 0
+      const getOrders = (p) => Number(p.totalOrders || p.orders || 0) || 0
+      const getName = (p) => String(p.personName || p.name || '').toLowerCase()
+
+      switch (sortBy) {
+        case 'amount-desc':
+          return getAmt(b) - getAmt(a)
+        case 'amount-asc':
+          return getAmt(a) - getAmt(b)
+        case 'orders-desc':
+          return getOrders(b) - getOrders(a)
+        case 'orders-asc':
+          return getOrders(a) - getOrders(b)
+        case 'name-asc':
+          return getName(a).localeCompare(getName(b))
+        case 'name-desc':
+          return getName(b).localeCompare(getName(a))
+        default:
+          return getAmt(b) - getAmt(a)
+      }
+    })
+    return list
+  }, [filtered, sortBy])
+
+  const totalPages = Math.max(1, Math.ceil(sortedPatrons.length / itemsPerPage))
   const safePage = Math.min(currentPage, totalPages)
-  const paginatedPatrons = filtered.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage)
+  const paginatedPatrons = sortedPatrons.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage)
 
   // Selected patron details
   const currentPatron = patronsList.find((p) => p.id === selectedCustomerId) || patronsList[0] || {}
@@ -120,28 +183,47 @@ export default function Customers({ onNavigateToBilling }) {
     setTimeout(() => setToastMessage(''), 2200)
   }
 
-  // Handle register patron
+  // Handle register / update patron
   const handleRegisterSubmit = (e) => {
     e.preventDefault()
     if (!newName.trim()) return
 
-    const added = DataStore.addCustomer({
-      name: newName.trim(),
-      phone: newPhone.trim() || '+91 98470 00000',
-      gstin: newGstin.trim() || 'Unregistered / Personal',
-      address: newAddress.trim() || 'Sivakasi, Tamil Nadu',
-      location: newAddress.trim() ? newAddress.trim().split(',')[0] : 'Sivakasi Yard Division',
-    })
+    if (editingPatron) {
+      const updated = {
+        ...editingPatron,
+        name: newName.trim(),
+        personName: newName.trim(),
+        phone: newPhone.trim(),
+        gstin: newGstin.trim() || 'Unregistered / Personal',
+        address: newAddress.trim() || editingPatron.address || 'Sivakasi, Tamil Nadu',
+        deliveryAddress: newAddress.trim() || editingPatron.deliveryAddress || editingPatron.address || 'Sivakasi, Tamil Nadu',
+        location: newAddress.trim() ? newAddress.trim().split(',')[0].trim() : (editingPatron.location || 'Sivakasi Yard Division'),
+      }
+      DataStore.updateCustomer(updated)
+      setPatronsList(DataStore.getCustomers())
+      setRegisterModalOpen(false)
+      setEditingPatron(null)
+      showToast(`Updated customer: ${updated.name}`)
+    } else {
+      const added = DataStore.addCustomer({
+        name: newName.trim(),
+        phone: newPhone.trim() || '+91 98470 00000',
+        gstin: newGstin.trim() || 'Unregistered / Personal',
+        address: newAddress.trim() || 'Sivakasi, Tamil Nadu',
+        location: newAddress.trim() ? newAddress.trim().split(',')[0].trim() : 'Sivakasi Yard Division',
+      })
 
-    setPatronsList(DataStore.getCustomers())
-    setSelectedCustomerId(added.id)
-    setRegisterModalOpen(false)
-    setDossierOpen(true)
+      setPatronsList(DataStore.getCustomers())
+      setSelectedCustomerId(added.id)
+      setRegisterModalOpen(false)
+      setDossierOpen(true)
+      showToast(`Added customer: ${added.name}`)
+    }
+
     setNewName('')
     setNewPhone('')
     setNewGstin('')
     setNewAddress('')
-    showToast(`Added customer: ${added.name}`)
   }
 
   // Real CSV Ledger Export (Requirement 3)
@@ -248,7 +330,7 @@ export default function Customers({ onNavigateToBilling }) {
           <button
             type="button"
             className="btn-register-patron"
-            onClick={() => setRegisterModalOpen(true)}
+            onClick={handleOpenAddCustomer}
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
@@ -256,7 +338,7 @@ export default function Customers({ onNavigateToBilling }) {
               <line x1="20" y1="8" x2="20" y2="14" />
               <line x1="23" y1="11" x2="17" y2="11" />
             </svg>
-            <span>+ Add Customer</span>
+            <span>Add Customer</span>
           </button>
         </div>
       </div>
@@ -351,10 +433,20 @@ export default function Customers({ onNavigateToBilling }) {
 
             <div className="register-sort-wrap">
               <span className="sort-label">Sort by:</span>
-              <select className="sort-select" defaultValue="amount">
-                <option value="amount">Amount</option>
-                <option value="orders">Orders</option>
-                <option value="name">Name</option>
+              <select
+                className="sort-select"
+                value={sortBy}
+                onChange={(e) => {
+                  setSortBy(e.target.value)
+                  setCurrentPage(1)
+                }}
+              >
+                <option value="amount-desc">Billed Amount (High to Low)</option>
+                <option value="amount-asc">Billed Amount (Low to High)</option>
+                <option value="orders-desc">Total Orders (High to Low)</option>
+                <option value="orders-asc">Total Orders (Low to High)</option>
+                <option value="name-asc">Customer Name (A to Z)</option>
+                <option value="name-desc">Customer Name (Z to A)</option>
               </select>
             </div>
           </div>
@@ -368,7 +460,7 @@ export default function Customers({ onNavigateToBilling }) {
                   <th>CONTACT INFO</th>
                   <th>TOTAL ORDERS</th>
                   <th>TOTAL BILLED</th>
-                  <th>ACTION</th>
+                  <th>ACTIONS</th>
                 </tr>
               </thead>
               <tbody>
@@ -412,18 +504,56 @@ export default function Customers({ onNavigateToBilling }) {
                         </span>
                       </td>
 
-                      {/* Action View Details */}
+                      {/* Action Icons: Preview, Edit, Delete */}
                       <td>
-                        <button
-                          type="button"
-                          className="btn-view-details"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleOpenDossier(patron)
-                          }}
-                        >
-                          View Details
-                        </button>
+                        <div className="patron-actions-cell">
+                          <button
+                            type="button"
+                            className="btn-patron-action btn-patron-preview"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleOpenDossier(patron)
+                            }}
+                            title="Preview Customer Dossier"
+                            aria-label="Preview"
+                          >
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                              <circle cx="12" cy="12" r="3" />
+                            </svg>
+                          </button>
+
+                          <button
+                            type="button"
+                            className="btn-patron-action btn-patron-edit"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleOpenEditPatron(patron)
+                            }}
+                            title="Edit Customer"
+                            aria-label="Edit"
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+                            </svg>
+                          </button>
+
+                          <button
+                            type="button"
+                            className="btn-patron-action btn-patron-delete"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setDeleteModalPatron(patron)
+                            }}
+                            title="Delete Customer"
+                            aria-label="Delete"
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="3 6 5 6 21 6" />
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                            </svg>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -616,7 +746,7 @@ export default function Customers({ onNavigateToBilling }) {
         <div className="customers-modal-overlay" onClick={() => setRegisterModalOpen(false)}>
           <div className="customers-modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="customers-modal-header">
-              <h3 className="modal-title">Add New Customer</h3>
+              <h3 className="modal-title">{editingPatron ? 'Edit Customer Details' : 'Add New Customer'}</h3>
               <button
                 type="button"
                 className="modal-close-btn"
@@ -682,10 +812,45 @@ export default function Customers({ onNavigateToBilling }) {
                   Cancel
                 </button>
                 <button type="submit" className="modal-btn-submit">
-                  Save Customer
+                  {editingPatron ? 'Update Customer' : 'Save Customer'}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteModalPatron && (
+        <div className="customers-modal-overlay" onClick={() => setDeleteModalPatron(null)}>
+          <div className="customers-delete-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="customers-delete-modal-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C0392B" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                <line x1="12" y1="9" x2="12" y2="13" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg>
+            </div>
+            <h3 className="customers-delete-modal-title">Delete Customer?</h3>
+            <p className="customers-delete-modal-text">
+              Are you sure you want to delete <strong>{deleteModalPatron.name}</strong>? This will remove this patron from your active customer directory.
+            </p>
+            <div className="customers-delete-modal-actions">
+              <button
+                type="button"
+                className="btn-delete-cancel"
+                onClick={() => setDeleteModalPatron(null)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn-delete-confirm"
+                onClick={handleDeleteConfirm}
+              >
+                Delete Customer
+              </button>
+            </div>
           </div>
         </div>
       )}

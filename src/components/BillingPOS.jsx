@@ -853,71 +853,39 @@ export default function BillingPOS({ onNavigateToProducts }) {
             </button>
           </div>
 
-          {/* 4. Collapsible Box: Additional Options */}
+          {/* Discount & Delivery Options (Inline, No Dropdown) */}
           <div className="pos-card pos-additional-options-card">
-            <button
-              type="button"
-              className="pos-accordion-toggle"
-              onClick={() => setAdditionalOptionsOpen(!additionalOptionsOpen)}
-            >
-              <div className="pos-accordion-title">
-                <span>⚙️</span>
-                <span>Additional Options (Discount, Delivery, Customer GST, Note)</span>
+            <div className="pos-card-header-clean" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+              <span style={{ fontSize: '14px' }}>🏷️</span>
+              <h3 style={{ fontSize: '13.5px', fontWeight: 700, margin: 0, color: '#31190B', letterSpacing: '-0.01em' }}>
+                Trade Discount & Delivery Logistics
+              </h3>
+            </div>
+            <div className="pos-additional-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
+              <div className="pos-input-group">
+                <label className="pos-label">Trade Discount (₹)</label>
+                <input
+                  type="number"
+                  min="0"
+                  className="pos-input"
+                  value={discount}
+                  onChange={(e) => updateCurrentBill({ discount: Math.max(0, Number(e.target.value) || 0) })}
+                  placeholder="0"
+                />
               </div>
-              <span className="pos-accordion-chevron">{additionalOptionsOpen ? '▴' : '▾'}</span>
-            </button>
 
-            {additionalOptionsOpen && (
-              <div className="pos-accordion-content">
-                <div className="pos-additional-grid">
-                  <div className="pos-input-group">
-                    <label className="pos-label">Trade Discount (₹)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      className="pos-input"
-                      value={discount}
-                      onChange={(e) => updateCurrentBill({ discount: Math.max(0, Number(e.target.value) || 0) })}
-                      placeholder="0"
-                    />
-                  </div>
-
-                  <div className="pos-input-group">
-                    <label className="pos-label">Delivery Logistics Charges (₹)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      className="pos-input"
-                      value={deliveryCharge}
-                      onChange={(e) => updateCurrentBill({ deliveryCharge: Math.max(0, Number(e.target.value) || 0) })}
-                      placeholder="0"
-                    />
-                  </div>
-
-                  <div className="pos-input-group">
-                    <label className="pos-label">Client GSTIN (Optional)</label>
-                    <input
-                      type="text"
-                      className="pos-input"
-                      value={customer.gstin || ''}
-                      onChange={(e) => handleCustomerChange('gstin', e.target.value)}
-                      placeholder="32AABCP9821K1ZK"
-                    />
-                  </div>
-
-                  <div className="pos-input-group pos-full-width">
-                    <label className="pos-label">Invoice Note / Disclaimer</label>
-                    <input
-                      type="text"
-                      className="pos-input"
-                      value={notes}
-                      onChange={(e) => updateCurrentBill({ notes: e.target.value })}
-                      placeholder="e.g. Natural teak wood grain variation is normal."
-                    />
-                  </div>
-                </div>
+              <div className="pos-input-group">
+                <label className="pos-label">Delivery Logistics Charges (₹)</label>
+                <input
+                  type="number"
+                  min="0"
+                  className="pos-input"
+                  value={deliveryCharge}
+                  onChange={(e) => updateCurrentBill({ deliveryCharge: Math.max(0, Number(e.target.value) || 0) })}
+                  placeholder="0"
+                />
               </div>
-            )}
+            </div>
           </div>
         </div>
       </div>

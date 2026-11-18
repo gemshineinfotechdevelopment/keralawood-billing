@@ -29,12 +29,14 @@ const DEFAULT_PRODUCTS = [
   { id: 24, name: 'Wooden Kitchen Bar Stool with Swivel Top', sku: 'KWF-BS-WD-01 • Teak', category: 'Chairs', stock: '14 in stock', stockType: 'in-stock', stockQuantity: 14, price: '₹6,800' },
 ]
 
-const getProductInitials = (prod) => {
-  const name = prod?.name || ''
-  const parts = name.trim().split(/\s+/)
-  if (parts.length >= 2 && parts[0] && parts[1]) return (parts[0][0] + parts[1][0]).toUpperCase()
-  if (name.length >= 2) return name.slice(0, 2).toUpperCase()
-  return 'KW'
+const getProductCode = (prod) => {
+  if (prod?.code) return String(prod.code).trim()
+  if (prod?.sku) {
+    const raw = String(prod.sku).trim()
+    if (raw.includes('•')) return raw.split('•')[0].trim()
+    return raw
+  }
+  return `KWF-${prod?.id || '101'}`
 }
 
 export default function StockManagement({ onAddNewProduct }) {
@@ -70,16 +72,6 @@ export default function StockManagement({ onAddNewProduct }) {
   const [quickSaving, setQuickSaving] = useState(false)
   const [quickSuccess, setQuickSuccess] = useState(false)
 
-  // Stock Edit Drawer / Dossier states
-  const [editingProduct, setEditingProduct] = useState(null)
-  const [drawerOpen, setDrawerOpen] = useState(false)
-  const [editQuantity, setEditQuantity] = useState(0)
-  const [editThreshold, setEditThreshold] = useState(2)
-  const [editPrice, setEditPrice] = useState('')
-  const [editBay, setEditBay] = useState('Bay C-04 / Shed 2')
-  const [isUpdating, setIsUpdating] = useState(false)
-  const [saveSuccess, setSaveSuccess] = useState(false)
-
   const handleOpenQuickStock = () => {
     if (products.length > 0 && !quickProductId) {
       setQuickProductId(products[0].id)
@@ -100,150 +92,37 @@ export default function StockManagement({ onAddNewProduct }) {
     if (!targetProduct) return
     setQuickSaving(true)
 
-    const currentQty =
-      targetProduct.stockQuantity !== undefined
-        ? targetProduct.stockQuantity
-        : parseInt(targetProduct.stock) || 0
-    const change = Number(movementQty) || 0
-    const newQty = movementType === 'in' ? currentQty + change : Math.max(0, currentQty - change)
-    const threshold = targetProduct.lowStockThreshold || 2
-
-    let stockType = 'in-stock'
-    let stockLabel = `${newQty} in stock`
-    if (newQty <= 1) {
-      stockType = 'critical'
-      stockLabel = `${newQty} left (Critical)`
-    } else if (newQty <= threshold) {
-      stockType = 'low'
-      stockLabel = `${newQty} in stock (Low)`
+    const change = Number(movementQty) || 1
+    if (movementType === 'in') {
+      DataStore.recordStockIn(targetProduct.id, change)
+    } else {
+      DataStore.recordStockOut(targetProduct.id, change)
     }
 
-    const updatedProduct = {
-      ...targetProduct,
-      stockQuantity: newQty,
-      stock: stockLabel,
-      stockType,
-    }
-
-    setProducts((prev) =>
-      prev.map((p) => (p.id === targetProduct.id ? updatedProduct : p))
-    )
-
-    DataStore.updateStock(targetProduct.id, newQty)
+    const updatedList = DataStore.getProducts()
+    setProducts(updatedList)
 
     try {
       const apiUrl = import.meta.env.VITE_API_URL || ''
-      await fetch(`${apiUrl}/api/products/${targetProduct.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          stockQuantity: newQty,
-        }),
-      })
-
-      const refreshRes = await fetch(`${apiUrl}/api/products`)
-      if (refreshRes.ok) {
-        const refreshData = await refreshRes.json()
-        if (refreshData?.success && Array.isArray(refreshData.products)) {
-          setProducts(refreshData.products)
-          if (refreshData.metrics) setMetrics(refreshData.metrics)
-        }
+      const updatedItem = updatedList.find((p) => p.id === targetProduct.id)
+      if (updatedItem) {
+        await fetch(`${apiUrl}/api/products/${encodeURIComponent(targetProduct.id || targetProduct.sku)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            stockQuantity: updatedItem.stockQuantity,
+            stockIn: updatedItem.stockIn,
+            stockOut: updatedItem.stockOut,
+          }),
+        })
       }
     } catch (err) {
-      console.warn('[StockManagement] Quick stock movement PUT error:', err.message)
+      console.warn('[StockManagement] Quick stock movement sync error:', err.message)
     } finally {
       setQuickSaving(false)
       setQuickSuccess(true)
       setTimeout(() => {
         handleCloseQuickStock()
-      }, 700)
-    }
-  }
-
-  const handleOpenEditDrawer = (product) => {
-    setEditingProduct(product)
-    const rawQty =
-      product.stockQuantity !== undefined
-        ? product.stockQuantity
-        : parseInt(product.stock) || 0
-    setEditQuantity(rawQty)
-    setEditThreshold(product.lowStockThreshold || 2)
-    setEditPrice(product.rawPrice || product.price?.replace(/[^0-9]/g, '') || '54000')
-    setEditBay(product.warehouseBay || 'Bay C-04 / Shed 2')
-    setSaveSuccess(false)
-    setDrawerOpen(true)
-  }
-
-  const handleCloseDrawer = () => {
-    setDrawerOpen(false)
-    setEditingProduct(null)
-  }
-
-  const handleSaveStock = async () => {
-    if (!editingProduct) return
-    setIsUpdating(true)
-
-    const qty = Math.max(0, Number(editQuantity) || 0)
-    const threshold = Math.max(0, Number(editThreshold) || 2)
-    const numPrice = Number(String(editPrice).replace(/[^0-9.]/g, '')) || 0
-
-    let stockType = 'in-stock'
-    let stockLabel = `${qty} in stock`
-    if (qty <= 1) {
-      stockType = 'critical'
-      stockLabel = `${qty} left (Critical)`
-    } else if (qty <= threshold) {
-      stockType = 'low'
-      stockLabel = `${qty} in stock (Low)`
-    }
-
-    const updatedProduct = {
-      ...editingProduct,
-      stockQuantity: qty,
-      lowStockThreshold: threshold,
-      stock: stockLabel,
-      stockType,
-      price: '₹' + numPrice.toLocaleString('en-IN'),
-      rawPrice: numPrice,
-      warehouseBay: editBay,
-    }
-
-    // Immediately update local state so table updates in real time
-    setProducts((prev) =>
-      prev.map((p) => (p.id === editingProduct.id ? updatedProduct : p))
-    )
-
-    DataStore.updateStock(editingProduct.id, qty)
-
-    try {
-      const apiUrl = import.meta.env.VITE_API_URL || ''
-      await fetch(`${apiUrl}/api/products/${editingProduct.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          stockQuantity: qty,
-          lowStockThreshold: threshold,
-          sellingPrice: numPrice,
-          warehouseBay: editBay,
-        }),
-      })
-
-      // Refresh product list and metrics from API
-      const refreshRes = await fetch(`${apiUrl}/api/products`)
-      if (refreshRes.ok) {
-        const refreshData = await refreshRes.json()
-        if (refreshData?.success && Array.isArray(refreshData.products)) {
-          setProducts(refreshData.products)
-          if (refreshData.metrics) setMetrics(refreshData.metrics)
-        }
-      }
-    } catch (err) {
-      console.warn('[StockManagement] PUT update fallback to local state:', err.message)
-    } finally {
-      setIsUpdating(false)
-      setSaveSuccess(true)
-      setTimeout(() => {
-        handleCloseDrawer()
       }, 700)
     }
   }
@@ -273,6 +152,11 @@ export default function StockManagement({ onAddNewProduct }) {
     const qty = p.stockQuantity !== undefined ? Number(p.stockQuantity) : (parseInt(p.stock) || 0)
     return acc + (isNaN(qty) ? 0 : qty)
   }, 0)
+
+  const inStockProductsCount = products.filter((p) => {
+    const qty = p.stockQuantity !== undefined ? Number(p.stockQuantity) : (parseInt(p.stock) || 0)
+    return qty > 0
+  }).length
 
   const totalValuation = products.reduce((acc, p) => {
     const qty = p.stockQuantity !== undefined ? Number(p.stockQuantity) : (parseInt(p.stock) || 0)
@@ -395,7 +279,7 @@ export default function StockManagement({ onAddNewProduct }) {
               <line x1="12" y1="8" x2="12" y2="16" />
               <line x1="8" y1="12" x2="16" y2="12" />
             </svg>
-            <span>+ Add New Wood Product</span>
+            <span>Add New Wood Product</span>
           </button>
         </div>
       </div>
@@ -453,10 +337,10 @@ export default function StockManagement({ onAddNewProduct }) {
             </span>
           </div>
           <div className="kpi-metric-wrap">
-            <span className="kpi-big-num">{totalStockCount.toLocaleString('en-IN')}</span>
-            <span className="kpi-suffix-gray">Pcs in inventory</span>
+            <span className="kpi-big-num">{inStockProductsCount} Products</span>
+            <span className="kpi-suffix-gray">in stock</span>
           </div>
-          <span className="kpi-footer-sub">Active across 3 warehouses</span>
+          <span className="kpi-footer-sub">Out of {products.length} total catalog items</span>
         </div>
 
         {/* Low Stock Items */}
@@ -545,65 +429,72 @@ export default function StockManagement({ onAddNewProduct }) {
           <table className="stock-table">
             <thead>
               <tr>
-                <th>PRODUCT</th>
+                <th>PRODUCT CODE</th>
+                <th>PRODUCT NAME</th>
                 <th className="category-th">CATEGORY</th>
-                <th>STOCK LEVEL</th>
-                <th className="price-th">PRICE</th>
-                <th className="actions-th">ACTIONS</th>
+                <th>STOCK IN</th>
+                <th>STOCK OUT</th>
+                <th>AVAILABLE STOCK</th>
+                <th className="price-th" style={{ textAlign: 'right' }}>PRICE</th>
               </tr>
             </thead>
             <tbody>
-              {paginatedProducts.map((p) => (
-                <tr
-                  key={p.id}
-                  className="stock-table-row"
-                  onClick={() => handleOpenEditDrawer(p)}
-                >
-                  <td>
-                    <div className="product-cell">
-                      <div className="product-avatar-sq">
-                        {getProductInitials(p)}
-                      </div>
-                      <div className="product-details">
-                        <span className="product-title">{p.name}</span>
-                        <span className="product-sku-wood">{p.sku}</span>
-                        <span className="mobile-product-meta">{p.category} • {p.price}</span>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="category-cell">{p.category}</td>
-                  <td>
-                    <span className={`stock-badge ${p.stockType}`}>{p.stock}</span>
-                  </td>
-                  <td className="price-cell">{p.price}</td>
-                  <td className="actions-cell">
-                    <button
-                      type="button"
-                      className="btn-edit-product"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        handleOpenEditDrawer(p)
-                      }}
-                      title="Edit Stock & Pricing"
-                    >
-                      <svg
-                        width="12"
-                        height="12"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2.2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
+              {paginatedProducts.map((p) => {
+                const code = getProductCode(p)
+                const stockQty = Number(p.stockQuantity !== undefined ? p.stockQuantity : parseInt(p.stock) || 0)
+                const stockOutVal = Number(p.stockOut || 0)
+                const stockInVal = Number(p.stockIn !== undefined ? p.stockIn : (stockQty + stockOutVal))
+                const numPrice = Number(String(p.sellingPrice || p.price || 0).replace(/[^0-9.]/g, '')) || 0
+                const threshold = Number(p.lowStockThreshold || 2)
+
+                return (
+                  <tr key={p.id || p.sku} className="stock-table-row">
+                    <td>
+                      <span className="product-code-pill" title={`Product Code: ${code}`}>
+                        {code}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="product-display-name-clean" title={p.name}>
+                        {p.name}
+                      </span>
+                    </td>
+                    <td className="category-cell">
+                      <span className="stock-cat-pill">{p.category || '-'}</span>
+                    </td>
+                    <td>
+                      <span className="badge-stock-in" title="Inward stock recorded from Product Page">
+                        +{stockInVal} pcs
+                      </span>
+                    </td>
+                    <td>
+                      <span
+                        className={`badge-stock-out ${stockOutVal > 0 ? 'has-out' : 'zero-out'}`}
+                        title="Deducted through POS Billing orders"
                       >
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                      </svg>
-                      <span>Edit</span>
-                    </button>
-                  </td>
-                </tr>
-              ))}
+                        -{stockOutVal} pcs
+                      </span>
+                    </td>
+                    <td>
+                      <span
+                        className={`stock-badge ${
+                          stockQty <= 1 ? 'critical' : stockQty <= threshold ? 'low' : 'in-stock'
+                        }`}
+                      >
+                        {stockQty <= 1
+                          ? `${stockQty} left (Critical)`
+                          : stockQty <= threshold
+                          ? `${stockQty} in stock (Low)`
+                          : `${stockQty} in stock`}
+                      </span>
+                    </td>
+                    <td className="price-cell" style={{ textAlign: 'right' }}>
+                      <span className="straight-rupee">₹</span>
+                      {numPrice.toLocaleString('en-IN')}
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
@@ -698,195 +589,7 @@ export default function StockManagement({ onAddNewProduct }) {
         </a>
       </div>
 
-      {/* Dossier / Stock Edit Drawer */}
-      {drawerOpen && editingProduct && (
-        <div className="stock-drawer-backdrop" onClick={handleCloseDrawer}>
-          <div
-            className="stock-drawer-panel"
-            onClick={(e) => e.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
-          >
-            {/* Drawer Header */}
-            <div className="drawer-header">
-              <div className="drawer-header-left">
-                <span className="drawer-badge-tag">EDIT STOCK & PRICING</span>
-                <h3 className="drawer-product-title">{editingProduct.name}</h3>
-                <span className="drawer-sku-label">{editingProduct.sku}</span>
-              </div>
-              <button
-                type="button"
-                className="drawer-close-btn"
-                onClick={handleCloseDrawer}
-                aria-label="Close drawer"
-              >
-                ✕
-              </button>
-            </div>
 
-            {/* Drawer Body */}
-            <div className="drawer-body">
-              {/* Current Status Card */}
-              <div className="drawer-status-card">
-                <span className="drawer-card-label">CURRENT RESERVE STATUS</span>
-                <div className="drawer-status-row">
-                  <div className="status-live-counter">
-                    <span className="live-counter-number">{editQuantity}</span>
-                    <span className="live-counter-unit">Units in Yard</span>
-                  </div>
-                  <span
-                    className={`stock-badge ${
-                      editQuantity <= 1
-                        ? 'critical'
-                        : editQuantity <= editThreshold
-                        ? 'low'
-                        : 'in-stock'
-                    }`}
-                  >
-                    {editQuantity <= 1
-                      ? `${editQuantity} left (Critical)`
-                      : editQuantity <= editThreshold
-                      ? `${editQuantity} in stock (Low)`
-                      : `${editQuantity} in stock`}
-                  </span>
-                </div>
-              </div>
-
-              {/* Stock Quantity Stepper */}
-              <div className="drawer-form-group">
-                <label className="drawer-field-label">Available Stock Quantity (Units)</label>
-                <div className="stepper-row">
-                  <button
-                    type="button"
-                    className="stepper-btn minus"
-                    onClick={() => setEditQuantity((q) => Math.max(0, q - 1))}
-                  >
-                    −
-                  </button>
-                  <input
-                    type="number"
-                    className="stepper-input"
-                    value={editQuantity}
-                    onChange={(e) => setEditQuantity(Math.max(0, parseInt(e.target.value) || 0))}
-                  />
-                  <button
-                    type="button"
-                    className="stepper-btn plus"
-                    onClick={() => setEditQuantity((q) => q + 1)}
-                  >
-                    +
-                  </button>
-                </div>
-
-                {/* Quick Increment Chips */}
-                <div className="quick-chip-row">
-                  <button
-                    type="button"
-                    className="quick-chip"
-                    onClick={() => setEditQuantity((q) => q + 1)}
-                  >
-                    +1 Inward
-                  </button>
-                  <button
-                    type="button"
-                    className="quick-chip"
-                    onClick={() => setEditQuantity((q) => q + 5)}
-                  >
-                    +5 Batch
-                  </button>
-                  <button
-                    type="button"
-                    className="quick-chip"
-                    onClick={() => setEditQuantity((q) => q + 10)}
-                  >
-                    +10 Mill Lot
-                  </button>
-                  <button
-                    type="button"
-                    className="quick-chip dispatch"
-                    onClick={() => setEditQuantity((q) => Math.max(0, q - 1))}
-                  >
-                    −1 Dispatch
-                  </button>
-                </div>
-              </div>
-
-              {/* Threshold & Selling Price */}
-              <div className="drawer-form-row-2col">
-                <div className="drawer-form-group">
-                  <label className="drawer-field-label">Low Stock Threshold</label>
-                  <input
-                    type="number"
-                    className="drawer-input-styled"
-                    value={editThreshold}
-                    onChange={(e) => setEditThreshold(Math.max(1, parseInt(e.target.value) || 1))}
-                  />
-                </div>
-
-                <div className="drawer-form-group">
-                  <label className="drawer-field-label">Selling Price (₹)</label>
-                  <input
-                    type="text"
-                    className="drawer-input-styled"
-                    value={editPrice}
-                    onChange={(e) => setEditPrice(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              {/* Warehouse Bay */}
-              <div className="drawer-form-group">
-                <label className="drawer-field-label">Depot Warehouse Bay / Shed Allocation</label>
-                <input
-                  type="text"
-                  className="drawer-input-styled"
-                  value={editBay}
-                  onChange={(e) => setEditBay(e.target.value)}
-                  placeholder="e.g. Bay C-04 / Shed 2"
-                />
-              </div>
-
-              {/* Compliance & Audit Note */}
-              <div className="drawer-fsc-note">
-                <svg
-                  width="13"
-                  height="13"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#A0724A"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="12" y1="16" x2="12" y2="12" />
-                  <line x1="12" y1="8" x2="12.01" y2="8" />
-                </svg>
-                <span>Stock movement logged to Sivakasi Forest Dept & FSC transit audit trail.</span>
-              </div>
-            </div>
-
-            {/* Drawer Footer Actions */}
-            <div className="drawer-footer">
-              <button
-                type="button"
-                className="btn-drawer-cancel"
-                onClick={handleCloseDrawer}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="btn-drawer-save"
-                onClick={handleSaveStock}
-                disabled={isUpdating}
-              >
-                {saveSuccess ? '✓ Stock Updated!' : isUpdating ? 'Saving...' : '✓ Update Stock'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Quick Stock In / Out Modal */}
       {quickStockOpen && (
@@ -972,7 +675,7 @@ export default function StockManagement({ onAddNewProduct }) {
                 >
                   {products.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.name} ({p.sku}) — {p.stock}
+                      {p.name}
                     </option>
                   ))}
                 </select>

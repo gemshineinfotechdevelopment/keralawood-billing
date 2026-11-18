@@ -169,6 +169,15 @@ export default function AddProduct({ onProductSaved, onCancel, editProduct = nul
   const handleSaveProduct = async () => {
     setIsSaving(true)
     const numericPrice = Number(unitPrice.replace(/[^0-9.]/g, '')) || 0
+    const inputQty = Number(stockQuantity) || 0
+    const prevQty = editProduct ? (Number(editProduct.stockQuantity) || 0) : 0
+    const existingStockOut = editProduct ? (Number(editProduct.stockOut) || 0) : 0
+    const existingStockIn = editProduct
+      ? (editProduct.stockIn !== undefined ? Number(editProduct.stockIn) : (prevQty + existingStockOut))
+      : 0
+    const qtyDiff = editProduct ? Math.max(0, inputQty - prevQty) : 0
+    const finalStockIn = editProduct ? (existingStockIn + qtyDiff) : inputQty
+
     const productPayload = {
       name: productName,
       category,
@@ -184,7 +193,9 @@ export default function AddProduct({ onProductSaved, onCancel, editProduct = nul
       woodGrade,
       surfacePolish,
       warranty,
-      stockQuantity: Number(stockQuantity) || 0,
+      stockQuantity: inputQty,
+      stockIn: finalStockIn,
+      stockOut: existingStockOut,
       lowStockThreshold: Number(lowStockThreshold) || 2,
       depotLocation,
       packagingType,

@@ -70,582 +70,7 @@ const INITIAL_PRODUCTS = [
   { id: 'prod-24', sku: 'KWF-BN-TK-02', name: 'Teakwood Solid Dining Bench', finish: 'Chamfered Edge Minimalist Legs', category: 'Dining Sets', unitPrice: 11500, stockQuantity: 6, lowStockThreshold: 2, woodSpecies: 'Teak' },
 ]
 
-const INITIAL_CUSTOMERS = [
-  {
-    id: 1,
-    initials: 'MP',
-    avatarBg: '#5C3A21',
-    name: 'Mathew Philip',
-    personName: 'Mathew Philip',
-    type: 'Residential',
-    fullTypeLabel: 'Mathew Philip • Residential Client',
-    phone: '+91 98470 12345',
-    location: 'Sivakasi Town Center',
-    address: 'Bazaar Street, Sivakasi',
-    deliveryAddress: 'Bazaar Street, Sivakasi',
-    gstin: '32AABCP9821K1ZK',
-    totalOrders: 3,
-    lifetimeValue: '1,38,060',
-    outstandingBalance: '0',
-    creditUsed: '1,38,060',
-    creditTotal: '3,00,000',
-    creditProgress: 46,
-    recentTx: [
-      { id: '#KWF-2026-0982', dateItem: 'Today • 6-Seater Table & Chairs', amount: '1,38,060' },
-      { id: '#KWF-2026-0850', dateItem: '15 Oct • Teak Coffee Table', amount: '24,000' },
-    ],
-  },
-  {
-    id: 2,
-    initials: 'DK',
-    avatarBg: '#4A2E18',
-    name: 'Deepak Kurian & Architects',
-    personName: 'Deepak Kurian',
-    type: 'B2B Studio',
-    fullTypeLabel: 'Deepak Kurian & Architects • B2B',
-    phone: '+91 97455 11029',
-    location: 'Sivakasi Architecture Guild',
-    address: 'Bazaar Rd, Sivakasi',
-    deliveryAddress: 'Bazaar Rd, Sivakasi',
-    gstin: '32AABCK9902Q1Z',
-    totalOrders: 18,
-    lifetimeValue: '18,40,000',
-    outstandingBalance: '22,600',
-    creditUsed: '1,20,000',
-    creditTotal: '5,00,000',
-    creditProgress: 24,
-    recentTx: [
-      { id: '#KWF-2026-0888', dateItem: 'Today • Cane Bookcase', amount: '22,600' },
-      { id: '#KWF-2026-0792', dateItem: '14 Oct • Boardroom Desk', amount: '95,000' },
-    ],
-  },
-  {
-    id: 3,
-    initials: 'AM',
-    avatarBg: '#EFE3DC',
-    avatarColor: '#5C3A21',
-    name: 'Anoop Menon',
-    personName: 'Anoop Menon',
-    type: 'Residential',
-    fullTypeLabel: 'Anoop Menon • Residential Client',
-    phone: '+91 98471 20984',
-    location: 'Sivakasi Colony',
-    address: 'Plot 42, Sivakasi Colony',
-    deliveryAddress: 'Plot 42, Sivakasi Colony',
-    gstin: 'Unregistered / Personal',
-    totalOrders: 4,
-    lifetimeValue: '3,42,000',
-    outstandingBalance: '0',
-    creditUsed: '0',
-    creditTotal: '1,00,000',
-    creditProgress: 0,
-    recentTx: [
-      { id: '#KWF-2026-0854', dateItem: '18 Oct • Nilambur Teak Bed', amount: '1,45,000' },
-    ],
-  },
-  {
-    id: 4,
-    initials: 'TV',
-    avatarBg: '#EFE3DC',
-    avatarColor: '#5C3A21',
-    name: 'Dr. Thomas Varghese',
-    personName: 'Dr. Thomas Varghese',
-    type: 'Residential',
-    fullTypeLabel: 'Dr. Thomas Varghese • Private Villa',
-    phone: '+91 97455 11029',
-    location: 'Sivakasi Division',
-    address: 'Riverside Bungalow, Sivakasi',
-    deliveryAddress: 'Riverside Bungalow, Sivakasi',
-    gstin: 'Unregistered / Personal',
-    totalOrders: 6,
-    lifetimeValue: '5,80,000',
-    outstandingBalance: '45,000',
-    creditUsed: '45,000',
-    creditTotal: '2,50,000',
-    creditProgress: 18,
-    recentTx: [
-      { id: '#KWF-2026-0870', dateItem: '22 Oct • Dining Suite 8-Seater', amount: '2,80,000' },
-    ],
-  },
-  {
-    id: 5,
-    initials: 'LN',
-    avatarBg: '#EFE3DC',
-    avatarColor: '#5C3A21',
-    name: 'Lakshmi Nair',
-    personName: 'Lakshmi Nair',
-    type: 'Residential',
-    fullTypeLabel: 'Lakshmi Nair • Residential Client',
-    phone: '+91 91944 60882',
-    location: 'Sivakasi East Yard',
-    address: 'Main Road, Sivakasi',
-    deliveryAddress: 'Main Road, Sivakasi',
-    gstin: 'Unregistered / Personal',
-    totalOrders: 2,
-    lifetimeValue: '85,000',
-    outstandingBalance: '0',
-    creditUsed: '0',
-    creditTotal: '1,50,000',
-    creditProgress: 0,
-    recentTx: [],
-  },
-  {
-    id: 6,
-    initials: 'SK',
-    avatarBg: '#31190B',
-    avatarColor: '#FFFFFF',
-    name: 'Suresh Kumar & Sons',
-    personName: 'Suresh Kumar',
-    type: 'Commercial',
-    fullTypeLabel: 'Suresh Kumar & Sons • Commercial Store',
-    phone: '+91 94431 88201',
-    location: 'Sivakasi Town',
-    address: '14 Bazaar Cross Street, Sivakasi',
-    deliveryAddress: '14 Bazaar Cross Street, Sivakasi',
-    gstin: '33AABCS8820K1Z9',
-    totalOrders: 5,
-    lifetimeValue: '2,45,000',
-    outstandingBalance: '0',
-    creditUsed: '60,500',
-    creditTotal: '3,00,000',
-    creditProgress: 20,
-    recentTx: [
-      { id: 'INV-1024', dateItem: 'Today • Teak Dining Table & Chairs', amount: '60,500' },
-    ],
-  },
-  {
-    id: 7,
-    initials: 'RP',
-    avatarBg: '#5C3A21',
-    avatarColor: '#FFFFFF',
-    name: 'Rajesh Packaging Ind.',
-    personName: 'Rajesh Pandian',
-    type: 'Industrial',
-    fullTypeLabel: 'Rajesh Packaging Ind. • Industrial Yard',
-    phone: '+91 98421 55032',
-    location: 'Industrial Estate, Sivakasi',
-    address: 'Plot 12, SIDCO Industrial Estate, Sivakasi',
-    deliveryAddress: 'Plot 12, SIDCO Industrial Estate, Sivakasi',
-    gstin: '33AABCR5503M1Z2',
-    totalOrders: 8,
-    lifetimeValue: '5,12,000',
-    outstandingBalance: '34,000',
-    creditUsed: '1,20,000',
-    creditTotal: '5,00,000',
-    creditProgress: 24,
-    recentTx: [
-      { id: 'INV-1023', dateItem: 'Yesterday • Rosewood King Bed', amount: '78,000' },
-    ],
-  },
-  {
-    id: 8,
-    initials: 'MS',
-    avatarBg: '#4A2E18',
-    avatarColor: '#FFFFFF',
-    name: 'Meenakshi Sundaram',
-    personName: 'Meenakshi Sundaram',
-    type: 'Heritage Villa',
-    fullTypeLabel: 'Meenakshi Sundaram • Heritage Residence',
-    phone: '+91 97890 23419',
-    location: 'South Car St, Sivakasi',
-    address: '88 South Car Street, Sivakasi',
-    deliveryAddress: '88 South Car Street, Sivakasi',
-    gstin: 'Unregistered / Personal',
-    totalOrders: 3,
-    lifetimeValue: '1,65,000',
-    outstandingBalance: '0',
-    creditUsed: '42,000',
-    creditTotal: '2,00,000',
-    creditProgress: 21,
-    recentTx: [
-      { id: 'INV-1022', dateItem: 'Nov 16 • Teak Artisan Sofa', amount: '42,000' },
-    ],
-  },
-  {
-    id: 9,
-    initials: 'AG',
-    avatarBg: '#5C3A21',
-    avatarColor: '#FFFFFF',
-    name: 'Annamalai Gounder',
-    personName: 'Annamalai Gounder',
-    type: 'Contractor',
-    fullTypeLabel: 'Annamalai Gounder • Depot Contractor',
-    phone: '+91 94861 40382',
-    location: 'Sattur Road, Sivakasi',
-    address: '42 Sattur By-pass Road, Sivakasi',
-    deliveryAddress: '42 Sattur By-pass Road, Sivakasi',
-    gstin: '33AABCA4038P1Z5',
-    totalOrders: 7,
-    lifetimeValue: '4,80,000',
-    outstandingBalance: '18,500',
-    creditUsed: '62,000',
-    creditTotal: '3,00,000',
-    creditProgress: 20,
-    recentTx: [
-      { id: 'INV-1020', dateItem: 'Nov 15 • Rosewood Wardrobe', amount: '68,000' },
-    ],
-  },
-  {
-    id: 10,
-    initials: 'KP',
-    avatarBg: '#31190B',
-    avatarColor: '#FFFFFF',
-    name: 'Karpagam Printers',
-    personName: 'Karpagam Shanmugam',
-    type: 'Commercial Studio',
-    fullTypeLabel: 'Karpagam Printers • Print Studio',
-    phone: '+91 94432 77109',
-    location: 'Railway Feeder Rd, Sivakasi',
-    address: '109 Railway Feeder Road, Sivakasi',
-    deliveryAddress: '109 Railway Feeder Road, Sivakasi',
-    gstin: '33AABCK7710J1Z8',
-    totalOrders: 6,
-    lifetimeValue: '3,20,000',
-    outstandingBalance: '0',
-    creditUsed: '16,500',
-    creditTotal: '2,00,000',
-    creditProgress: 8,
-    recentTx: [
-      { id: 'INV-1019', dateItem: 'Nov 15 • Teak Coffee Table', amount: '16,500' },
-    ],
-  },
-  {
-    id: 11,
-    initials: 'PT',
-    avatarBg: '#4A2E18',
-    avatarColor: '#FFFFFF',
-    name: 'Palaniswamy Timber Traders',
-    personName: 'Palaniswamy Nadar',
-    type: 'B2B Partner',
-    fullTypeLabel: 'Palaniswamy Timber Traders • B2B',
-    phone: '+91 98430 66214',
-    location: 'Timber Market, Sivakasi',
-    address: 'Unit 5, Timber Market Yard, Sivakasi',
-    deliveryAddress: 'Unit 5, Timber Market Yard, Sivakasi',
-    gstin: '33AABCP6621L1Z1',
-    totalOrders: 14,
-    lifetimeValue: '12,90,000',
-    outstandingBalance: '62,000',
-    creditUsed: '1,80,000',
-    creditTotal: '6,00,000',
-    creditProgress: 30,
-    recentTx: [
-      { id: 'INV-1018', dateItem: 'Nov 14 • Hydraulic Storage Bed', amount: '62,000' },
-    ],
-  },
-  {
-    id: 12,
-    initials: 'RS',
-    avatarBg: '#5C3A21',
-    avatarColor: '#FFFFFF',
-    name: 'Radhakrishnan & Co',
-    personName: 'Radhakrishnan Pillai',
-    type: 'Commercial',
-    fullTypeLabel: 'Radhakrishnan & Co • Commercial',
-    phone: '+91 94420 31872',
-    location: 'Vilampatti Rd, Sivakasi',
-    address: '71 Vilampatti Road, Sivakasi',
-    deliveryAddress: '71 Vilampatti Road, Sivakasi',
-    gstin: '33AABCR3187N1Z4',
-    totalOrders: 4,
-    lifetimeValue: '2,10,000',
-    outstandingBalance: '0',
-    creditUsed: '34,000',
-    creditTotal: '2,50,000',
-    creditProgress: 13,
-    recentTx: [
-      { id: 'INV-1017', dateItem: 'Nov 14 • Kerala Mandapam Pooja Unit', amount: '34,000' },
-    ],
-  },
-  {
-    id: 13,
-    initials: 'SR',
-    avatarBg: '#31190B',
-    avatarColor: '#FFFFFF',
-    name: 'Sivakasi Residency Suites',
-    personName: 'Senthil Nathan',
-    type: 'Hospitality',
-    fullTypeLabel: 'Sivakasi Residency Suites • Hospitality',
-    phone: '+91 97880 91423',
-    location: 'Bypass Road, Sivakasi',
-    address: '33 Bypass Junction, Sivakasi',
-    deliveryAddress: '33 Bypass Junction, Sivakasi',
-    gstin: '33AABCS9142R1Z7',
-    totalOrders: 9,
-    lifetimeValue: '7,40,000',
-    outstandingBalance: '29,500',
-    creditUsed: '95,000',
-    creditTotal: '4,00,000',
-    creditProgress: 23,
-    recentTx: [
-      { id: 'INV-1016', dateItem: 'Nov 13 • Rosewood Dressing Table', amount: '29,500' },
-    ],
-  },
-  {
-    id: 14,
-    initials: 'MI',
-    avatarBg: '#4A2E18',
-    avatarColor: '#FFFFFF',
-    name: 'Murugan Litho Press',
-    personName: 'Murugan Chettiar',
-    type: 'Industrial',
-    fullTypeLabel: 'Murugan Litho Press • Industrial',
-    phone: '+91 98425 10982',
-    location: 'Thirutangal, Sivakasi',
-    address: '15 Litho Nagar, Thirutangal, Sivakasi',
-    deliveryAddress: '15 Litho Nagar, Thirutangal, Sivakasi',
-    gstin: '33AABCM1098T1Z3',
-    totalOrders: 5,
-    lifetimeValue: '3,85,000',
-    outstandingBalance: '0',
-    creditUsed: '48,000',
-    creditTotal: '3,00,000',
-    creditProgress: 16,
-    recentTx: [
-      { id: 'INV-1015', dateItem: 'Nov 13 • Handcrafted Wooden Oonjal Swing', amount: '48,000' },
-    ],
-  },
-  {
-    id: 15,
-    initials: 'VC',
-    avatarBg: '#5C3A21',
-    avatarColor: '#FFFFFF',
-    name: 'Vignesh Construction Co.',
-    personName: 'Vigneshwaran',
-    type: 'Contractor',
-    fullTypeLabel: 'Vignesh Construction Co. • Builder',
-    phone: '+91 94435 82910',
-    location: 'Ring Road, Sivakasi',
-    address: '88 Ring Road, Sivakasi',
-    deliveryAddress: '88 Ring Road, Sivakasi',
-    gstin: '33AABCV8291Q1Z6',
-    totalOrders: 11,
-    lifetimeValue: '9,20,000',
-    outstandingBalance: '21,000',
-    creditUsed: '1,45,000',
-    creditTotal: '5,00,000',
-    creditProgress: 29,
-    recentTx: [
-      { id: 'INV-1013', dateItem: 'Nov 12 • Mahogany Library Display Rack', amount: '21,000' },
-    ],
-  },
-  {
-    id: 16,
-    initials: 'KR',
-    avatarBg: '#31190B',
-    avatarColor: '#FFFFFF',
-    name: 'Karthik Raja',
-    personName: 'Karthik Raja',
-    type: 'Residential',
-    fullTypeLabel: 'Karthik Raja • Residential Client',
-    phone: '+91 98433 45192',
-    location: 'Teachers Colony, Sivakasi',
-    address: '12 Teachers Colony 2nd St, Sivakasi',
-    deliveryAddress: '12 Teachers Colony 2nd St, Sivakasi',
-    gstin: 'Unregistered / Personal',
-    totalOrders: 3,
-    lifetimeValue: '1,12,000',
-    outstandingBalance: '0',
-    creditUsed: '26,500',
-    creditTotal: '1,50,000',
-    creditProgress: 17,
-    recentTx: [
-      { id: 'INV-1012', dateItem: 'Nov 11 • Teakwood TV Entertainment Console', amount: '26,500' },
-    ],
-  },
-  {
-    id: 17,
-    initials: 'ST',
-    avatarBg: '#4A2E18',
-    avatarColor: '#FFFFFF',
-    name: 'Selvi Thirumalai',
-    personName: 'Selvi Thirumalai',
-    type: 'Residential',
-    fullTypeLabel: 'Selvi Thirumalai • Residential Client',
-    phone: '+91 97860 38291',
-    location: 'Sankarankovil Rd, Sivakasi',
-    address: '54 Sankarankovil Road, Sivakasi',
-    deliveryAddress: '54 Sankarankovil Road, Sivakasi',
-    gstin: 'Unregistered / Personal',
-    totalOrders: 2,
-    lifetimeValue: '72,000',
-    outstandingBalance: '0',
-    creditUsed: '12,800',
-    creditTotal: '1,00,000',
-    creditProgress: 12,
-    recentTx: [
-      { id: 'INV-1011', dateItem: 'Nov 11 • Hand-Carved Rocking Chair', amount: '12,800' },
-    ],
-  },
-  {
-    id: 18,
-    initials: 'VS',
-    avatarBg: '#5C3A21',
-    avatarColor: '#FFFFFF',
-    name: 'Vijayalakshmi Sweets',
-    personName: 'Vijayalakshmi Ammal',
-    type: 'Commercial Store',
-    fullTypeLabel: 'Vijayalakshmi Sweets • Retail',
-    phone: '+91 94433 90281',
-    location: 'South Car Street, Sivakasi',
-    address: '22 South Car Street, Sivakasi',
-    deliveryAddress: '22 South Car Street, Sivakasi',
-    gstin: '33AABCV9028K1Z5',
-    totalOrders: 6,
-    lifetimeValue: '2,90,000',
-    outstandingBalance: '0',
-    creditUsed: '29,000',
-    creditTotal: '2,00,000',
-    creditProgress: 14,
-    recentTx: [
-      { id: 'INV-1010', dateItem: 'Nov 10 • Teak Ergonomic Armchairs', amount: '29,000' },
-    ],
-  },
-  {
-    id: 19,
-    initials: 'JB',
-    avatarBg: '#31190B',
-    avatarColor: '#FFFFFF',
-    name: 'Jayaram Brothers',
-    personName: 'Jayaram Pandian',
-    type: 'Wholesale Merchant',
-    fullTypeLabel: 'Jayaram Brothers • Wholesale',
-    phone: '+91 98420 81290',
-    location: 'Thirutangal Rd, Sivakasi',
-    address: '90 Thirutangal Road, Sivakasi',
-    deliveryAddress: '90 Thirutangal Road, Sivakasi',
-    gstin: '33AABCJ8129F1Z2',
-    totalOrders: 7,
-    lifetimeValue: '4,10,000',
-    outstandingBalance: '0',
-    creditUsed: '18,500',
-    creditTotal: '3,00,000',
-    creditProgress: 6,
-    recentTx: [
-      { id: 'INV-1009', dateItem: 'Nov 10 • Handcrafted Cane Bookcase', amount: '18,500' },
-    ],
-  },
-  {
-    id: 20,
-    initials: 'NS',
-    avatarBg: '#4A2E18',
-    avatarColor: '#FFFFFF',
-    name: 'Dr. N. Soundararajan',
-    personName: 'Dr. N. Soundararajan',
-    type: 'Private Hospital',
-    fullTypeLabel: 'Dr. N. Soundararajan • Hospital Suite',
-    phone: '+91 97890 55192',
-    location: 'Hospital Road, Sivakasi',
-    address: '16 Hospital Road, Sivakasi',
-    deliveryAddress: '16 Hospital Road, Sivakasi',
-    gstin: 'Unregistered / Personal',
-    totalOrders: 4,
-    lifetimeValue: '2,60,000',
-    outstandingBalance: '0',
-    creditUsed: '22,500',
-    creditTotal: '2,50,000',
-    creditProgress: 9,
-    recentTx: [
-      { id: 'INV-1008', dateItem: 'Nov 09 • Anjili Heritage Brass Chest', amount: '22,500' },
-    ],
-  },
-  {
-    id: 21,
-    initials: 'MI',
-    avatarBg: '#5C3A21',
-    avatarColor: '#FFFFFF',
-    name: 'Malarvizhi Interiors',
-    personName: 'Malarvizhi Senthil',
-    type: 'Architect & Design',
-    fullTypeLabel: 'Malarvizhi Interiors • Studio',
-    phone: '+91 94421 66839',
-    location: 'North Car Street, Sivakasi',
-    address: '45 North Car Street, Sivakasi',
-    deliveryAddress: '45 North Car Street, Sivakasi',
-    gstin: '33AABCM6683P1Z9',
-    totalOrders: 10,
-    lifetimeValue: '8,40,000',
-    outstandingBalance: '19,800',
-    creditUsed: '1,10,000',
-    creditTotal: '4,50,000',
-    creditProgress: 24,
-    recentTx: [
-      { id: 'INV-1007', dateItem: 'Nov 09 • Live-Edge Console Table', amount: '19,800' },
-    ],
-  },
-  {
-    id: 22,
-    initials: 'BA',
-    avatarBg: '#31190B',
-    avatarColor: '#FFFFFF',
-    name: 'Balaji Agency',
-    personName: 'Balaji Srinivasan',
-    type: 'Commercial',
-    fullTypeLabel: 'Balaji Agency • Commercial',
-    phone: '+91 98432 10984',
-    location: 'Sattur Road, Sivakasi',
-    address: '38 Sattur Main Road, Sivakasi',
-    deliveryAddress: '38 Sattur Main Road, Sivakasi',
-    gstin: '33AABCB1098M1Z7',
-    totalOrders: 5,
-    lifetimeValue: '1,95,000',
-    outstandingBalance: '0',
-    creditUsed: '9,500',
-    creditTotal: '1,50,000',
-    creditProgress: 6,
-    recentTx: [
-      { id: 'INV-1006', dateItem: 'Nov 08 • Louvered Shoe Rack', amount: '9,500' },
-    ],
-  },
-  {
-    id: 23,
-    initials: 'MS',
-    avatarBg: '#4A2E18',
-    avatarColor: '#FFFFFF',
-    name: 'Manickam & Sons Traders',
-    personName: 'Manickam Nadar',
-    type: 'B2B Wholesale',
-    fullTypeLabel: 'Manickam & Sons Traders • B2B',
-    phone: '+91 94430 77190',
-    location: 'Market Yard, Sivakasi',
-    address: '29 Market Yard Outer, Sivakasi',
-    deliveryAddress: '29 Market Yard Outer, Sivakasi',
-    gstin: '33AABCM7719L1Z4',
-    totalOrders: 12,
-    lifetimeValue: '11,20,000',
-    outstandingBalance: '31,000',
-    creditUsed: '1,65,000',
-    creditTotal: '5,00,000',
-    creditProgress: 33,
-    recentTx: [
-      { id: 'INV-1005', dateItem: 'Nov 08 • Vintage 5-Drawer Wooden Chest', amount: '31,000' },
-    ],
-  },
-  {
-    id: 24,
-    initials: 'SS',
-    avatarBg: '#5C3A21',
-    avatarColor: '#FFFFFF',
-    name: 'Sree Saravana Match Works',
-    personName: 'Saravanan Muthuraman',
-    type: 'Industrial Safety',
-    fullTypeLabel: 'Sree Saravana Match Works • Industrial',
-    phone: '+91 97892 44381',
-    location: 'Sivakasi Depot',
-    address: '102 Match Factory Compound, Sivakasi',
-    deliveryAddress: '102 Match Factory Compound, Sivakasi',
-    gstin: '33AABCS4438H1Z1',
-    totalOrders: 16,
-    lifetimeValue: '15,60,000',
-    outstandingBalance: '23,000',
-    creditUsed: '2,10,000',
-    creditTotal: '7,00,000',
-    creditProgress: 30,
-    recentTx: [
-      { id: 'INV-1004', dateItem: 'Nov 07 • Teakwood Solid Dining Benches', amount: '23,000' },
-    ],
-  },
-]
+const INITIAL_CUSTOMERS = []
 
 const INITIAL_TRANSACTIONS = [
   { id: 'INV-1024', date: 'Nov 17, 2026, 05:45 PM', monthYear: 'November 2026', year: '2026', customer: 'Suresh Kumar & Sons', project: 'Sivakasi Town', wood: 'Nilambur Teak', item: '1x Teak Dining Table, 6x Chairs', volume: 42, amount: '60,500', rawAmount: 60500, status: 'Paid' },
@@ -825,11 +250,42 @@ export const DataStore = {
 
   // PRODUCTS
   getProducts() {
-    return loadFromStorage(STORAGE_KEYS.PRODUCTS, INITIAL_PRODUCTS)
+    const raw = loadFromStorage(STORAGE_KEYS.PRODUCTS, INITIAL_PRODUCTS)
+    return (raw || []).map((p) => {
+      const stockQuantity = Number(p.stockQuantity) || 0
+      const stockOut = Number(p.stockOut) || 0
+      const stockIn = p.stockIn !== undefined ? Number(p.stockIn) : (stockQuantity + stockOut)
+      return {
+        ...p,
+        stockQuantity,
+        stockIn,
+        stockOut,
+      }
+    })
   },
   saveProducts(list) {
     saveToStorage(STORAGE_KEYS.PRODUCTS, list)
     notifyStoreUpdate()
+  },
+  recordStockIn(productId, qtyToAdd) {
+    const list = this.getProducts()
+    const target = list.find((p) => p.id === productId || p.sku === productId || p.name === productId)
+    if (target) {
+      const add = Math.max(1, Number(qtyToAdd) || 1)
+      target.stockIn = (Number(target.stockIn) || 0) + add
+      target.stockQuantity = (Number(target.stockQuantity) || 0) + add
+      this.saveProducts(list)
+    }
+  },
+  recordStockOut(productId, qtyToDeduct) {
+    const list = this.getProducts()
+    const target = list.find((p) => p.id === productId || p.sku === productId || p.name === productId)
+    if (target) {
+      const deduct = Math.max(1, Number(qtyToDeduct) || 1)
+      target.stockOut = (Number(target.stockOut) || 0) + deduct
+      target.stockQuantity = Math.max(0, (Number(target.stockQuantity) || 0) - deduct)
+      this.saveProducts(list)
+    }
   },
   addProduct(item) {
     const list = this.getProducts()
@@ -844,6 +300,7 @@ export const DataStore = {
     if (existingIndex >= 0) {
       const existing = list[existingIndex]
       const newQty = (Number(existing.stockQuantity) || 0) + qty
+      const newStockIn = (Number(existing.stockIn) || Number(existing.stockQuantity) || 0) + qty
       let stockType = 'in-stock'
       let stockLabel = `${newQty} in stock`
       if (newQty <= 1) {
@@ -856,6 +313,7 @@ export const DataStore = {
       list[existingIndex] = {
         ...existing,
         stockQuantity: newQty,
+        stockIn: newStockIn,
         stock: stockLabel,
         stockType,
         unitPrice: numPrice || existing.unitPrice,
@@ -867,7 +325,7 @@ export const DataStore = {
       fetch(`${API_BASE}/api/products/${encodeURIComponent(existing.sku || existing.name)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ stockQuantity: newQty, sellingPrice: numPrice || existing.unitPrice }),
+        body: JSON.stringify({ stockQuantity: newQty, stockIn: newStockIn, sellingPrice: numPrice || existing.unitPrice }),
       }).catch(() => {})
 
       return list[existingIndex]
@@ -893,20 +351,22 @@ export const DataStore = {
       price: '₹' + numPrice.toLocaleString('en-IN'),
       sellingPrice: numPrice,
       stockQuantity: qty,
+      stockIn: qty,
+      stockOut: 0,
       stock: stockLabel,
       stockType,
       lowStockThreshold: threshold,
       woodSpecies: item.woodSpecies || 'Teak',
       description: item.description || '',
       dimensions: item.dimensions || { length: 0, width: 0, height: 0, weight: 0 },
-      woodGrade: item.woodGrade || 'Grade A - Nilambur Heartwood',
-      surfacePolish: item.surfacePolish || 'Natural Protective Organic-Beeswax',
-      joineryTechnique: item.joineryTechnique || 'Mortise & Tenon with Rosewood Dowels',
-      warranty: item.warranty || '5-Yr Termite & Wood',
-      depotLocation: item.depotLocation || 'Sivakasi Central Depot',
-      packagingType: item.packagingType || 'Corrugated Multi-layer Wood Wrap',
-      shippingClass: item.shippingClass || 'Class 3 - Heavy Solid Furniture (Direct Depot Truck)',
-      tradeDiscount: item.tradeDiscount || 'Standard Builder Tier (10% Off)',
+      woodGrade: item.woodGrade || '',
+      surfacePolish: item.surfacePolish || '',
+      joineryTechnique: item.joineryTechnique || '',
+      warranty: item.warranty || '',
+      depotLocation: item.depotLocation || '',
+      packagingType: item.packagingType || '',
+      shippingClass: item.shippingClass || '',
+      tradeDiscount: item.tradeDiscount || '',
     }
     list.unshift(newProduct)
     this.saveProducts(list)
@@ -940,6 +400,12 @@ export const DataStore = {
     let updatedItem = null
     const updated = list.map((p) => {
       if (p.id === targetId || p._id === targetId || p.sku === item.sku || p.name === item.name) {
+        const existingStockOut = Number(p.stockOut || 0)
+        const computedStockIn = item.stockIn !== undefined
+          ? Number(item.stockIn)
+          : (p.stockIn !== undefined ? Number(p.stockIn) : (qty + existingStockOut))
+        const computedStockOut = item.stockOut !== undefined ? Number(item.stockOut) : existingStockOut
+
         updatedItem = {
           ...p,
           ...item,
@@ -953,6 +419,8 @@ export const DataStore = {
           price: '₹' + numPrice.toLocaleString('en-IN'),
           sellingPrice: numPrice,
           stockQuantity: qty,
+          stockIn: computedStockIn,
+          stockOut: computedStockOut,
           stock: stockLabel,
           stockType,
           lowStockThreshold: threshold,
@@ -1080,6 +548,38 @@ export const DataStore = {
     }).catch(() => {})
 
     return newCustomer
+  },
+  updateCustomer(updatedCust) {
+    const list = this.getCustomers()
+    const targetId = updatedCust.id || updatedCust._id
+    const updatedList = list.map((c) => {
+      if (c.id === targetId || c._id === targetId || (updatedCust.name && c.name.toLowerCase() === updatedCust.name.toLowerCase())) {
+        return { ...c, ...updatedCust }
+      }
+      return c
+    })
+    this.saveCustomers(updatedList)
+
+    fetch(`${API_BASE}/api/customers/${encodeURIComponent(targetId || updatedCust.name)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedCust),
+    }).catch(() => {})
+
+    return updatedCust
+  },
+  deleteCustomer(customerId) {
+    const list = this.getCustomers()
+    const target = list.find((c) => c.id === customerId || c._id === customerId)
+    const filtered = list.filter((c) => c.id !== customerId && c._id !== customerId)
+    this.saveCustomers(filtered)
+
+    const idToSync = (target && (target._id || target.id)) || customerId
+    fetch(`${API_BASE}/api/customers/${encodeURIComponent(idToSync)}`, {
+      method: 'DELETE',
+    }).catch(() => {})
+
+    return filtered
   },
 
   // BILLS & DRAFTS
@@ -1265,15 +765,20 @@ export const DataStore = {
     txs.unshift(newTx)
     this.saveTransactions(txs)
 
-    // Deduct stock locally
+    // Deduct stock locally and increment stockOut
     const products = this.getProducts()
     items.forEach((item) => {
-      const p = products.find((prod) => prod.sku === item.sku || prod.name === (item.description || item.name))
+      const p = products.find((prod) => (item.sku && prod.sku === item.sku) || prod.name === (item.description || item.name))
       if (p) {
-        p.stockQuantity = Math.max(0, (p.stockQuantity || 0) - (Number(item.quantity) || 1))
-        this.updateStock(p.id, p.stockQuantity)
+        const qtySold = Number(item.quantity) || 1
+        p.stockQuantity = Math.max(0, (Number(p.stockQuantity) || 0) - qtySold)
+        p.stockOut = (Number(p.stockOut) || 0) + qtySold
+        if (p.stockIn === undefined) {
+          p.stockIn = p.stockQuantity + p.stockOut
+        }
       }
     })
+    this.saveProducts(products)
 
     // Sync sale to MongoDB Backend
     fetch(`${API_BASE}/api/sales`, {

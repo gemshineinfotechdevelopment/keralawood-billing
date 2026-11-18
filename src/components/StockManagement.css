@@ -424,34 +424,130 @@
   letter-spacing: -0.01em;
 }
 
-.actions-cell {
-  text-align: right;
-}
-
-.btn-edit-product {
-  background-color: #FEF1ED;
-  border: 1px solid #EAE0D8;
-  font-size: 11.5px;
+.product-code-pill {
+  font-family: monospace, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas;
+  font-size: 11px;
   font-weight: 700;
-  color: #31190B;
-  cursor: pointer;
-  padding: 5px 12px;
+  color: #5C3A21;
+  background-color: #F8EFE9;
+  border: 1px solid #E5D5C8;
+  padding: 3px 8px;
   border-radius: 6px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  flex-shrink: 0;
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  white-space: nowrap;
-  transition: all 0.15s ease;
+  justify-content: center;
 }
 
-.btn-edit-product:hover {
+.product-display-name-clean {
+  font-size: 13px;
+  font-weight: 700;
+  color: #31190B;
+  display: block;
+  white-space: nowrap;
+}
+
+.stock-cat-pill {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6B574B;
+  background-color: #FAF4F0;
+  border: 1px solid #EDE2DA;
+  padding: 2px 8px;
+  border-radius: 4px;
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.badge-stock-in {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  background-color: #EBF8EE;
+  color: #1B7A32;
+  border: 1px solid #C4EBCB;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+
+.badge-stock-out {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+
+.badge-stock-out.has-out {
+  background-color: #FEF3EB;
+  color: #C05621;
+  border: 1px solid #FBD38D;
+}
+
+.badge-stock-out.zero-out {
+  background-color: #F7FAFC;
+  color: #718096;
+  border: 1px solid #E2E8F0;
+}
+
+.stock-sync-meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.stock-sync-indicator {
+  font-size: 10px;
+  font-weight: 600;
+  color: #2F855A;
+  background-color: #F0FFF4;
+  border: 1px solid #C6F6D5;
+  padding: 2px 7px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.btn-edit-in-products {
+  background-color: #FFF9F5;
+  border: 1px solid #E5D5C8;
+  font-size: 11px;
+  font-weight: 600;
+  color: #5C3A21;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 5px;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-edit-in-products:hover {
   background-color: #C88D58;
   color: #FFFFFF;
   border-color: #C88D58;
 }
 
 .stock-table-row {
-  cursor: pointer;
+  cursor: default;
+  transition: background-color 0.15s ease;
+}
+
+.stock-table-row:hover {
+  background-color: #FCF9F7;
+}
+
+.straight-rupee {
+  font-family: inherit;
+  font-weight: inherit;
+  margin-right: 1px;
 }
 
 /* Pagination Row */

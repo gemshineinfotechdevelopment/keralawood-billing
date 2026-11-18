@@ -332,26 +332,7 @@ export default function Settings() {
             </div>
           </div>
 
-          <div className="settings-form-row-2col">
-            <div className="settings-field-group">
-              <label className="settings-field-label">Bank IFSC Code</label>
-              <input
-                type="text"
-                className="settings-input"
-                value={ifscCode}
-                onChange={(e) => setIfscCode(e.target.value)}
-              />
-            </div>
-            <div className="settings-field-group">
-              <label className="settings-field-label">UPI ID / VPA for Dynamic QR</label>
-              <input
-                type="text"
-                className="settings-input"
-                value={upiId}
-                onChange={(e) => setUpiId(e.target.value)}
-              />
-            </div>
-          </div>
+
         </div>
       </section>
 

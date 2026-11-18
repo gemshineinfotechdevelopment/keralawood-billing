@@ -21,6 +21,8 @@ const productSchema = new mongoose.Schema(
     joineryTechnique: { type: String, default: '' },
     warranty: { type: String, default: '' },
     stockQuantity: { type: Number, default: 0 },
+    stockIn: { type: Number, default: 0 },
+    stockOut: { type: Number, default: 0 },
     lowStockThreshold: { type: Number, default: 0 },
     depotLocation: { type: String, default: '' },
     warehouseBay: { type: String, default: '' },

@@ -342,6 +342,8 @@ app.post('/api/products', async (req, res) => {
       joineryTechnique: data.joineryTechnique || '',
       warranty: data.warranty || '',
       stockQuantity: parseNum(data.stockQuantity, 0),
+      stockIn: parseNum(data.stockIn !== undefined ? data.stockIn : data.stockQuantity, 0),
+      stockOut: parseNum(data.stockOut, 0),
       lowStockThreshold: parseNum(data.lowStockThreshold, 0),
       depotLocation: data.depotLocation || '',
       warehouseBay: data.warehouseBay || '',
@@ -447,6 +449,21 @@ app.put('/api/customers/:id', async (req, res) => {
   }
 });
 
+app.delete('/api/customers/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      await Customer.findByIdAndDelete(id);
+    } else {
+      await Customer.findOneAndDelete({ $or: [{ id }, { name: id }] });
+    }
+    res.json({ success: true, message: 'Customer deleted successfully' });
+  } catch (err) {
+    console.error('[API] /api/customers DELETE error:', err);
+    res.status(500).json({ success: false, message: 'Failed to delete customer', error: err.message });
+  }
+});
+
 // -------------------------------------------------------------
 // SETTINGS API
 // -------------------------------------------------------------
@@ -525,7 +542,7 @@ app.post('/api/sales', async (req, res) => {
       if (item.sku || item.name) {
         await Product.findOneAndUpdate(
           { $or: [{ sku: item.sku }, { name: item.name }] },
-          { $inc: { stockQuantity: -qtyToDeduct } }
+          { $inc: { stockQuantity: -qtyToDeduct, stockOut: qtyToDeduct } }
         );
       }
     }
