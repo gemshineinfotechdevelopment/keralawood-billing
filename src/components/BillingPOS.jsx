@@ -58,6 +58,15 @@ function numberToWordsINR(num) {
   return result ? `${result} Rupees Only` : 'Zero Rupees Only'
 }
 
+const getCustomerInitials = (name) => {
+  if (!name) return 'WC'
+  const parts = String(name).trim().split(/\s+/)
+  if (parts.length >= 2 && parts[0] && parts[1]) {
+    return (parts[0][0] + parts[1][0]).toUpperCase()
+  }
+  return String(name).trim().slice(0, 2).toUpperCase() || 'WC'
+}
+
 export default function BillingPOS({ onNavigateToProducts }) {
   const [bills, setBills] = useState(() => DataStore.getBills())
   const [activeBillId, setActiveBillId] = useState(() => DataStore.getActiveBillId())
@@ -470,9 +479,27 @@ export default function BillingPOS({ onNavigateToProducts }) {
             </button>
           ))}
         </div>
-        <button type="button" className="pos-btn-new-draft" onClick={handleCreateNewBill}>
-          + New Draft Bill
-        </button>
+        <div className="pos-topbar-actions">
+          <button type="button" className="pos-btn-new-draft" onClick={handleCreateNewBill}>
+            + New Draft Bill
+          </button>
+          <button
+            type="button"
+            className="pos-btn-dossier-toggle"
+            onClick={() => setBillDossierOpen(true)}
+            title="Open Slide-over Bill Dossier"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14 2 14 8 20 8" />
+              <line x1="16" y1="13" x2="8" y2="13" />
+              <line x1="16" y1="17" x2="8" y2="17" />
+              <polyline points="10 9 9 9 8 9" />
+            </svg>
+            <span>Bill Dossier</span>
+            <span className="pos-dossier-pill">₹{grandTotal.toLocaleString('en-IN')}</span>
+          </button>
+        </div>
       </div>
 
       {/* Main 2-Column Concept Workspace */}
@@ -806,6 +833,26 @@ export default function BillingPOS({ onNavigateToProducts }) {
             </div>
           </div>
 
+          {/* Prominent Bill Dossier & Checkout Trigger Bar */}
+          <div className="pos-checkout-trigger-bar">
+            <div className="pos-checkout-trigger-info">
+              <span className="pos-checkout-items-count">
+                {items.length} {items.length === 1 ? 'Timber Item' : 'Timber Items'}
+              </span>
+              <span className="pos-checkout-amount">
+                ₹{grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+            </div>
+            <button
+              type="button"
+              className="pos-btn-open-dossier-prominent"
+              onClick={() => setBillDossierOpen(true)}
+            >
+              <span>View Bill Dossier & Checkout</span>
+              <span className="pos-arrow-symbol">→</span>
+            </button>
+          </div>
+
           {/* 4. Collapsible Box: Additional Options */}
           <div className="pos-card pos-additional-options-card">
             <button
@@ -873,119 +920,229 @@ export default function BillingPOS({ onNavigateToProducts }) {
             )}
           </div>
         </div>
+      </div>
 
-        {/* RIGHT COLUMN: BILL SUMMARY Card */}
-        <div className="pos-concept-right-column">
-          <div className="pos-card pos-summary-card">
-            <h3 className="pos-summary-title">BILL SUMMARY</h3>
-
-            <div className="pos-summary-lines">
-              <div className="pos-summary-line">
-                <span className="pos-line-label">Items Subtotal:</span>
-                <span className="pos-line-val">
-                  ₹{itemsSubtotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </span>
-              </div>
-
-              {discount > 0 && (
-                <div className="pos-summary-line pos-discount-line">
-                  <span className="pos-line-label">Trade Discount:</span>
-                  <span className="pos-line-val">-₹{discount.toLocaleString('en-IN')}</span>
-                </div>
-              )}
-
-              {deliveryCharge > 0 && (
-                <div className="pos-summary-line">
-                  <span className="pos-line-label">Delivery Charges:</span>
-                  <span className="pos-line-val">+₹{deliveryCharge.toLocaleString('en-IN')}</span>
-                </div>
-              )}
-
-              {totalGst > 0 && (
-                <div className="pos-summary-line">
-                  <span className="pos-line-label">Tax / GST Breakdown:</span>
-                  <span className="pos-line-val">
-                    +₹{totalGst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+      {/* Slide-over Bill Dossier Drawer */}
+      {billDossierOpen && (
+        <div className="dossier-drawer-backdrop" onClick={() => setBillDossierOpen(false)}>
+          <div className="dossier-drawer-panel bill-dossier-panel" onClick={(e) => e.stopPropagation()}>
+            {/* Drawer Header */}
+            <div className="dossier-drawer-header">
+              <div className="dossier-drawer-header-top">
+                <div className="dossier-badge-wrap">
+                  <span className="dossier-eyebrow">BILL DOSSIER</span>
+                  <span className="dossier-badge-pill">{invoiceNumber || 'INV-1001'}</span>
+                  <span className={`bill-status-pill status-${(paymentStatus || 'pending').toLowerCase()}`}>
+                    {paymentStatus}
                   </span>
                 </div>
-              )}
-            </div>
-
-            <div className="pos-summary-divider" />
-
-            {/* Grand Total & Dynamic In-Words */}
-            <div className="pos-grand-total-block">
-              <div className="pos-grand-total-row">
-                <span className="pos-grand-label">GRAND TOTAL:</span>
-                <span className="pos-grand-amount">
-                  ₹{grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </span>
-              </div>
-              <div className="pos-grand-words">
-                <em>{numberToWordsINR(grandTotal)}</em>
-              </div>
-            </div>
-
-            {/* Payment Status Segmented Control */}
-            <div className="pos-payment-status-block">
-              <label className="pos-label">Payment Status</label>
-              <div className="pos-payment-status-segmented">
-                {['Pending', 'Partial', 'Paid'].map((st) => (
-                  <button
-                    key={st}
-                    type="button"
-                    className={`pos-status-tab ${paymentStatus === st ? 'active' : ''}`}
-                    onClick={() => updateCurrentBill({ paymentStatus: st })}
-                  >
-                    {st}
-                  </button>
-                ))}
+                <button
+                  type="button"
+                  className="dossier-close-btn"
+                  onClick={() => setBillDossierOpen(false)}
+                  aria-label="Close bill dossier"
+                >
+                  ✕
+                </button>
               </div>
 
-              {/* Partial Amount Input */}
-              {paymentStatus === 'Partial' && (
-                <div className="pos-partial-input-wrap">
-                  <div className="pos-input-group">
-                    <label className="pos-label">Amount Paid (₹)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      max={grandTotal}
-                      className="pos-input"
-                      value={amountPaid}
-                      onChange={(e) => updateCurrentBill({ amountPaid: Number(e.target.value) || 0 })}
-                    />
-                  </div>
-                  <div className="pos-partial-balance">
-                    <span>Balance Due:</span>
-                    <strong>₹{balanceDue.toLocaleString('en-IN')}</strong>
+              {/* Customer Profile Banner */}
+              <div className="bill-dossier-customer-card">
+                <div className="bill-dossier-cust-avatar">
+                  {getCustomerInitials(customer?.name)}
+                </div>
+                <div className="bill-dossier-cust-info">
+                  <h3 className="bill-dossier-cust-name">{customer.name || 'Walk-in Customer'}</h3>
+                  <div className="bill-dossier-cust-meta">
+                    {customer.phone && <span>📞 {customer.phone}</span>}
+                    {customer.gstin && <span>🏛️ GSTIN: {customer.gstin}</span>}
+                    {customer.address && <span>📍 {customer.address}</span>}
                   </div>
                 </div>
-              )}
-
-              {/* Payment Mode Selector */}
-              <div className="pos-payment-mode-wrap">
-                <label className="pos-label">Payment Mode</label>
-                <select
-                  className="pos-select"
-                  value={paymentMode}
-                  onChange={(e) => updateCurrentBill({ paymentMode: e.target.value })}
-                >
-                  <option value="UPI">UPI / QR Transfer</option>
-                  <option value="Cash">Cash at Yard</option>
-                  <option value="Bank Transfer">Bank Wire (NEFT/RTGS)</option>
-                  <option value="Cheque">Commercial Cheque</option>
-                  <option value="Card">Credit / Debit Card</option>
-                </select>
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="pos-summary-actions">
+            {/* Drawer Body */}
+            <div className="dossier-drawer-body">
+              {/* Hero Grand Total Box */}
+              <div className="bill-dossier-grand-card">
+                <div className="bill-dossier-grand-header">
+                  <span className="bill-dossier-grand-label">GRAND TOTAL</span>
+                  <span className="bill-dossier-item-tag">{items.length} {items.length === 1 ? 'Item' : 'Items'}</span>
+                </div>
+                <div className="bill-dossier-grand-price">
+                  ₹{grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </div>
+                <div className="bill-dossier-in-words">
+                  <em>{numberToWordsINR(grandTotal)}</em>
+                </div>
+              </div>
+
+              {/* Itemized Order Breakdown */}
+              <div className="dossier-section-box">
+                <div className="bill-dossier-sec-header">
+                  <h4 className="dossier-section-heading" style={{ margin: 0, border: 'none', padding: 0 }}>
+                    Itemized Order Breakdown
+                  </h4>
+                  <span className="bill-dossier-sec-sub">Sivakasi Yard Depot</span>
+                </div>
+                <div className="bill-dossier-items-list">
+                  {items.map((it, idx) => {
+                    const rowLine = (Number(it.quantity) || 0) * (Number(it.price) || 0)
+                    return (
+                      <div key={it.id || idx} className="bill-dossier-item-row">
+                        <div className="bill-dossier-item-left">
+                          <span className="bill-dossier-item-num">#{idx + 1}</span>
+                          <div className="bill-dossier-item-details">
+                            <span className="bill-dossier-item-name">{it.description || 'Timber Item'}</span>
+                            <span className="bill-dossier-item-specs">
+                              {it.woodSpecies ? `${it.woodSpecies} ` : ''}
+                              {it.finish ? `• ${it.finish} ` : ''}
+                              • Qty: {it.quantity || 1} × ₹{(Number(it.price) || 0).toLocaleString('en-IN')}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="bill-dossier-item-right">
+                          <span className="bill-dossier-item-line">₹{rowLine.toLocaleString('en-IN')}</span>
+                          {it.gstRate > 0 && <span className="bill-dossier-item-tax">+{it.gstRate}% GST</span>}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Financial Calculation Breakdown */}
+              <div className="dossier-section-box">
+                <h4 className="dossier-section-heading">Financial Summary</h4>
+                <div className="bill-dossier-calc-lines">
+                  <div className="bill-dossier-calc-line">
+                    <span className="bill-dossier-calc-label">Items Subtotal:</span>
+                    <span className="bill-dossier-calc-val">
+                      ₹{itemsSubtotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
+
+                  {discount > 0 && (
+                    <div className="bill-dossier-calc-line calc-discount">
+                      <span className="bill-dossier-calc-label">Trade Discount:</span>
+                      <span className="bill-dossier-calc-val">-₹{discount.toLocaleString('en-IN')}</span>
+                    </div>
+                  )}
+
+                  {deliveryCharge > 0 && (
+                    <div className="bill-dossier-calc-line">
+                      <span className="bill-dossier-calc-label">Delivery Charges:</span>
+                      <span className="bill-dossier-calc-val">+₹{deliveryCharge.toLocaleString('en-IN')}</span>
+                    </div>
+                  )}
+
+                  {totalGst > 0 && (
+                    <div className="bill-dossier-calc-line">
+                      <span className="bill-dossier-calc-label">Tax / GST Breakdown:</span>
+                      <span className="bill-dossier-calc-val">
+                        +₹{totalGst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  )}
+
+                  <div className="bill-dossier-divider" />
+
+                  <div className="bill-dossier-calc-line calc-net-total">
+                    <span className="bill-dossier-calc-label bold">Final Payable Total:</span>
+                    <span className="bill-dossier-calc-val bold">
+                      ₹{grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Payment Settlement Section */}
+              <div className="dossier-section-box">
+                <h4 className="dossier-section-heading">Payment Settlement</h4>
+                <div className="pos-payment-status-block" style={{ marginBottom: '12px' }}>
+                  <label className="pos-label">Payment Status</label>
+                  <div className="pos-payment-status-segmented">
+                    {['Pending', 'Partial', 'Paid'].map((st) => (
+                      <button
+                        key={st}
+                        type="button"
+                        className={`pos-status-tab ${paymentStatus === st ? 'active' : ''}`}
+                        onClick={() => updateCurrentBill({ paymentStatus: st })}
+                      >
+                        {st}
+                      </button>
+                    ))}
+                  </div>
+
+                  {paymentStatus === 'Partial' && (
+                    <div className="pos-partial-input-wrap">
+                      <div className="pos-input-group">
+                        <label className="pos-label">Amount Paid (₹)</label>
+                        <input
+                          type="number"
+                          min="0"
+                          max={grandTotal}
+                          className="pos-input"
+                          value={amountPaid}
+                          onChange={(e) => updateCurrentBill({ amountPaid: Number(e.target.value) || 0 })}
+                        />
+                      </div>
+                      <div className="pos-partial-balance">
+                        <span>Balance Due:</span>
+                        <strong>₹{balanceDue.toLocaleString('en-IN')}</strong>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="pos-payment-mode-wrap">
+                    <label className="pos-label">Payment Mode</label>
+                    <select
+                      className="pos-select"
+                      value={paymentMode}
+                      onChange={(e) => updateCurrentBill({ paymentMode: e.target.value })}
+                    >
+                      <option value="UPI">UPI / QR Transfer</option>
+                      <option value="Cash">Cash at Yard</option>
+                      <option value="Bank Transfer">Bank Wire (NEFT/RTGS)</option>
+                      <option value="Cheque">Commercial Cheque</option>
+                      <option value="Card">Credit / Debit Card</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Invoice Metadata & Dates */}
+              <div className="dossier-section-box">
+                <h4 className="dossier-section-heading">Billing Metadata</h4>
+                <div className="dossier-details-grid">
+                  <div className="dossier-detail-row">
+                    <span className="dossier-label">INVOICE DATE</span>
+                    <span className="dossier-value">{invoiceDate || '-'}</span>
+                  </div>
+                  <div className="dossier-detail-row">
+                    <span className="dossier-label">DUE DATE</span>
+                    <span className="dossier-value">{dueDate || '-'}</span>
+                  </div>
+                  {notes && (
+                    <div className="dossier-detail-row full-width">
+                      <span className="dossier-label">NOTE / INSTRUCTION</span>
+                      <span className="dossier-value desc-text">{notes}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Drawer Footer Actions */}
+            <div className="dossier-drawer-actions bill-dossier-actions">
               <button
                 type="button"
                 className="pos-btn-save-bill"
-                onClick={() => handleSaveBill(false)}
+                onClick={() => {
+                  handleSaveBill(false)
+                  setBillDossierOpen(false)
+                }}
               >
                 💾 Save Bill
               </button>
@@ -993,14 +1150,25 @@ export default function BillingPOS({ onNavigateToProducts }) {
               <button
                 type="button"
                 className="pos-btn-save-print"
-                onClick={() => handleSaveBill(true)}
+                onClick={() => {
+                  handleSaveBill(true)
+                  setBillDossierOpen(false)
+                }}
               >
                 👁️ Save & Print Preview
+              </button>
+
+              <button
+                type="button"
+                className="btn-dossier-close-full"
+                onClick={() => setBillDossierOpen(false)}
+              >
+                Close Dossier
               </button>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Printable Invoice Modal Dossier */}
       {invoiceModalOpen && (

@@ -558,17 +558,90 @@
   letter-spacing: -0.01em;
 }
 
-.status-badge-dispatched {
-  background-color: #E2F5E9;
-  color: #166534;
+.sales-table tbody tr.dashboard-sales-row {
+  cursor: pointer;
+}
+
+.sales-table tbody tr.dashboard-sales-row:hover {
+  background-color: #FDF8F5;
+}
+
+.status-badge {
   font-size: 10.5px;
-  font-weight: 600;
+  font-weight: 700;
   padding: 3px 10px;
   border-radius: 9999px;
   display: inline-flex;
   align-items: center;
   gap: 5px;
+}
+
+.status-badge.status-badge-paid {
+  background-color: #E2F5E9;
+  color: #15803D;
   border: 1px solid #CEEBD7;
+}
+
+.status-badge.status-badge-dispatched {
+  background-color: #E0F2FE;
+  color: #0369A1;
+  border: 1px solid #BAE6FD;
+}
+
+.status-badge.status-badge-partial {
+  background-color: #FEF3C7;
+  color: #B45309;
+  border: 1px solid #FDE68A;
+}
+
+.status-badge.status-badge-pending {
+  background-color: #FEE2E2;
+  color: #B91C1C;
+  border: 1px solid #FECACA;
+}
+
+.dashboard-empty-sales-cell {
+  padding: 44px 22px;
+  text-align: center;
+}
+
+.dashboard-empty-sales-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.dashboard-empty-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #31190B;
+  margin: 0;
+}
+
+.dashboard-empty-subtitle {
+  font-size: 12px;
+  color: #8A7B72;
+  max-width: 440px;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.btn-dashboard-create-bill {
+  margin-top: 8px;
+  padding: 7px 18px;
+  background-color: #31190B;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.btn-dashboard-create-bill:hover {
+  background-color: #4A2E18;
 }
 
 /* Pagination Bar */

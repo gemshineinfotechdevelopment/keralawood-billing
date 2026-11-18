@@ -1,38 +1,61 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { DataStore } from '../services/dataStore'
 import './Dashboard.css'
 
-const DEFAULT_SALES = [
-  { invoice: 'INV-1024', customer: 'Suresh Kumar & Sons', location: 'Sivakasi Town', items: '1x Teak Dining Table, 6x Chairs', amount: '₹60,500', status: 'Dispatched' },
-  { invoice: 'INV-1023', customer: 'Dr. Thomas Varghese', location: 'Sivakasi Division', items: '1x Solid Rosewood King Bed, 2x Nightstands', amount: '₹85,200', status: 'Dispatched' },
-  { invoice: 'INV-1022', customer: 'Priya Lakshmi Textiles', location: 'Kamaraj Road, Sivakasi', items: '1x Teakwood 3-Seater Sofa, 1x Coffee Table', amount: '₹58,500', status: 'Dispatched' },
-  { invoice: 'INV-1021', customer: 'Deepak Kurian & Architects', location: 'Sivakasi Guild', items: '1x Jackfruit Live-Edge Boardroom Desk', amount: '₹95,000', status: 'Dispatched' },
-  { invoice: 'INV-1020', customer: 'Rajeshwari Ammal', location: 'Main Bazaar, Sivakasi', items: '1x Kerala Traditional Mandapam Pooja Unit', amount: '₹34,000', status: 'Dispatched' },
-  { invoice: 'INV-1019', customer: 'Anoop Menon', location: 'Sivakasi Colony', items: '1x Teakwood Queen Hydraulic Storage Bed', amount: '₹62,000', status: 'Dispatched' },
-  { invoice: 'INV-1018', customer: 'Sri Meenakshi Printers', location: 'Industrial Area, Sivakasi', items: '1x Rosewood 3-Door Master Wardrobe', amount: '₹68,000', status: 'Dispatched' },
-  { invoice: 'INV-1017', customer: 'Murugan Modern Furnishings', location: 'Bypass Road, Sivakasi', items: '4x High-Back Ergonomic Teak Study Chairs', amount: '₹34,000', status: 'Dispatched' },
-  { invoice: 'INV-1016', customer: 'Senthil Nathan', location: 'Police Station Rd, Sivakasi', items: '1x Handcrafted Wooden Oonjal Swing', amount: '₹48,000', status: 'Dispatched' },
-  { invoice: 'INV-1015', customer: 'Dr. K. Radhakrishnan', location: 'Gandhi Nagar, Sivakasi', items: '1x Solid Rosewood Dressing Table with Mirror', amount: '₹29,500', status: 'Dispatched' },
-  { invoice: 'INV-1014', customer: 'Anandha Bhavan Residency', location: 'Station Rd, Sivakasi', items: '1x Teakwood 4-Seater Dining Set', amount: '₹36,000', status: 'Dispatched' },
-  { invoice: 'INV-1013', customer: 'Vignesh Construction Co.', location: 'Ring Road, Sivakasi', items: '1x Mahogany 6-Shelf Library Display Rack', amount: '₹21,000', status: 'Dispatched' },
-  { invoice: 'INV-1012', customer: 'Karthik Raja', location: 'Teachers Colony, Sivakasi', items: '1x Teakwood TV Media Entertainment Console', amount: '₹26,500', status: 'Dispatched' },
-  { invoice: 'INV-1011', customer: 'Selvi Thirumalai', location: 'Sankarankovil Rd, Sivakasi', items: '1x Traditional Hand-Carved Rocking Chair', amount: '₹12,800', status: 'Dispatched' },
-  { invoice: 'INV-1010', customer: 'Vijayalakshmi Sweets', location: 'South Car Street, Sivakasi', items: '2x Teak Ergonomic Armchairs', amount: '₹29,000', status: 'Dispatched' },
-  { invoice: 'INV-1009', customer: 'Jayaram Brothers', location: 'Thirutangal Rd, Sivakasi', items: '1x Handcrafted Cane Bookcase', amount: '₹18,500', status: 'Dispatched' },
-  { invoice: 'INV-1008', customer: 'Dr. N. Soundararajan', location: 'Hospital Road, Sivakasi', items: '1x Anjili Heritage Brass Chest', amount: '₹22,500', status: 'Dispatched' },
-  { invoice: 'INV-1007', customer: 'Malarvizhi Interiors', location: 'North Car Street, Sivakasi', items: '1x Live-Edge Teak Entryway Console Table', amount: '₹19,800', status: 'Dispatched' },
-  { invoice: 'INV-1006', customer: 'Balaji Agency', location: 'Sattur Road, Sivakasi', items: '1x Solid Wood 3-Tier Louvered Shoe Rack', amount: '₹9,500', status: 'Dispatched' },
-  { invoice: 'INV-1005', customer: 'Manickam & Sons Traders', location: 'Market Yard, Sivakasi', items: '1x Vintage 5-Drawer Wooden Chest', amount: '₹31,000', status: 'Dispatched' },
-  { invoice: 'INV-1004', customer: 'Sree Saravana Match Works', location: 'Sivakasi Depot', items: '2x Teakwood Solid Dining Benches', amount: '₹23,000', status: 'Dispatched' },
-  { invoice: 'INV-1003', customer: 'K. Vasanth Kumar', location: 'Velayutham Colony, Sivakasi', items: '2x Wooden Bar Stools with Swivel Top', amount: '₹13,600', status: 'Dispatched' },
-  { invoice: 'INV-1002', customer: 'Gowri Shankar Mills', location: 'Vembakottai Rd, Sivakasi', items: '1x Solid Teak Side Server Credenza', amount: '₹24,000', status: 'Dispatched' },
-  { invoice: 'INV-1001', customer: 'Shanmuga Priya', location: 'Alagappan Nagar, Sivakasi', items: '2x Rosewood Dual-Drawer Bedside Nightstands', amount: '₹14,400', status: 'Dispatched' },
-]
+const normalizeSaleItem = (sale, idx) => {
+  const invoice = sale.invoice || sale.invoiceNumber || sale.id || `INV-${1000 + idx}`
+  const customer = sale.customer?.name || (typeof sale.customer === 'string' && sale.customer.trim() ? sale.customer : 'Walk-in Customer')
+  const location = sale.location || sale.project || sale.customerAddress || sale.customer?.address || sale.customer?.location || 'Sivakasi Depot'
+
+  let items = ''
+  if (typeof sale.items === 'string' && sale.items.trim()) {
+    items = sale.items
+  } else if (typeof sale.item === 'string' && sale.item.trim()) {
+    items = sale.item
+  } else if (Array.isArray(sale.items) && sale.items.length > 0) {
+    items = sale.items.map((i) => `${i.quantity || 1}x ${i.description || i.name || 'Timber'}`).join(', ')
+  } else if (Array.isArray(sale.itemDetails) && sale.itemDetails.length > 0) {
+    items = sale.itemDetails.map((i) => `${i.quantity || 1}x ${i.description || i.name || 'Timber'}`).join(', ')
+  } else {
+    items = sale.wood ? `${sale.wood} Order` : 'Artisanal Timber Order'
+  }
+
+  const rawAmount = typeof sale.rawAmount === 'number'
+    ? sale.rawAmount
+    : typeof sale.amount === 'number'
+    ? sale.amount
+    : Number(String(sale.amount || 0).replace(/[^0-9.]/g, '')) || 0
+  const formattedAmount = '₹' + rawAmount.toLocaleString('en-IN')
+
+  const statusRaw = sale.status || sale.paymentStatus || 'Paid'
+  const statusLower = statusRaw.toLowerCase()
+  let statusType = 'paid'
+  if (statusLower.includes('pending')) {
+    statusType = 'pending'
+  } else if (statusLower.includes('partial')) {
+    statusType = 'partial'
+  } else if (statusLower.includes('dispatch')) {
+    statusType = 'dispatched'
+  }
+
+  return {
+    id: sale.id || sale._id || invoice || `tx-${idx}`,
+    invoice,
+    customer,
+    location,
+    items,
+    rawAmount,
+    amount: formattedAmount,
+    status: statusRaw,
+    statusType,
+    original: sale,
+  }
+}
 
 export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice, onNavigate }) {
   const [recentSales, setRecentSales] = useState(() => {
     const txs = DataStore.getTransactions()
-    return Array.isArray(txs) && txs.length > 0 ? txs : DEFAULT_SALES
+    return Array.isArray(txs) ? txs : []
   })
   const [products, setProducts] = useState(() => DataStore.getProducts())
   const [reorderedMap, setReorderedMap] = useState({})
@@ -45,7 +68,7 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
     const handleStoreUpdate = () => {
       setProducts(DataStore.getProducts())
       const txs = DataStore.getTransactions()
-      if (Array.isArray(txs) && txs.length > 0) {
+      if (Array.isArray(txs)) {
         setRecentSales(txs)
       }
     }
@@ -53,13 +76,15 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
     return () => window.removeEventListener('timber_store_updated', handleStoreUpdate)
   }, [])
 
+  // Normalized dynamic sales list
+  const normalizedSales = useMemo(() => {
+    return recentSales.map((s, idx) => normalizeSaleItem(s, idx))
+  }, [recentSales])
+
   // Dynamic calculations from live data
-  const totalSalesSum = recentSales.reduce((acc, s) => {
-    const raw = typeof s.amount === 'number'
-      ? s.amount
-      : Number(String(s.amount || '').replace(/[^0-9]/g, '')) || 0
-    return acc + raw
-  }, 0)
+  const totalSalesSum = useMemo(() => {
+    return normalizedSales.reduce((acc, s) => acc + (s.rawAmount || 0), 0)
+  }, [normalizedSales])
 
   const totalStockCount = products.reduce((acc, p) => acc + (Number(p.stockQuantity) || 0), 0)
 
@@ -103,20 +128,32 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
 
   useEffect(() => {
     // 1. Fetch dashboard aggregated stats and recent sales from MongoDB
-    fetch('/api/dashboard')
+    fetch('/api/sales')
       .then((res) => {
-        if (!res.ok) throw new Error('Network response not ok')
+        if (!res.ok) throw new Error('Sales network response not ok')
         return res.json()
       })
       .then((data) => {
-        if (data?.success) {
-          if (Array.isArray(data.recentSales) && data.recentSales.length > 0) {
-            setRecentSales(data.recentSales)
-          }
+        if (data?.success && Array.isArray(data.sales) && data.sales.length > 0) {
+          setRecentSales(data.sales)
+          DataStore.saveTransactions(data.sales)
+        } else {
+          // If /api/sales is empty, try /api/dashboard
+          return fetch('/api/dashboard')
+            .then((r) => r.json())
+            .then((d) => {
+              if (d?.success && Array.isArray(d.recentSales) && d.recentSales.length > 0) {
+                setRecentSales(d.recentSales)
+              }
+            })
         }
       })
       .catch((err) => {
-        console.warn('[Dashboard] Backend API offline or unreachable, using fallback dataset:', err.message)
+        console.warn('[Dashboard] Backend API offline or unreachable, using local dataStore:', err.message)
+        const local = DataStore.getTransactions()
+        if (Array.isArray(local) && local.length > 0) {
+          setRecentSales(local)
+        }
       })
 
     // 2. Fetch live products from MongoDB
@@ -131,14 +168,19 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
       .catch(() => {})
   }, [])
 
-  const filteredSales = recentSales.filter((sale) => {
-    const q = salesSearch.toLowerCase()
-    return (
-      (sale.customer || '').toLowerCase().includes(q) ||
-      (sale.invoice || '').toLowerCase().includes(q) ||
-      (sale.items || '').toLowerCase().includes(q)
-    )
-  })
+  const filteredSales = useMemo(() => {
+    const q = salesSearch.toLowerCase().trim()
+    if (!q) return normalizedSales
+    return normalizedSales.filter((sale) => {
+      return (
+        sale.customer.toLowerCase().includes(q) ||
+        sale.invoice.toLowerCase().includes(q) ||
+        sale.items.toLowerCase().includes(q) ||
+        sale.location.toLowerCase().includes(q) ||
+        sale.status.toLowerCase().includes(q)
+      )
+    })
+  }, [normalizedSales, salesSearch])
 
   const totalSalesPages = Math.ceil(filteredSales.length / salesPerPage) || 1
   const displayedSales = filteredSales.slice(
@@ -298,34 +340,107 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
               </tr>
             </thead>
             <tbody>
-            {displayedSales.map((sale) => (
-              <tr key={sale.invoice}>
-                <td className="invoice-col">{sale.invoice}</td>
-                <td className="customer-col">
-                  <span className="customer-name">{sale.customer}</span>
-                  <span className="customer-location">{sale.location}</span>
-                </td>
-                <td className="items-col">{sale.items}</td>
-                <td className="amount-col">{sale.amount}</td>
-                <td>
-                  <span className="status-badge-dispatched">
-                    <svg
-                      width="11"
-                      height="11"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                    <span>{sale.status}</span>
-                  </span>
+            {displayedSales.length === 0 ? (
+              <tr>
+                <td colSpan="5" className="dashboard-empty-sales-cell">
+                  <div className="dashboard-empty-sales-wrap">
+                    <p className="dashboard-empty-title">
+                      {salesSearch ? `No sales found matching "${salesSearch}"` : 'No recent sales transactions recorded.'}
+                    </p>
+                    <p className="dashboard-empty-subtitle">
+                      As bills and invoices are completed in Billing & POS, transactions will appear dynamically here.
+                    </p>
+                    <button type="button" className="btn-dashboard-create-bill" onClick={onNavigateToNewBill}>
+                      + Create New Bill
+                    </button>
+                  </div>
                 </td>
               </tr>
-            ))}
+            ) : (
+              displayedSales.map((sale, idx) => (
+                <tr
+                  key={sale.id || sale.invoice || idx}
+                  className="dashboard-sales-row"
+                  onClick={() => {
+                    if (onNavigate) onNavigate('Billing & POS')
+                  }}
+                  title="View transaction in Billing & POS"
+                >
+                  <td className="invoice-col">{sale.invoice}</td>
+                  <td className="customer-col">
+                    <span className="customer-name">{sale.customer}</span>
+                    <span className="customer-location">{sale.location}</span>
+                  </td>
+                  <td className="items-col">{sale.items}</td>
+                  <td className="amount-col">{sale.amount}</td>
+                  <td>
+                    <span className={`status-badge status-badge-${sale.statusType}`}>
+                      {sale.statusType === 'paid' && (
+                        <svg
+                          width="11"
+                          height="11"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      )}
+                      {sale.statusType === 'pending' && (
+                        <svg
+                          width="11"
+                          height="11"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <circle cx="12" cy="12" r="10" />
+                          <polyline points="12 6 12 12 16 14" />
+                        </svg>
+                      )}
+                      {sale.statusType === 'partial' && (
+                        <svg
+                          width="11"
+                          height="11"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                        </svg>
+                      )}
+                      {sale.statusType === 'dispatched' && (
+                        <svg
+                          width="11"
+                          height="11"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <rect x="1" y="3" width="15" height="13" />
+                          <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
+                          <circle cx="5.5" cy="18.5" r="2.5" />
+                          <circle cx="18.5" cy="18.5" r="2.5" />
+                        </svg>
+                      )}
+                      <span>{sale.status}</span>
+                    </span>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

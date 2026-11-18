@@ -1187,17 +1187,12 @@ export const DataStore = {
 
   // TRANSACTIONS / SALES
   getTransactions() {
-    const raw = loadFromStorage(STORAGE_KEYS.TRANSACTIONS, INITIAL_TRANSACTIONS)
-    const cleaned = (raw || []).filter((tx) => {
-      const yr = String(tx.year || '')
-      const dt = String(tx.date || '')
-      return yr !== '2024' && !dt.includes('2024')
-    })
-    if (cleaned.length < 20) {
-      saveToStorage(STORAGE_KEYS.TRANSACTIONS, INITIAL_TRANSACTIONS)
-      return INITIAL_TRANSACTIONS
+    const raw = loadFromStorage(STORAGE_KEYS.TRANSACTIONS, null)
+    if (raw && Array.isArray(raw)) {
+      return raw
     }
-    return cleaned
+    saveToStorage(STORAGE_KEYS.TRANSACTIONS, INITIAL_TRANSACTIONS)
+    return INITIAL_TRANSACTIONS
   },
   saveTransactions(txs) {
     saveToStorage(STORAGE_KEYS.TRANSACTIONS, txs)
@@ -1249,9 +1244,12 @@ export const DataStore = {
       customerPhone: bill.customer?.phone || '',
       customerAddress: bill.customer?.address || '',
       customerGstin: bill.customer?.gstin || '',
-      project: bill.customer?.location || 'Sivakasi Yard Sale',
+      project: bill.customer?.location || bill.customer?.address || 'Sivakasi Yard Sale',
+      location: bill.customer?.location || bill.customer?.address || 'Sivakasi Yard Sale',
       wood: items[0]?.woodSpecies || 'Teak Wood',
       item: itemNames || 'Artisan Furniture Order',
+      items: itemNames || 'Artisan Furniture Order',
+      itemDetails: items,
       volume: totalVolume || 36,
       amount: grandTotal.toLocaleString('en-IN'),
       rawAmount: grandTotal,

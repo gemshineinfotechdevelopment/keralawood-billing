@@ -126,18 +126,13 @@
   background-color: #F8EFE9;
 }
 
-/* 2-Column Workspace */
+/* Workspace Layout */
 .pos-concept-workspace {
-  display: grid;
-  grid-template-columns: 1fr 340px;
-  gap: 20px;
-  align-items: start;
-}
-
-@media (max-width: 1024px) {
-  .pos-concept-workspace {
-    grid-template-columns: 1fr;
-  }
+  display: flex;
+  flex-direction: column;
+  max-width: 1100px;
+  width: 100%;
+  margin: 0 auto;
 }
 
 /* Base Card Styling */
@@ -1191,5 +1186,571 @@
     top: 0;
     width: 100%;
     padding: 0;
+  }
+}
+
+/* ===================================================
+   BILL DOSSIER & CHECKOUT TRIGGER BAR
+   =================================================== */
+
+.pos-btn-dossier-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 14px;
+  background-color: #31190B;
+  color: #FFFFFF;
+  border: 1px solid #31190B;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(49, 25, 11, 0.15);
+}
+
+.pos-btn-dossier-toggle:hover {
+  background-color: #4A2E18;
+  border-color: #4A2E18;
+}
+
+.pos-dossier-pill {
+  font-size: 10.5px;
+  font-weight: 700;
+  background-color: rgba(200, 141, 88, 0.35);
+  color: #FAF6F2;
+  padding: 2px 7px;
+  border-radius: 10px;
+}
+
+.pos-checkout-trigger-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background-color: #FDF8F5;
+  border: 1.5px solid #EAE0D8;
+  border-radius: 10px;
+  padding: 14px 20px;
+  margin-top: 14px;
+  box-shadow: 0 1px 3px rgba(49, 25, 11, 0.04);
+}
+
+.pos-checkout-trigger-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.pos-checkout-items-count {
+  font-size: 11px;
+  font-weight: 700;
+  color: #8C5325;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pos-checkout-amount {
+  font-size: 22px;
+  font-weight: 800;
+  color: #31190B;
+  letter-spacing: -0.01em;
+}
+
+.pos-btn-open-dossier-prominent {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 22px;
+  background-color: #31190B;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.15s ease, transform 0.05s ease;
+  box-shadow: 0 3px 8px rgba(49, 25, 11, 0.2);
+}
+
+.pos-btn-open-dossier-prominent:hover {
+  background-color: #4A2E18;
+}
+
+.pos-btn-open-dossier-prominent:active {
+  transform: translateY(1px);
+}
+
+.pos-arrow-symbol {
+  font-size: 15px;
+  transition: transform 0.15s ease;
+}
+
+.pos-btn-open-dossier-prominent:hover .pos-arrow-symbol {
+  transform: translateX(3px);
+}
+
+.pos-summary-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.pos-summary-header-row .pos-summary-title {
+  margin: 0;
+}
+
+.pos-btn-expand-dossier {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #8C5325;
+  background-color: #FEF6EE;
+  border: 1px solid #F5D7BA;
+  border-radius: 5px;
+  padding: 3px 9px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pos-btn-expand-dossier:hover {
+  background-color: #FCE8D5;
+  border-color: #C88D58;
+  color: #31190B;
+}
+
+/* ===================================================
+   SLIDE-OVER BILL DOSSIER DRAWER
+   =================================================== */
+
+.dossier-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(49, 25, 11, 0.48);
+  backdrop-filter: blur(3px);
+  z-index: 99999;
+  display: flex;
+  justify-content: flex-end;
+  animation: fadeInBackdrop 0.25s ease-out;
+}
+
+@keyframes fadeInBackdrop {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.dossier-drawer-panel.bill-dossier-panel {
+  width: 520px;
+  max-width: 95vw;
+  height: 100vh;
+  background-color: #FFFDFB;
+  box-shadow: -10px 0 35px rgba(49, 25, 11, 0.22);
+  border-left: 1px solid #EAE0D8;
+  display: flex;
+  flex-direction: column;
+  animation: slideInRight 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.dossier-drawer-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid #F1E7E0;
+  background-color: #FFF9F5;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.dossier-drawer-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dossier-badge-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dossier-eyebrow {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #B07D4F;
+  text-transform: uppercase;
+}
+
+.dossier-badge-pill {
+  font-size: 10.5px;
+  font-weight: 700;
+  font-family: monospace;
+  background-color: #F3E6DC;
+  color: #5C3A21;
+  padding: 2px 8px;
+  border-radius: 12px;
+  border: 1px solid rgba(200, 141, 88, 0.25);
+}
+
+.bill-status-pill {
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.bill-status-pill.status-paid {
+  background-color: #DCFCE7;
+  color: #15803D;
+  border: 1px solid #86EFAC;
+}
+
+.bill-status-pill.status-partial {
+  background-color: #FEF3C7;
+  color: #B45309;
+  border: 1px solid #FDE68A;
+}
+
+.bill-status-pill.status-pending {
+  background-color: #FEE2E2;
+  color: #B91C1C;
+  border: 1px solid #FECACA;
+}
+
+.dossier-close-btn {
+  background: transparent;
+  border: none;
+  font-size: 16px;
+  color: #8C7B72;
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.dossier-close-btn:hover {
+  background-color: #EFE4DC;
+  color: #31190B;
+}
+
+/* Customer Profile Banner inside Dossier Header */
+.bill-dossier-customer-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background-color: #FFFFFF;
+  border: 1px solid #EFE4DC;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(49, 25, 11, 0.03);
+}
+
+.bill-dossier-cust-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background-color: #31190B;
+  color: #C88D58;
+  border: 1px solid rgba(200, 141, 88, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.bill-dossier-cust-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.bill-dossier-cust-name {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #31190B;
+  margin: 0;
+  line-height: 1.25;
+}
+
+.bill-dossier-cust-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 11px;
+  color: #7D6C63;
+}
+
+/* Dossier Body & Scroll Container */
+.dossier-drawer-body {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Grand Total Hero Card in Dossier */
+.bill-dossier-grand-card {
+  background: linear-gradient(135deg, #31190B 0%, #4A2E18 100%);
+  color: #FFFFFF;
+  border-radius: 10px;
+  padding: 18px 20px;
+  box-shadow: 0 4px 14px rgba(49, 25, 11, 0.18);
+  display: flex;
+  flex-direction: column;
+}
+
+.bill-dossier-grand-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.bill-dossier-grand-label {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #E2CEBE;
+  text-transform: uppercase;
+}
+
+.bill-dossier-item-tag {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #FAF6F2;
+  background-color: rgba(255, 255, 255, 0.16);
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+.bill-dossier-grand-price {
+  font-size: 28px;
+  font-weight: 800;
+  color: #FAF6F2;
+  letter-spacing: -0.02em;
+  margin: 8px 0 4px 0;
+}
+
+.bill-dossier-in-words {
+  font-size: 11.5px;
+  color: #D5C0B3;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+/* Dossier Section Box */
+.dossier-section-box {
+  background-color: #FFFFFF;
+  border: 1px solid #F0E6DE;
+  border-radius: 8px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 2px rgba(49, 25, 11, 0.02);
+}
+
+.bill-dossier-sec-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #F6EFEA;
+}
+
+.bill-dossier-sec-sub {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #9C877C;
+}
+
+.dossier-section-heading {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #31190B;
+  margin: 0 0 10px 0;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #F6EFEA;
+  letter-spacing: -0.01em;
+}
+
+/* Items List in Dossier */
+.bill-dossier-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bill-dossier-item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 10px;
+  background-color: #FAF6F2;
+  border-radius: 6px;
+  border: 1px solid #EFE4DC;
+  gap: 12px;
+}
+
+.bill-dossier-item-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.bill-dossier-item-num {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #8C5325;
+  background-color: #FFFFFF;
+  border: 1px solid #EAE0D8;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.bill-dossier-item-details {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.bill-dossier-item-name {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #31190B;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bill-dossier-item-specs {
+  font-size: 10.5px;
+  color: #7D6C63;
+}
+
+.bill-dossier-item-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
+.bill-dossier-item-line {
+  font-size: 13px;
+  font-weight: 700;
+  color: #31190B;
+}
+
+.bill-dossier-item-tax {
+  font-size: 10px;
+  font-weight: 600;
+  color: #8C5325;
+}
+
+/* Calculation Lines in Dossier */
+.bill-dossier-calc-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bill-dossier-calc-line {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #5C4537;
+}
+
+.bill-dossier-calc-val {
+  font-weight: 600;
+  color: #31190B;
+}
+
+.bill-dossier-calc-line.calc-discount {
+  color: #15803D;
+}
+
+.bill-dossier-calc-line.calc-discount .bill-dossier-calc-val {
+  color: #15803D;
+}
+
+.bill-dossier-divider {
+  height: 1px;
+  background-color: #EFE4DC;
+  margin: 4px 0;
+}
+
+.bill-dossier-calc-line.calc-net-total {
+  font-size: 15px;
+  color: #31190B;
+  padding-top: 4px;
+}
+
+.bill-dossier-calc-label.bold,
+.bill-dossier-calc-val.bold {
+  font-weight: 800;
+  color: #31190B;
+}
+
+/* Dossier Footer Actions */
+.bill-dossier-actions {
+  padding: 16px 24px;
+  background-color: #FFF9F5;
+  border-top: 1px solid #F1E7E0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.btn-dossier-close-full {
+  width: 100%;
+  padding: 10px;
+  background: transparent;
+  border: 1px solid #D3C4B8;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #5C4537;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-dossier-close-full:hover {
+  background-color: #EFE4DC;
+  color: #31190B;
+}
+
+@media (max-width: 640px) {
+  .pos-checkout-trigger-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .pos-btn-open-dossier-prominent {
+    justify-content: center;
   }
 }

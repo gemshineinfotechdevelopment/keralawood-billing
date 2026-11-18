@@ -638,12 +638,15 @@ app.get('/api/dashboard', async (req, res) => {
     }
 
     const formattedSales = sales.map((s) => ({
+      id: s._id || s.invoice,
       invoice: s.invoice,
       customer: s.customer,
-      location: s.location || s.project || 'Sivakasi Yard',
-      items: s.items,
+      location: s.location || s.project || s.customerAddress || 'Sivakasi Yard',
+      items: s.items || (Array.isArray(s.itemDetails) && s.itemDetails.length > 0 ? s.itemDetails.map(i => `${i.quantity}x ${i.description || i.name}`).join(', ') : 'Artisan Timber Order'),
       amount: '₹' + Number(s.amount || 0).toLocaleString('en-IN'),
-      status: s.status || 'Dispatched',
+      rawAmount: Number(s.amount || 0),
+      status: s.paymentStatus || s.status || 'Paid',
+      paymentStatus: s.paymentStatus || 'Paid',
     }));
 
     res.json({
