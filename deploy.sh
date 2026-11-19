@@ -53,8 +53,12 @@ fi
 # Save PM2 process list so it restarts on VPS reboot
 pm2 save
 
-# 7. Test and Reload Nginx
-echo "🌐 Reloading Nginx..."
+# 7. Update, test and reload Nginx
+echo "🌐 Updating and Reloading Nginx..."
+if [ -d "/etc/nginx/sites-available" ]; then
+    sudo cp "$APP_DIR/nginx.conf" /etc/nginx/sites-available/keralawoods-billing.gemshine.tech
+    sudo ln -sf /etc/nginx/sites-available/keralawoods-billing.gemshine.tech /etc/nginx/sites-enabled/
+fi
 sudo nginx -t
 sudo systemctl reload nginx
 

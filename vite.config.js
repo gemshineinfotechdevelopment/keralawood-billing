@@ -8,6 +8,7 @@ export default defineConfig(({ mode }) => {
   const frontendPort = Number(env.VITE_PORT) || 5173
 
   return {
+    base: '/',
     plugins: [react()],
     envDir: './src',
     server: {
