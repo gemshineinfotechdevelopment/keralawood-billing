@@ -1228,7 +1228,6 @@
   *::after {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
-    color-adjust: exact !important;
     box-sizing: border-box !important;
   }
 
