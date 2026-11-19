@@ -14,7 +14,7 @@ export default defineConfig(({ mode }) => {
       port: frontendPort,
       proxy: {
         '/api': {
-          target: 'http://localhost:5000',
+          target: 'http://localhost:5031',
           changeOrigin: true,
           configure: (proxy) => {
             proxy.on('error', (err, _req, res) => {

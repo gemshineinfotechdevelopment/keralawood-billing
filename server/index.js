@@ -21,8 +21,8 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, '.env') });
 
 const app = express();
-const PORT = process.env.PORT || 5000;
-const FRONTEND_URL = process.env.FRONTEND_URL || 'https://keralawood-billing.vercel.app,http://localhost:5173';
+const PORT = process.env.PORT || 5031;
+const FRONTEND_URL = process.env.FRONTEND_URL || 'https://keralawoods-billing.gemshine.tech,http://localhost:5173';
 const MONGODB_URI = process.env.MONGODB_URI;
 
 // Global process error handlers to prevent silent crashes
