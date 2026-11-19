@@ -34,7 +34,13 @@ npm install
 echo "🔨 Building Vite Frontend..."
 npm run build
 
-# 5. Reload or Start PM2 Backend Process
+# 5. Fix permissions so Nginx (www-data) can read dist assets
+echo "🔒 Setting permissions for Nginx..."
+chmod 755 "$APP_DIR"
+chmod -R 755 "$APP_DIR/dist"
+chown -R www-data:www-data "$APP_DIR/dist" 2>/dev/null || true
+
+# 6. Reload or Start PM2 Backend Process
 echo "⚙️  Updating PM2 Backend Process ($APP_NAME on port 5031)..."
 if pm2 describe "$APP_NAME" > /dev/null 2>&1; then
     echo "🔄 Reloading existing PM2 process..."
@@ -47,7 +53,7 @@ fi
 # Save PM2 process list so it restarts on VPS reboot
 pm2 save
 
-# 6. Test and Reload Nginx
+# 7. Test and Reload Nginx
 echo "🌐 Reloading Nginx..."
 sudo nginx -t
 sudo systemctl reload nginx
