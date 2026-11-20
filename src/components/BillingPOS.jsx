@@ -903,7 +903,7 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
       </table>
 
       {/* Statutory HSN / Tax Clarification Breakdown Table */}
-      <div style={{ marginTop: '16px', marginBottom: '16px' }}>
+      <div style={{ marginTop: '36px', marginBottom: '20px' }}>
         <table className="pos-print-table" style={{ borderCollapse: 'collapse', border: 'none', width: '100%', fontSize: '11px', textAlign: 'right', marginBottom: '8px' }}>
           <thead>
             <tr style={{ backgroundColor: '#FAF1EE' }}>
@@ -1088,6 +1088,7 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
             </div>
           )}
           <div className="pos-print-sign-box">
+            <p style={{ fontWeight: 600 }}>For Kerala Wood Furniture</p>
             <div className="pos-print-sign-space" />
             <p>Authorized Signatory</p>
           </div>
