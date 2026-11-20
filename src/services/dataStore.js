@@ -1040,6 +1040,8 @@ export const DataStore = {
       status: bill.paymentStatus || 'Paid',
       paymentStatus: bill.paymentStatus || 'Paid',
       paymentMode: bill.paymentMode || 'UPI',
+      billedBy: bill.billedBy || bill.salesPerson || 'Rajesh Sivan',
+      salesPerson: bill.salesPerson || bill.billedBy || 'Rajesh Sivan',
     }
 
     const existingIdx = txs.findIndex(
@@ -1086,6 +1088,17 @@ export const DataStore = {
     })
     this.saveProducts(products)
 
+    // Increment ordersClosed for salesPerson if matched
+    if (newTx.billedBy || newTx.salesPerson) {
+      const spName = (newTx.billedBy || newTx.salesPerson).trim().toLowerCase()
+      const spList = this.getSalesPersons()
+      const sp = spList.find((s) => s.name?.toLowerCase() === spName || s.code?.toLowerCase() === spName)
+      if (sp) {
+        sp.ordersClosed = (Number(sp.ordersClosed) || 0) + 1
+        this.saveSalesPersons(spList)
+      }
+    }
+
     // Sync sale to MongoDB Backend
     fetch(`${API_BASE}/api/sales`, {
       method: 'POST',
@@ -1106,6 +1119,8 @@ export const DataStore = {
         amount: grandTotal,
         paymentStatus: bill.paymentStatus || 'Pending',
         paymentMode: bill.paymentMode || 'UPI',
+        billedBy: newTx.billedBy,
+        salesPerson: newTx.salesPerson,
         invoiceDate: bill.invoiceDate,
         dueDate: bill.dueDate,
         notes: bill.notes,

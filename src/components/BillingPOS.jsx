@@ -85,6 +85,7 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
   const [customers, setCustomers] = useState(() => DataStore.getCustomers())
   const [products, setProducts] = useState(() => DataStore.getProducts())
   const [settings, setSettings] = useState(() => DataStore.getSettings())
+  const [salesPersonsList, setSalesPersonsList] = useState(() => DataStore.getSalesPersons())
 
   // Modal, Dossier & Toast States
   const [invoiceModalOpen, setInvoiceModalOpen] = useState(false)
@@ -125,8 +126,20 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
       setProducts(DataStore.getProducts())
       setSettings(DataStore.getSettings())
       setSavedBills(DataStore.getTransactions())
+      setSalesPersonsList(DataStore.getSalesPersons())
     }
     window.addEventListener('timber_store_updated', handleUpdate)
+
+    // Pull live sales persons from MongoDB on mount
+    fetch('/api/sales-persons')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.success && Array.isArray(data.salesPersons) && data.salesPersons.length > 0) {
+          setSalesPersonsList(data.salesPersons)
+          DataStore.saveSalesPersons(data.salesPersons)
+        }
+      })
+      .catch(() => {})
 
     // Pull live sales from MongoDB Atlas on mount
     fetch('/api/sales')
@@ -254,6 +267,7 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
   // Payment status & modes
   const paymentStatus = currentBill.paymentStatus || 'Pending' // 'Pending' | 'Partial' | 'Paid'
   const paymentMode = currentBill.paymentMode || 'UPI'
+  const billedBy = currentBill.billedBy || currentBill.salesPerson || (salesPersonsList[0]?.name || settings.signatoryName || 'Rajesh Sivan')
   const amountPaid = Number(currentBill.amountPaid) || 0
   const discount = Number(currentBill.discount) || 0
   const deliveryCharge = Number(currentBill.deliveryCharge) || 0
@@ -525,7 +539,11 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
   }, [savedBills, billsSearch])
 
   const handleStartNewBill = () => {
+    const defaultBilledBy = salesPersonsList[0]?.name || settings.signatoryName || 'Rajesh Sivan'
     const fresh = DataStore.createNewDraft()
+    fresh.billedBy = defaultBilledBy
+    fresh.salesPerson = defaultBilledBy
+    DataStore.saveBill(fresh)
     setBills(DataStore.getBills())
     setActiveBillId(fresh.id)
     setSaveCustomerToDirectory(false)
@@ -571,6 +589,8 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
       invoiceDate: bill.rawDate || (bill.date && !isNaN(new Date(bill.date).getTime()) ? new Date(bill.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]),
       paymentStatus: bill.paymentStatus || bill.status || 'Paid',
       paymentMode: bill.paymentMode || 'UPI',
+      billedBy: bill.billedBy || bill.salesPerson || (salesPersonsList[0]?.name || settings.signatoryName || 'Rajesh Sivan'),
+      salesPerson: bill.salesPerson || bill.billedBy || (salesPersonsList[0]?.name || settings.signatoryName || 'Rajesh Sivan'),
       amountPaid: bill.rawAmount || Number(String(bill.amount || 0).replace(/[^0-9.]/g, '')) || 0,
       discount: bill.discount || 0,
       deliveryCharge: bill.deliveryCharge || 0,
@@ -640,6 +660,7 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
         dueDate,
         paymentStatus,
         paymentMode,
+        billedBy,
         customer,
         shipping,
         items,
@@ -711,6 +732,7 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
       dueDate: due,
       paymentStatus: st,
       paymentMode: md,
+      billedBy: previewBill.billedBy || previewBill.salesPerson || billedBy,
       customer: cust,
       shipping: shp,
       items: itms,
@@ -733,6 +755,7 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
     dueDate,
     paymentStatus,
     paymentMode,
+    billedBy,
     customer,
     shipping,
     items,
@@ -879,6 +902,11 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
           <p>
             <strong>Invoice Date:</strong> {modalBillData.invoiceDate}
           </p>
+          {modalBillData.billedBy && (
+            <p>
+              <strong>Billed By:</strong> {modalBillData.billedBy}
+            </p>
+          )}
         </div>
       </div>
 
@@ -1126,7 +1154,7 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
           <div className="pos-print-sign-box">
             <p style={{ fontWeight: 600 }}>For Kerala Wood Furniture</p>
             <div className="pos-print-sign-space" />
-            <p>Authorized Signatory</p>
+            <p>{modalBillData.billedBy ? `${modalBillData.billedBy} (Authorized Signatory)` : 'Authorized Signatory'}</p>
           </div>
         </div>
       </div>
@@ -1251,6 +1279,11 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
                           </td>
                           <td className="pos-col-date">
                             <span className="pos-bill-date">{bill.date || 'Today'}</span>
+                            {(bill.billedBy || bill.salesPerson) && (
+                              <span style={{ fontSize: '11px', color: '#8A7B72', display: 'block', marginTop: '2px' }}>
+                                By: {bill.billedBy || bill.salesPerson}
+                              </span>
+                            )}
                           </td>
                           <td className="pos-col-customer">
                             <span className="pos-bill-cust-name">{bill.customer || 'Walk-in Patron'}</span>
@@ -1487,6 +1520,30 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
                   <option value="Card">Card</option>
                   <option value="Net Banking">Net Banking</option>
                   <option value="Cheque">Cheque</option>
+                </select>
+              </div>
+
+              <div className="pos-input-group">
+                <label className="pos-label">Billed By (Sales Person) *</label>
+                <select
+                  className="pos-input"
+                  style={{ height: '38px', cursor: 'pointer', fontWeight: 600, color: '#31190B' }}
+                  value={billedBy}
+                  onChange={(e) => updateCurrentBill({ billedBy: e.target.value, salesPerson: e.target.value })}
+                >
+                  {salesPersonsList.map((sp) => (
+                    <option key={sp.id || sp.code} value={sp.name}>
+                      {sp.name} {sp.code ? `(${sp.code})` : ''}
+                    </option>
+                  ))}
+                  {settings.signatoryName && !salesPersonsList.some((s) => s.name === settings.signatoryName) && (
+                    <option value={settings.signatoryName}>
+                      {settings.signatoryName} ({settings.signatoryDesignation || 'Store Manager'})
+                    </option>
+                  )}
+                  {salesPersonsList.length === 0 && !settings.signatoryName && (
+                    <option value="Rajesh Sivan">Rajesh Sivan (Store Manager)</option>
+                  )}
                 </select>
               </div>
             </div>

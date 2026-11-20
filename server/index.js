@@ -639,6 +639,8 @@ app.post('/api/sales', async (req, res) => {
       existing.deliveryCharge = Number(data.deliveryCharge) || existing.deliveryCharge;
       existing.paymentStatus = data.paymentStatus || existing.paymentStatus;
       existing.paymentMode = data.paymentMode || existing.paymentMode;
+      existing.billedBy = data.billedBy || data.salesPerson || existing.billedBy;
+      existing.salesPerson = data.salesPerson || data.billedBy || existing.salesPerson;
       existing.amountPaid = Number(data.amountPaid) || existing.amountPaid;
       existing.balanceDue = Number(data.balanceDue) || existing.balanceDue;
       existing.notes = data.notes || existing.notes;
@@ -666,6 +668,8 @@ app.post('/api/sales', async (req, res) => {
       amount: rawAmt,
       paymentStatus: data.paymentStatus || 'Pending',
       paymentMode: data.paymentMode || 'UPI',
+      billedBy: data.billedBy || data.salesPerson || '',
+      salesPerson: data.salesPerson || data.billedBy || '',
       amountPaid: Number(data.amountPaid) || (data.paymentStatus === 'Paid' ? rawAmt : 0),
       balanceDue: Number(data.balanceDue) || (data.paymentStatus === 'Paid' ? 0 : rawAmt),
       status: data.status || 'Dispatched',

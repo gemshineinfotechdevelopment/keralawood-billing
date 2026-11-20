@@ -19,6 +19,8 @@ const saleSchema = new mongoose.Schema(
     amount: { type: Number, required: true },
     paymentStatus: { type: String, default: 'Pending' }, // 'Pending' | 'Partial' | 'Paid'
     paymentMode: { type: String, default: 'UPI' },
+    billedBy: { type: String, default: '' },
+    salesPerson: { type: String, default: '' },
     amountPaid: { type: Number, default: 0 },
     balanceDue: { type: Number, default: 0 },
     status: { type: String, default: 'Dispatched' },
