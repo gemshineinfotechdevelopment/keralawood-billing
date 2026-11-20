@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { DataStore } from '../services/dataStore'
 import treeLogo from '../assets/tree-logo.png'
 import './BillingPOS.css'
@@ -856,12 +857,12 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
 
       if (directPrintAfter) {
         setPreviewBill(billToRecord)
-        setInvoiceModalOpen(true)
+        setInvoiceModalOpen(false)
         setPrintSuccessToast(`✓ Bill ${invoiceNumber} saved! Opening print preview...`)
         setTimeout(() => {
           window.print()
           setTimeout(() => setPrintSuccessToast(''), 3000)
-        }, 300)
+        }, 150)
       } else if (showModalAfter) {
         setPreviewBill(billToRecord)
         setInvoiceModalOpen(true)
@@ -2500,12 +2501,15 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
         </div>
       )}
 
-      {/* Hidden Print-Only Container: enables direct printing without opening any preview modal */}
-      {!invoiceModalOpen && (
-        <div className="pos-print-only-wrapper" aria-hidden="true">
-          {renderPrintableInvoiceSheet()}
-        </div>
-      )}
+      {/* Isolated Print Portal attached directly to document.body:
+          guarantees 100% full-page, multi-page printing without clipping from #root or scroll containers */}
+      {typeof document !== 'undefined' &&
+        createPortal(
+          <div id="pos-print-isolated-portal" className="pos-print-isolated-portal" aria-hidden="true">
+            {renderPrintableInvoiceSheet()}
+          </div>,
+          document.body
+        )}
     </div>
   )
 }
