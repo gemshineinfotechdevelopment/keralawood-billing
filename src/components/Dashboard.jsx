@@ -46,6 +46,7 @@ const normalizeSaleItem = (sale, idx) => {
     items,
     rawAmount,
     amount: formattedAmount,
+    paymentMode: sale.paymentMode || 'UPI',
     status: statusRaw,
     statusType,
     original: sale,
@@ -408,7 +409,7 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
                 <th>CUSTOMER</th>
                 <th>ITEMS ORDERED</th>
                 <th>AMOUNT</th>
-                <th>STATUS</th>
+                <th>PAYMENT MODE</th>
               </tr>
             </thead>
             <tbody>
@@ -446,68 +447,19 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
                   <td className="items-col">{sale.items}</td>
                   <td className="amount-col">{sale.amount}</td>
                   <td>
-                    <span className={`status-badge status-badge-${sale.statusType}`}>
-                      {sale.statusType === 'paid' && (
-                        <svg
-                          width="11"
-                          height="11"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <polyline points="20 6 9 17 4 12" />
-                        </svg>
-                      )}
-                      {sale.statusType === 'pending' && (
-                        <svg
-                          width="11"
-                          height="11"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <circle cx="12" cy="12" r="10" />
-                          <polyline points="12 6 12 12 16 14" />
-                        </svg>
-                      )}
-                      {sale.statusType === 'partial' && (
-                        <svg
-                          width="11"
-                          height="11"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                        </svg>
-                      )}
-                      {sale.statusType === 'dispatched' && (
-                        <svg
-                          width="11"
-                          height="11"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <rect x="1" y="3" width="15" height="13" />
-                          <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
-                          <circle cx="5.5" cy="18.5" r="2.5" />
-                          <circle cx="18.5" cy="18.5" r="2.5" />
-                        </svg>
-                      )}
-                      <span>{sale.status}</span>
+                    <span style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      padding: '4px 10px',
+                      borderRadius: '6px',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      backgroundColor: '#F5EAE4',
+                      color: '#5C3A21',
+                      border: '1px solid #E8D5C8',
+                      letterSpacing: '0.02em'
+                    }}>
+                      {sale.paymentMode || 'UPI'}
                     </span>
                   </td>
                 </tr>

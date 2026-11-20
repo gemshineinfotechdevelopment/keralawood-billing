@@ -8,6 +8,8 @@ const STORAGE_KEYS = {
   ACTIVE_BILL_ID: 'sivakasi_wood_active_bill_id',
   TRANSACTIONS: 'sivakasi_wood_transactions',
   SETTINGS: 'sivakasi_wood_settings',
+  PURCHASES: 'sivakasi_wood_purchases',
+  SALES_PERSONS: 'sivakasi_wood_sales_persons',
 }
 
 const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) || ''
@@ -68,6 +70,124 @@ const INITIAL_PRODUCTS = []
 const INITIAL_CUSTOMERS = []
 
 const INITIAL_TRANSACTIONS = []
+
+const INITIAL_PURCHASES = [
+  {
+    id: 'PUR-101',
+    invoiceNumber: 'PUR-101',
+    supplier: 'Wayanad Teak Forest Mills',
+    supplierPhone: '+91 94471 28910',
+    date: '2026-11-18',
+    item: 'Grade-A Nilambur Teak Planks (6x4)',
+    category: 'Timber Logs',
+    quantity: '60 Pcs',
+    amount: 145000,
+    paymentMode: 'Bank Wire',
+    gstAmount: 26100,
+  },
+  {
+    id: 'PUR-102',
+    invoiceNumber: 'PUR-102',
+    supplier: 'Kallai Rosewood Consortium',
+    supplierPhone: '+91 98492 41102',
+    date: '2026-11-15',
+    item: 'Seasoned Rosewood Sawn Timber',
+    category: 'Hardwood Timber',
+    quantity: '35 Pcs',
+    amount: 182000,
+    paymentMode: 'UPI',
+    gstAmount: 32760,
+  },
+  {
+    id: 'PUR-103',
+    invoiceNumber: 'PUR-103',
+    supplier: 'Malabar Timber Imports & Depot',
+    supplierPhone: '+91 97451 88320',
+    date: '2026-11-10',
+    item: 'Sal Wood Structural Beams',
+    category: 'Structural Lumber',
+    quantity: '80 Pcs',
+    amount: 98000,
+    paymentMode: 'Cheque',
+    gstAmount: 17640,
+  },
+  {
+    id: 'PUR-104',
+    invoiceNumber: 'PUR-104',
+    supplier: 'Godavari Hardwoods Ltd',
+    supplierPhone: '+91 88921 77310',
+    date: '2026-11-04',
+    item: 'Acacia Furniture Blocks & Billets',
+    category: 'Sawn Wood',
+    quantity: '110 Pcs',
+    amount: 76000,
+    paymentMode: 'Cash',
+    gstAmount: 13680,
+  },
+]
+
+const INITIAL_SALES_PERSONS = [
+  {
+    id: 'SP-101',
+    code: 'SP-101',
+    name: 'Anand Kumar',
+    phone: '+91 98421 55670',
+    email: 'anand.k@keralawood.in',
+    role: 'Senior Timber Consultant',
+    territory: 'Sivakasi & Virudhunagar',
+    target: 500000,
+    achievedSales: 482000,
+    commissionRate: 3.0,
+    paymentMode: 'Bank Wire',
+    ordersClosed: 26,
+    joiningDate: '2025-04-10',
+  },
+  {
+    id: 'SP-102',
+    code: 'SP-102',
+    name: 'Meenakshi Sundaram',
+    phone: '+91 97892 44102',
+    email: 'meenakshi.s@keralawood.in',
+    role: 'Architectural Projects Lead',
+    territory: 'Madurai & South Region',
+    target: 650000,
+    achievedSales: 615000,
+    commissionRate: 3.5,
+    paymentMode: 'UPI',
+    ordersClosed: 32,
+    joiningDate: '2025-06-15',
+  },
+  {
+    id: 'SP-103',
+    code: 'SP-103',
+    name: 'Karthik Raja',
+    phone: '+91 99433 11890',
+    email: 'karthik.r@keralawood.in',
+    role: 'Depot Sales Executive',
+    territory: 'Yard Walk-ins & POS',
+    target: 400000,
+    achievedSales: 390000,
+    commissionRate: 2.5,
+    paymentMode: 'UPI',
+    ordersClosed: 41,
+    joiningDate: '2025-08-01',
+  },
+  {
+    id: 'SP-104',
+    code: 'SP-104',
+    name: 'Divya Prakash',
+    phone: '+91 94420 88210',
+    email: 'divya.p@keralawood.in',
+    role: 'Wholesale & Builder Accounts',
+    territory: 'Commercial Contracts',
+    target: 750000,
+    achievedSales: 540000,
+    commissionRate: 3.0,
+    paymentMode: 'Cheque',
+    ordersClosed: 19,
+    joiningDate: '2026-01-12',
+  },
+]
 
 const EMPTY_INITIAL_CUSTOMER = {
   id: 'cust-empty-1',
@@ -226,6 +346,48 @@ export const DataStore = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(settings),
     }).catch(() => {})
+  },
+
+  // PURCHASES
+  getPurchases() {
+    return loadFromStorage(STORAGE_KEYS.PURCHASES, INITIAL_PURCHASES)
+  },
+  savePurchases(list) {
+    saveToStorage(STORAGE_KEYS.PURCHASES, list)
+    notifyStoreUpdate()
+  },
+  addPurchase(purchase) {
+    const list = this.getPurchases()
+    const id = purchase.id || `PUR-${Date.now().toString().slice(-4)}`
+    const item = { ...purchase, id, invoiceNumber: purchase.invoiceNumber || id }
+    const updated = [item, ...list]
+    this.savePurchases(updated)
+    return item
+  },
+  deletePurchase(id) {
+    const list = this.getPurchases().filter((p) => p.id !== id && p.invoiceNumber !== id)
+    this.savePurchases(list)
+  },
+
+  // SALES PERSONS
+  getSalesPersons() {
+    return loadFromStorage(STORAGE_KEYS.SALES_PERSONS, INITIAL_SALES_PERSONS)
+  },
+  saveSalesPersons(list) {
+    saveToStorage(STORAGE_KEYS.SALES_PERSONS, list)
+    notifyStoreUpdate()
+  },
+  addSalesPerson(sp) {
+    const list = this.getSalesPersons()
+    const id = sp.id || `SP-${100 + list.length + 1}`
+    const item = { ...sp, id, code: sp.code || id }
+    const updated = [item, ...list]
+    this.saveSalesPersons(updated)
+    return item
+  },
+  deleteSalesPerson(id) {
+    const list = this.getSalesPersons().filter((s) => s.id !== id && s.code !== id)
+    this.saveSalesPersons(list)
   },
 
   // PRODUCTS

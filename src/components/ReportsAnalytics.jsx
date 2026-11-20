@@ -42,6 +42,7 @@ export default function ReportsAnalytics() {
             item: s.items,
             amount: Number(s.amount || 0).toLocaleString('en-IN'),
             rawAmount: Number(s.amount || 0),
+            paymentMode: s.paymentMode || 'UPI',
             status: s.paymentStatus || s.status || 'Paid',
             createdAt: s.createdAt || s.date,
           }))
@@ -786,7 +787,7 @@ export default function ReportsAnalytics() {
                 <th>WOOD SPECIES</th>
                 <th>ORDER ITEMS</th>
                 <th>AMOUNT</th>
-                <th>STATUS</th>
+                <th>PAYMENT MODE</th>
               </tr>
             </thead>
             <tbody>
@@ -816,21 +817,19 @@ export default function ReportsAnalytics() {
                       </span>
                     </td>
                     <td>
-                      <span className="sales-paid-badge">
-                        <svg
-                          width="12"
-                          height="12"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.5"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <circle cx="12" cy="12" r="10" />
-                          <polyline points="9 12 12 15 16 10" />
-                        </svg>
-                        <span>{tx.status || 'Paid'}</span>
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        padding: '4px 10px',
+                        borderRadius: '6px',
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        backgroundColor: '#F5EAE4',
+                        color: '#5C3A21',
+                        border: '1px solid #E8D5C8',
+                        letterSpacing: '0.02em'
+                      }}>
+                        {tx.paymentMode || 'UPI'}
                       </span>
                     </td>
                   </tr>

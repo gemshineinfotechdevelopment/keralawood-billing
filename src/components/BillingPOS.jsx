@@ -2026,8 +2026,20 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
                 <div className="dossier-badge-wrap">
                   <span className="dossier-eyebrow">BILL DOSSIER</span>
                   <span className="dossier-badge-pill">{invoiceNumber || 'INV-1001'}</span>
-                  <span className={`bill-status-pill status-${(paymentStatus || 'pending').toLowerCase()}`}>
-                    {paymentStatus}
+                  <span style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    padding: '3px 10px',
+                    borderRadius: '12px',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    backgroundColor: '#F5EAE4',
+                    color: '#5C3A21',
+                    border: '1px solid #E8D5C8',
+                    letterSpacing: '0.02em'
+                  }}>
+                    ● {paymentMode || 'UPI'}
                   </span>
                 </div>
                 <button

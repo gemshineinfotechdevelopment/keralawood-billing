@@ -1,0 +1,522 @@
+/* ==========================================================================
+   Purchases & Inward Cargo Management Styles
+   Theme: Kerala Wood Furniture (Rich Teak & Modern ERP)
+   ========================================================================== */
+
+.purchases-page-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 1240px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 10px 16px 40px;
+  box-sizing: border-box;
+  font-family: inherit;
+  color: #31190B;
+}
+
+/* Page Header */
+.purchases-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  border-bottom: 1.5px solid #EFE4DC;
+  padding-bottom: 16px;
+}
+
+.purchases-title-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.purchases-main-title {
+  font-size: 24px;
+  font-weight: 800;
+  color: #31190B;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.purchases-main-subtitle {
+  font-size: 13px;
+  color: #7D6C63;
+  margin: 0;
+}
+
+.purchases-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-purchases-print {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 6px;
+  border: 1px solid #D3C4B8;
+  background-color: #FFFFFF;
+  color: #31190B;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-purchases-print:hover {
+  background-color: #FAF1EE;
+  border-color: #C88D58;
+}
+
+.btn-new-purchase-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border-radius: 6px;
+  background-color: #31190B;
+  color: #FFFFFF;
+  border: 1px solid #31190B;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(49, 25, 11, 0.2);
+  transition: all 0.15s ease;
+}
+
+.btn-new-purchase-primary:hover {
+  background-color: #4A2711;
+  transform: translateY(-1px);
+}
+
+/* KPI Summary Cards */
+.purchases-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 992px) {
+  .purchases-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 576px) {
+  .purchases-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.purchases-kpi-card {
+  background-color: #FFFFFF;
+  border: 1px solid #EFE4DC;
+  border-radius: 10px;
+  padding: 16px 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 1px 3px rgba(49, 25, 11, 0.04);
+}
+
+.purchases-kpi-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.purchases-kpi-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #8A7B72;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.purchases-kpi-value {
+  font-size: 22px;
+  font-weight: 800;
+  color: #31190B;
+}
+
+.purchases-kpi-sub {
+  font-size: 11px;
+  color: #A6978F;
+}
+
+.purchases-kpi-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background-color: #FEF6EE;
+  color: #C88D58;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Controls Bar (Search & Filters) */
+.purchases-controls-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  background-color: #FFFFFF;
+  border: 1px solid #EFE4DC;
+  border-radius: 8px;
+  padding: 12px 16px;
+}
+
+.purchases-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  max-width: 380px;
+}
+
+.purchases-search-icon {
+  position: absolute;
+  left: 12px;
+  color: #8A7B72;
+  pointer-events: none;
+}
+
+.purchases-search-input {
+  width: 100%;
+  padding: 8px 12px 8px 36px;
+  border: 1.5px solid #D3C4B8;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #31190B;
+  background-color: #FFFFFF;
+  transition: all 0.15s ease;
+}
+
+.purchases-search-input:focus {
+  outline: none;
+  border-color: #C88D58;
+  box-shadow: 0 0 0 3px rgba(200, 141, 88, 0.18);
+}
+
+.purchases-filter-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.purchases-select-filter {
+  padding: 8px 12px;
+  border: 1.5px solid #D3C4B8;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #31190B;
+  background-color: #FFFFFF;
+  cursor: pointer;
+  outline: none;
+}
+
+.purchases-select-filter:focus {
+  border-color: #C88D58;
+}
+
+/* Purchases Table */
+.purchases-table-card {
+  background-color: #FFFFFF;
+  border: 1px solid #EFE4DC;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(49, 25, 11, 0.04);
+}
+
+.purchases-table-wrapper {
+  overflow-x: auto;
+  width: 100%;
+}
+
+.purchases-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13px;
+}
+
+.purchases-table thead {
+  background-color: #FAF4EF;
+  border-bottom: 1.5px solid #EFE4DC;
+}
+
+.purchases-table th {
+  padding: 12px 14px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #5C4537;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.purchases-table tbody tr {
+  border-bottom: 1px solid #F5EAE4;
+  transition: background-color 0.12s ease;
+}
+
+.purchases-table tbody tr:hover {
+  background-color: #FDF9F6;
+}
+
+.purchases-table td {
+  padding: 12px 14px;
+  vertical-align: middle;
+  color: #31190B;
+}
+
+.purchases-invoice-no {
+  font-weight: 700;
+  color: #31190B;
+  font-size: 13.5px;
+}
+
+.purchases-invoice-date {
+  font-size: 11px;
+  color: #8A7B72;
+  margin-top: 2px;
+}
+
+.purchases-supplier-name {
+  font-weight: 700;
+  color: #31190B;
+}
+
+.purchases-supplier-phone {
+  font-size: 11px;
+  color: #8C5325;
+}
+
+.purchases-amt-val {
+  font-size: 14px;
+  font-weight: 800;
+  color: #31190B;
+}
+
+.purchases-payment-mode-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  background-color: #F5EAE4;
+  color: #5C3A21;
+  border: 1px solid #E8D5C8;
+  letter-spacing: 0.02em;
+}
+
+/* Actions Cell & Squircle Buttons */
+.purchases-actions-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-purchase-action {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  border: 1px solid #E4D8CE;
+  background: #FFFFFF;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  color: #5C4537;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.btn-purchase-action:hover {
+  transform: translateY(-1px);
+}
+
+.btn-purchase-edit {
+  background: #EFF6FF !important;
+  border: 1px solid #DBEAFE !important;
+  color: #2563EB !important;
+}
+
+.btn-purchase-edit:hover {
+  background: #DBEAFE !important;
+  border-color: #BFDBFE !important;
+  color: #1D4ED8 !important;
+}
+
+.btn-purchase-view:hover {
+  background: #EBF3FF;
+  border-color: #ADC6FF;
+  color: #1D39C4;
+}
+
+.btn-purchase-delete:hover {
+  background: #FFF1F0;
+  border-color: #FFA39E;
+  color: #CF1322;
+}
+
+/* Table Footer */
+.purchases-table-footer {
+  padding: 12px 18px;
+  background-color: #FAF4EF;
+  border-top: 1px solid #EFE4DC;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: #7D6C63;
+}
+
+/* Modals */
+.purchases-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(49, 25, 11, 0.45);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.purchases-modal-card {
+  background-color: #FFFFFF;
+  border: 1px solid #EFE4DC;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 580px;
+  box-shadow: 0 10px 30px rgba(49, 25, 11, 0.2);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  max-height: 90vh;
+}
+
+.purchases-modal-header {
+  padding: 16px 20px;
+  background-color: #FAF4EF;
+  border-bottom: 1.5px solid #EFE4DC;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.purchases-modal-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: #31190B;
+}
+
+.purchases-modal-close-btn {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #8A7B72;
+}
+
+.purchases-modal-close-btn:hover {
+  color: #31190B;
+}
+
+.purchases-modal-body {
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.purchases-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.purchases-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.purchases-full-width {
+  grid-column: 1 / -1;
+}
+
+.purchases-label {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #4A3528;
+}
+
+.purchases-input,
+.purchases-select {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1.5px solid #D3C4B8;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #31190B;
+  background-color: #FFFFFF;
+  box-sizing: border-box;
+  transition: all 0.15s ease;
+}
+
+.purchases-input:focus,
+.purchases-select:focus {
+  outline: none;
+  border-color: #C88D58;
+  box-shadow: 0 0 0 3px rgba(200, 141, 88, 0.18);
+}
+
+.purchases-modal-footer {
+  padding: 14px 20px;
+  background-color: #FAF4EF;
+  border-top: 1px solid #EFE4DC;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.btn-purchases-cancel {
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: 1px solid #D3C4B8;
+  background-color: #FFFFFF;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #5C4537;
+  cursor: pointer;
+}
+
+.btn-purchases-submit {
+  padding: 8px 18px;
+  border-radius: 6px;
+  background-color: #31190B;
+  color: #FFFFFF;
+  border: 1px solid #31190B;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-purchases-submit:hover {
+  background-color: #4A2711;
+}

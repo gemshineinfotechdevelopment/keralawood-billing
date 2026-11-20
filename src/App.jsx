@@ -8,6 +8,8 @@ import Settings from './components/Settings'
 import ReportsAnalytics from './components/ReportsAnalytics'
 import BillingPOS from './components/BillingPOS'
 import Customers from './components/Customers'
+import Purchases from './components/Purchases'
+import SalesPerson from './components/SalesPerson'
 import { DataStore } from './services/dataStore'
 import './App.css'
 
@@ -128,6 +130,10 @@ function App() {
               setBillingInitialMode('editor')
               setActiveNav('Billing & POS')
             }} />
+          ) : activeNav === 'Purchases' ? (
+            <Purchases />
+          ) : activeNav === 'Sales Person' ? (
+            <SalesPerson />
           ) : (
             <div className="module-placeholder">
               <div className="placeholder-card">
