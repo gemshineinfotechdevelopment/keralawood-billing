@@ -71,7 +71,6 @@ const getCustomerInitials = (name) => {
 export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'list' }) {
   const [viewMode, setViewMode] = useState(initialViewMode) // 'list' | 'editor'
   const [billsSearch, setBillsSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState('All')
   const [savedBills, setSavedBills] = useState(() => DataStore.getTransactions())
   const [previewBill, setPreviewBill] = useState(null)
   const [deleteModalBill, setDeleteModalBill] = useState(null)
@@ -479,21 +478,17 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
   const filteredSavedBills = useMemo(() => {
     return savedBills.filter((bill) => {
       const q = billsSearch.toLowerCase().trim()
-      const invMatch = !q || (bill.invoice && bill.invoice.toLowerCase().includes(q))
-      const custMatch = !q || (bill.customer && bill.customer.toLowerCase().includes(q))
+      if (!q) return true
+      const invMatch = bill.invoice && bill.invoice.toLowerCase().includes(q)
+      const custMatch = bill.customer && bill.customer.toLowerCase().includes(q)
+      const phoneMatch = (bill.customerPhone || bill.phone) && String(bill.customerPhone || bill.phone).toLowerCase().includes(q)
       const itemMatch =
-        !q ||
         (bill.items && bill.items.toLowerCase().includes(q)) ||
         (bill.item && bill.item.toLowerCase().includes(q))
-      const matchesSearch = invMatch || custMatch || itemMatch
-
-      if (!matchesSearch) return false
-
-      if (statusFilter === 'All') return true
-      const s = (bill.status || bill.paymentStatus || '').toLowerCase()
-      return s.includes(statusFilter.toLowerCase())
+      const modeMatch = bill.paymentMode && bill.paymentMode.toLowerCase().includes(q)
+      return invMatch || custMatch || phoneMatch || itemMatch || modeMatch
     })
-  }, [savedBills, billsSearch, statusFilter])
+  }, [savedBills, billsSearch])
 
   const handleStartNewBill = () => {
     const fresh = DataStore.createNewDraft()
@@ -790,9 +785,13 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
       {/* Invoice Header */}
       <div className="pos-print-top">
         <div className="pos-print-brand">
-          <img src={settings.logoUrl || treeLogo} alt="Kerala Wood Furniture Logo" className="pos-print-custom-logo" />
-          <h2>{settings.depotName || 'Kerala Wood Furniture — Sivakasi Depot'}</h2>
-          <p>{settings.address || 'Sivakasi Central Depot & Mill Yard, Sivakasi'}</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px' }}>
+            <img src={settings.logoUrl || treeLogo} alt="Kerala Wood Furniture Logo" className="pos-print-custom-logo" style={{ maxHeight: '42px', maxWidth: '42px', objectFit: 'contain', margin: 0 }} />
+            <h2 style={{ margin: 0, fontSize: '22px', fontWeight: 800, color: '#31190B', lineHeight: 1.1 }}>
+              {(settings.depotName || 'Kerala Wood Furniture').replace(/[-–—]\s*sivakasi\s*depot/gi, '').trim() || 'Kerala Wood Furniture'}
+            </h2>
+          </div>
+          <p>{(settings.address || 'Sivakasi Central Mill Yard, Sivakasi').replace(/Depot & /gi, '').replace(/Central Depot/gi, 'Central Yard')}</p>
           <p>
             Phone: {settings.contactPhone} • GSTIN: {settings.gstin} • HSN: {settings.hsnCode}
           </p>
@@ -980,13 +979,13 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
                 <line x1="12" y1="5" x2="12" y2="19" />
                 <line x1="5" y1="12" x2="19" y2="12" />
               </svg>
-              <span>+ New Bill</span>
+              <span>New Bill</span>
             </button>
           </div>
 
-          {/* Search & Filter Bar */}
+          {/* Search Bar */}
           <div className="pos-bills-filter-bar">
-            <div className="pos-bills-search-wrap">
+            <div className="pos-bills-search-wrap" style={{ maxWidth: '420px', width: '100%' }}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8C7E74" strokeWidth="2">
                 <circle cx="11" cy="11" r="8" />
                 <line x1="21" y1="21" x2="16.65" y2="16.65" />
@@ -1008,20 +1007,6 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
                 </button>
               )}
             </div>
-
-            <div className="pos-bills-status-filter">
-              <span className="pos-filter-label">Status:</span>
-              <select
-                className="pos-status-select"
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-              >
-                <option value="All">All Invoices</option>
-                <option value="Paid">Paid</option>
-                <option value="Pending">Pending</option>
-                <option value="Partial">Partial</option>
-              </select>
-            </div>
           </div>
 
           {/* Bills Table */}
@@ -1035,7 +1020,7 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
                     <th>CUSTOMER</th>
                     <th>ITEMS ORDERED</th>
                     <th>AMOUNT</th>
-                    <th>STATUS</th>
+                    <th>PAYMENT MODE</th>
                     <th style={{ textAlign: 'center' }}>ACTIONS</th>
                   </tr>
                 </thead>
@@ -1105,9 +1090,20 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
                             <span className="pos-bill-rupee">₹</span>
                             <span className="pos-bill-amt-val">{rawAmt.toLocaleString('en-IN')}</span>
                           </td>
-                          <td className="pos-col-status">
-                            <span className={`pos-bill-status-badge ${statusClass}`}>
-                              {status}
+                          <td className="pos-col-mode">
+                            <span style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              padding: '4px 10px',
+                              borderRadius: '6px',
+                              fontSize: '11px',
+                              fontWeight: 700,
+                              backgroundColor: '#F5EAE4',
+                              color: '#5C3A21',
+                              border: '1px solid #E8D5C8',
+                              letterSpacing: '0.02em'
+                            }}>
+                              {bill.paymentMode || 'UPI'}
                             </span>
                           </td>
                           <td className="pos-col-actions" style={{ textAlign: 'center' }}>
