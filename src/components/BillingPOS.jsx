@@ -848,17 +848,28 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
 
     try {
       DataStore.recordSaleFromBill(billToRecord)
-      const nextBill = DataStore.removeBill(currentBill.id)
+      DataStore.removeBill(currentBill.id)
+
+      // Create a fresh clean new draft so the bill form is completely cleared
+      const freshDraft = DataStore.createNewDraft()
       setBills(DataStore.getBills())
-      if (nextBill) {
-        setActiveBillId(nextBill.id)
-      }
+      setActiveBillId(freshDraft.id)
+      DataStore.setActiveBillId(freshDraft.id)
       setSavedBills(DataStore.getTransactions())
+
+      // Reset all search and form states
+      setCustomerSearchQuery('')
+      setCustomerSearchOpen(false)
+      setSameAsBillTo(false)
+      setSaveCustomerToDirectory(false)
+      setAdditionalOptionsOpen(false)
+      setExpandedItemDetails({})
+      setBillDossierOpen(false)
 
       if (directPrintAfter) {
         setPreviewBill(billToRecord)
         setInvoiceModalOpen(false)
-        setPrintSuccessToast(`✓ Bill ${invoiceNumber} saved! Opening print preview...`)
+        setPrintSuccessToast(`✓ Bill ${invoiceNumber} saved & cleared! Opening print preview...`)
         setTimeout(() => {
           window.print()
           setTimeout(() => setPrintSuccessToast(''), 3000)
@@ -867,8 +878,8 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
         setPreviewBill(billToRecord)
         setInvoiceModalOpen(true)
       } else {
-        setPrintSuccessToast(`✓ Bill ${invoiceNumber} saved successfully!`)
-        setViewMode('list')
+        setPrintSuccessToast(`✓ Bill ${invoiceNumber} saved! Form cleared for next customer.`)
+        setViewMode('editor')
         setTimeout(() => setPrintSuccessToast(''), 3000)
       }
     } catch (err) {
@@ -1471,29 +1482,6 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
           ))}
         </div>
         <div className="pos-topbar-actions">
-          <button
-            type="button"
-            className="pos-btn-topbar-direct-bill"
-            onClick={() => handleSaveBill(false, true)}
-            title="Save bill and print invoice directly"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              backgroundColor: '#166534',
-              color: '#FFFFFF',
-              border: 'none',
-              borderRadius: '6px',
-              padding: '8px 14px',
-              fontSize: '12.5px',
-              fontWeight: 700,
-              cursor: 'pointer',
-              boxShadow: '0 2px 6px rgba(22, 101, 52, 0.25)',
-              transition: 'all 0.15s ease'
-            }}
-          >
-            🖨️ Save & Direct Bill
-          </button>
           <button type="button" className="pos-btn-new-draft" onClick={handleCreateNewBill}>
             + New Draft Bill
           </button>
@@ -2033,35 +2021,11 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
             <div className="pos-checkout-actions-inline">
               <button
                 type="button"
-                className="pos-btn-save-print-direct"
-                onClick={() => handleSaveBill(false, true)}
-                title="Save bill and print invoice directly"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  backgroundColor: '#166534',
-                  color: '#FFFFFF',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '11px 22px',
-                  fontSize: '13.5px',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  boxShadow: '0 2px 8px rgba(22, 101, 52, 0.28)',
-                  transition: 'all 0.15s ease'
-                }}
-              >
-                <span>🖨️ Save & Direct Bill</span>
-              </button>
-
-              <button
-                type="button"
                 className="pos-btn-direct-save"
                 onClick={() => handleSaveBill(false)}
                 title="Save bill and deduct stock immediately"
               >
-                <span>💾 Save Bill Only</span>
+                <span>💾 Save Bill</span>
               </button>
 
               <button

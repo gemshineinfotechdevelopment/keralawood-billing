@@ -243,7 +243,7 @@ export default function AddProduct({ onProductSaved, onCancel, editProduct = nul
       setSavedSuccess(true)
       setTimeout(() => {
         setSavedSuccess(false)
-        if (onProductSaved) onProductSaved()
+        if (onProductSaved) onProductSaved(true)
       }, 700)
     } else {
       DataStore.addProduct(productPayload)
@@ -258,9 +258,12 @@ export default function AddProduct({ onProductSaved, onCancel, editProduct = nul
         console.warn('[AddProduct] Error saving product to backend API:', err.message)
       }
       setSavedSuccess(true)
+      localStorage.removeItem('kwf_product_draft')
+      handleAddNewProductForm()
+      setToastMsg('✓ Product cataloged successfully! Form cleared for next product entry')
       setTimeout(() => {
         setSavedSuccess(false)
-        if (onProductSaved) onProductSaved()
+        if (onProductSaved) onProductSaved(false)
       }, 700)
     }
     localStorage.removeItem('kwf_product_draft')

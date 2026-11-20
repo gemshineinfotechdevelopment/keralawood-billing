@@ -801,6 +801,11 @@ export const DataStore = {
       name: targetCust.name ? `Bill #${seq} • ${targetCust.name}` : `Bill #${seq}`,
       status: 'active',
       customer: targetCust,
+      shipping: {
+        name: '',
+        phone: '',
+        address: '',
+      },
       items: [], // Completely clean empty items
       paymentStatus: 'Pending',
       paymentMode: 'UPI',

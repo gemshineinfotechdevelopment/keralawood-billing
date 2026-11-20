@@ -77,11 +77,15 @@ export default function Products() {
     setDossierOpen(false)
   }
 
-  const handleProductSaved = () => {
+  const handleProductSaved = (wasEdit = false) => {
     setProducts(DataStore.getProducts())
-    setViewMode('list')
-    setEditingProduct(null)
-    showToast(editingProduct ? '✓ Product updated successfully!' : '✓ New product cataloged successfully!')
+    if (wasEdit) {
+      setViewMode('list')
+      setEditingProduct(null)
+      showToast('✓ Product updated successfully!')
+    } else {
+      showToast('✓ New product cataloged successfully! Form cleared.')
+    }
   }
 
   const handleDeleteProduct = () => {
