@@ -267,7 +267,7 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
   // Payment status & modes
   const paymentStatus = currentBill.paymentStatus || 'Pending' // 'Pending' | 'Partial' | 'Paid'
   const paymentMode = currentBill.paymentMode || 'UPI'
-  const billedBy = currentBill.billedBy || currentBill.salesPerson || (salesPersonsList[0]?.name || settings.signatoryName || 'Rajesh Sivan')
+  const billedBy = currentBill.billedBy || currentBill.salesPerson || (salesPersonsList[0]?.name || '')
   const amountPaid = Number(currentBill.amountPaid) || 0
   const discount = Number(currentBill.discount) || 0
   const deliveryCharge = Number(currentBill.deliveryCharge) || 0
@@ -539,7 +539,7 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
   }, [savedBills, billsSearch])
 
   const handleStartNewBill = () => {
-    const defaultBilledBy = salesPersonsList[0]?.name || settings.signatoryName || 'Rajesh Sivan'
+    const defaultBilledBy = salesPersonsList[0]?.name || ''
     const fresh = DataStore.createNewDraft()
     fresh.billedBy = defaultBilledBy
     fresh.salesPerson = defaultBilledBy
@@ -589,8 +589,8 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
       invoiceDate: bill.rawDate || (bill.date && !isNaN(new Date(bill.date).getTime()) ? new Date(bill.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]),
       paymentStatus: bill.paymentStatus || bill.status || 'Paid',
       paymentMode: bill.paymentMode || 'UPI',
-      billedBy: bill.billedBy || bill.salesPerson || (salesPersonsList[0]?.name || settings.signatoryName || 'Rajesh Sivan'),
-      salesPerson: bill.salesPerson || bill.billedBy || (salesPersonsList[0]?.name || settings.signatoryName || 'Rajesh Sivan'),
+      billedBy: bill.billedBy || bill.salesPerson || (salesPersonsList[0]?.name || ''),
+      salesPerson: bill.salesPerson || bill.billedBy || (salesPersonsList[0]?.name || ''),
       amountPaid: bill.rawAmount || Number(String(bill.amount || 0).replace(/[^0-9.]/g, '')) || 0,
       discount: bill.discount || 0,
       deliveryCharge: bill.deliveryCharge || 0,
@@ -772,9 +772,10 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
   // Save & Print Actions
   // -------------------------------------------------------------
   const handleSaveBill = (showModalAfter = false, directPrintAfter = false) => {
-    if (itemsSubtotal <= 0 && items.filter((i) => i.description.trim()).length === 0) {
-      setPrintSuccessToast('⚠️ Please add at least one item before saving.')
-      setTimeout(() => setPrintSuccessToast(''), 2500)
+    const validItems = items.filter((i) => (i.description && i.description.trim()) || Number(i.price) > 0)
+    if (validItems.length === 0) {
+      setPrintSuccessToast('⚠️ Please enter at least one item description or rate before saving.')
+      setTimeout(() => setPrintSuccessToast(''), 3000)
       return
     }
 
@@ -784,7 +785,7 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
         name: customer.name.trim(),
         phone: customer.phone?.trim() || '',
         address: customer.address?.trim() || '',
-        deliveryAddress: customer.address?.trim() || '',
+        deliveryAddress: shipping?.address?.trim() || customer.address?.trim() || '',
         gstin: customer.gstin?.trim() || 'Unregistered / Personal',
         location: customer.address?.trim() ? customer.address.trim().split(',')[0] : 'Sivakasi',
       })
@@ -793,41 +794,49 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
     // 2. Record sale into MongoDB & local dataStore
     const billToRecord = {
       ...currentBill,
+      id: currentBill.id || `BILL-${Date.now()}`,
       invoiceNumber,
       invoiceDate,
       dueDate,
       customer,
       shipping,
-      items,
+      items: validItems.length > 0 ? validItems : items,
       discount,
       deliveryCharge,
       taxType,
       cgstAmount,
       sgstAmount,
       igstAmount,
+      subtotal: itemsSubtotal,
+      rawAmount: grandTotal,
+      amount: grandTotal,
       paymentStatus,
       paymentMode,
+      billedBy,
+      salesPerson: billedBy,
       amountPaid: paymentStatus === 'Paid' ? grandTotal : amountPaid,
+      balanceDue,
       notes,
     }
 
     DataStore.recordSaleFromBill(billToRecord)
+    DataStore.deleteBill(currentBill.id)
     setBills(DataStore.getBills())
     setSavedBills(DataStore.getTransactions())
 
     if (directPrintAfter) {
       setPreviewBill(billToRecord)
-      setViewMode('list')
+      setInvoiceModalOpen(true)
       setPrintSuccessToast(`✓ Bill ${invoiceNumber} saved! Opening print...`)
       setTimeout(() => {
         window.print()
         setTimeout(() => setPrintSuccessToast(''), 3000)
-      }, 150)
+      }, 350)
     } else if (showModalAfter) {
       setPreviewBill(billToRecord)
       setInvoiceModalOpen(true)
     } else {
-      setPrintSuccessToast(`✓ Bill ${invoiceNumber} saved successfully to MongoDB!`)
+      setPrintSuccessToast(`✓ Bill ${invoiceNumber} saved successfully!`)
       setViewMode('list')
       setTimeout(() => setPrintSuccessToast(''), 3000)
     }
@@ -902,11 +911,6 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
           <p>
             <strong>Invoice Date:</strong> {modalBillData.invoiceDate}
           </p>
-          {modalBillData.billedBy && (
-            <p>
-              <strong>Billed By:</strong> {modalBillData.billedBy}
-            </p>
-          )}
         </div>
       </div>
 
@@ -1154,7 +1158,7 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
           <div className="pos-print-sign-box">
             <p style={{ fontWeight: 600 }}>For Kerala Wood Furniture</p>
             <div className="pos-print-sign-space" />
-            <p>{modalBillData.billedBy ? `${modalBillData.billedBy} (Authorized Signatory)` : 'Authorized Signatory'}</p>
+            <p>Authorized Signatory</p>
           </div>
         </div>
       </div>
@@ -1432,6 +1436,29 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
           ))}
         </div>
         <div className="pos-topbar-actions">
+          <button
+            type="button"
+            className="pos-btn-topbar-direct-bill"
+            onClick={() => handleSaveBill(false, true)}
+            title="Save bill and print invoice directly"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              backgroundColor: '#166534',
+              color: '#FFFFFF',
+              border: 'none',
+              borderRadius: '6px',
+              padding: '8px 14px',
+              fontSize: '12.5px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              boxShadow: '0 2px 6px rgba(22, 101, 52, 0.25)',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            🖨️ Save & Direct Bill
+          </button>
           <button type="button" className="pos-btn-new-draft" onClick={handleCreateNewBill}>
             + New Draft Bill
           </button>
@@ -1524,25 +1551,24 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
               </div>
 
               <div className="pos-input-group">
-                <label className="pos-label">Billed By (Sales Person) *</label>
+                <label className="pos-label">Sales Person (Billed By) *</label>
                 <select
                   className="pos-input"
                   style={{ height: '38px', cursor: 'pointer', fontWeight: 600, color: '#31190B' }}
                   value={billedBy}
                   onChange={(e) => updateCurrentBill({ billedBy: e.target.value, salesPerson: e.target.value })}
                 >
-                  {salesPersonsList.map((sp) => (
-                    <option key={sp.id || sp.code} value={sp.name}>
-                      {sp.name} {sp.code ? `(${sp.code})` : ''}
-                    </option>
-                  ))}
-                  {settings.signatoryName && !salesPersonsList.some((s) => s.name === settings.signatoryName) && (
-                    <option value={settings.signatoryName}>
-                      {settings.signatoryName} ({settings.signatoryDesignation || 'Store Manager'})
-                    </option>
-                  )}
-                  {salesPersonsList.length === 0 && !settings.signatoryName && (
-                    <option value="Rajesh Sivan">Rajesh Sivan (Store Manager)</option>
+                  {salesPersonsList.length === 0 ? (
+                    <option value="">No sales persons found (Add in Sales Person page)</option>
+                  ) : (
+                    <>
+                      <option value="">-- Select Sales Person --</option>
+                      {salesPersonsList.map((sp) => (
+                        <option key={sp.id || sp.code} value={sp.name}>
+                          {sp.name} {sp.code ? `(${sp.code})` : ''}
+                        </option>
+                      ))}
+                    </>
                   )}
                 </select>
               </div>
@@ -1972,12 +1998,37 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
             <div className="pos-checkout-actions-inline">
               <button
                 type="button"
+                className="pos-btn-save-print-direct"
+                onClick={() => handleSaveBill(false, true)}
+                title="Save bill and print invoice directly"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  backgroundColor: '#166534',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '11px 22px',
+                  fontSize: '13.5px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 8px rgba(22, 101, 52, 0.28)',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <span>🖨️ Save & Direct Bill</span>
+              </button>
+
+              <button
+                type="button"
                 className="pos-btn-direct-save"
                 onClick={() => handleSaveBill(false)}
                 title="Save bill and deduct stock immediately"
               >
-                <span>💾 Save & Deduct Stock</span>
+                <span>💾 Save Bill Only</span>
               </button>
+
               <button
                 type="button"
                 className="pos-btn-open-dossier-prominent"

@@ -962,8 +962,8 @@ export const DataStore = {
       status: bill.paymentStatus || 'Paid',
       paymentStatus: bill.paymentStatus || 'Paid',
       paymentMode: bill.paymentMode || 'UPI',
-      billedBy: bill.billedBy || bill.salesPerson || 'Rajesh Sivan',
-      salesPerson: bill.salesPerson || bill.billedBy || 'Rajesh Sivan',
+      billedBy: bill.billedBy || bill.salesPerson || '',
+      salesPerson: bill.salesPerson || bill.billedBy || '',
     }
 
     const existingIdx = txs.findIndex(
@@ -1018,6 +1018,14 @@ export const DataStore = {
       if (sp) {
         sp.ordersClosed = (Number(sp.ordersClosed) || 0) + 1
         this.saveSalesPersons(spList)
+
+        // Sync update to backend
+        const key = sp._id || sp.id || sp.code
+        fetch(`${API_BASE}/api/sales-persons/${encodeURIComponent(key)}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(sp),
+        }).catch(() => {})
       }
     }
 
