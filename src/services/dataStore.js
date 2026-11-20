@@ -651,6 +651,16 @@ export const DataStore = {
     const updated = bills.map((b) => (b.id === billId ? { ...b, ...updates } : b))
     this.saveBills(updated)
   },
+  saveBill(bill) {
+    const bills = this.getBills()
+    const idx = bills.findIndex((b) => b.id === bill.id || (b.invoiceNumber && b.invoiceNumber === bill.invoiceNumber))
+    if (idx >= 0) {
+      bills[idx] = { ...bills[idx], ...bill }
+    } else {
+      bills.push(bill)
+    }
+    this.saveBills(bills)
+  },
   holdCurrentBill(billId) {
     this.updateBill(billId, { status: 'draft' })
   },

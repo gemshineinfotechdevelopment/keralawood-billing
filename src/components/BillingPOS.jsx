@@ -205,6 +205,11 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
 
   // Customer state
   const customer = currentBill.customer || { name: '', phone: '', address: '', gstin: '' }
+  const shipping = currentBill.shipping || {
+    name: customer.name || '',
+    phone: customer.phone || '',
+    address: customer.address || '',
+  }
 
   // Items in active bill (fallback to 1 empty row if items array is empty)
   const items = currentBill.items && currentBill.items.length > 0
@@ -297,12 +302,23 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
     })
   }
 
+  // Shipping Field Changes
+  const handleShippingChange = (field, val) => {
+    updateCurrentBill({
+      shipping: {
+        ...shipping,
+        [field]: val,
+      },
+    })
+  }
+
   // Autofill Customer from Dropdown
   const handleAutofillCustomer = (e) => {
     const selectedId = e.target.value
     if (!selectedId || selectedId === 'clear') {
       updateCurrentBill({
         customer: { name: '', phone: '', address: '', deliveryAddress: '', gstin: '' },
+        shipping: { name: '', phone: '', address: '' },
       })
       return
     }
@@ -316,6 +332,11 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
           address: found.address || found.location || '',
           deliveryAddress: found.deliveryAddress || found.address || '',
           gstin: found.gstin || '',
+        },
+        shipping: {
+          name: found.name,
+          phone: found.phone || '',
+          address: found.deliveryAddress || found.address || '',
         },
         name: `${currentBill.name.split('•')[0].trim()} • ${found.name}`,
       })
@@ -486,6 +507,69 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
     setViewMode('list')
   }
 
+  const handleEditBill = (bill) => {
+    const inv = bill.invoice || bill.invoiceNumber || bill.id
+    const existingDraft = bills.find((b) => b.invoiceNumber === inv || b.id === inv || b.id === bill.id)
+
+    if (existingDraft) {
+      setActiveBillId(existingDraft.id)
+      DataStore.setActiveBillId(existingDraft.id)
+      setViewMode('editor')
+      setPrintSuccessToast(`✓ Resumed editing bill ${inv}!`)
+      setTimeout(() => setPrintSuccessToast(''), 2000)
+      return
+    }
+
+    const itms = Array.isArray(bill.itemDetails) && bill.itemDetails.length > 0
+      ? bill.itemDetails
+      : [
+          {
+            id: 'item-edit-1',
+            description: bill.items || bill.item || 'Timber Furniture Order',
+            quantity: 1,
+            unit: 'Pieces (Nos)',
+            price: bill.rawAmount || Number(String(bill.amount || 0).replace(/[^0-9.]/g, '')) || 0,
+            gstRate: bill.taxType === 'intra' || !bill.taxType ? 18 : 18,
+            hsn: bill.hsnCode || '4407',
+            woodSpecies: bill.wood || 'Teak',
+            finish: 'Natural Beeswax',
+          },
+        ]
+
+    const editableBill = {
+      id: bill.id || `bill-edit-${Date.now()}`,
+      invoiceNumber: inv,
+      invoiceDate: bill.rawDate || (bill.date && !isNaN(new Date(bill.date).getTime()) ? new Date(bill.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]),
+      paymentStatus: bill.paymentStatus || bill.status || 'Paid',
+      paymentMode: bill.paymentMode || 'UPI',
+      amountPaid: bill.rawAmount || Number(String(bill.amount || 0).replace(/[^0-9.]/g, '')) || 0,
+      discount: bill.discount || 0,
+      deliveryCharge: bill.deliveryCharge || 0,
+      taxType: bill.taxType || 'intra',
+      notes: bill.notes || '',
+      customer: {
+        name: bill.customer || 'Walk-in Patron',
+        phone: bill.customerPhone || bill.phone || '',
+        address: bill.customerAddress || bill.address || bill.location || '',
+        gstin: bill.customerGstin || bill.gstin || '',
+      },
+      shipping: bill.shipping || {
+        name: bill.shippingName || bill.customer || '',
+        phone: bill.shippingPhone || bill.customerPhone || '',
+        address: bill.shippingAddress || bill.location || bill.customerAddress || '',
+      },
+      items: itms,
+    }
+
+    DataStore.saveBill(editableBill)
+    setBills(DataStore.getBills())
+    setActiveBillId(editableBill.id)
+    DataStore.setActiveBillId(editableBill.id)
+    setViewMode('editor')
+    setPrintSuccessToast(`✓ Loaded bill ${inv} for editing!`)
+    setTimeout(() => setPrintSuccessToast(''), 2000)
+  }
+
   const handleViewBill = (bill) => {
     setPreviewBill(bill)
     setInvoiceModalOpen(true)
@@ -528,6 +612,7 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
         paymentStatus,
         paymentMode,
         customer,
+        shipping,
         items,
         notes,
         itemsSubtotal,
@@ -553,6 +638,11 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
       address: previewBill.customerAddress || previewBill.address || previewBill.location || 'Sivakasi Yard Sale',
       gstin: previewBill.customerGstin || previewBill.gstin || 'Unregistered / Personal',
     }
+    const shp = {
+      name: previewBill.shipping?.name || previewBill.shippingName || cust.name,
+      phone: previewBill.shipping?.phone || previewBill.shippingPhone || cust.phone,
+      address: previewBill.shipping?.address || previewBill.shippingAddress || cust.address,
+    }
     const itms =
       Array.isArray(previewBill.itemDetails) && previewBill.itemDetails.length > 0
         ? previewBill.itemDetails
@@ -566,6 +656,7 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
                 Number(String(previewBill.amount || 0).replace(/[^0-9.]/g, '')) ||
                 0,
               gstRate: 0,
+              hsn: previewBill.hsnCode || '4407',
               woodSpecies: previewBill.wood || 'Artisan Timber',
             },
           ]
@@ -592,6 +683,7 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
       paymentStatus: st,
       paymentMode: md,
       customer: cust,
+      shipping: shp,
       items: itms,
       notes: nt,
       itemsSubtotal: sub,
@@ -613,6 +705,7 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
     paymentStatus,
     paymentMode,
     customer,
+    shipping,
     items,
     notes,
     itemsSubtotal,
@@ -652,6 +745,7 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
       invoiceDate,
       dueDate,
       customer,
+      shipping,
       items,
       discount,
       deliveryCharge,
@@ -711,67 +805,80 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
           <p>
             <strong>Invoice Date:</strong> {modalBillData.invoiceDate}
           </p>
-          <p>
-            <strong>Due Date:</strong> {modalBillData.dueDate}
-          </p>
-          <p>
-            <strong>Payment:</strong> {modalBillData.paymentStatus} ({modalBillData.paymentMode})
-          </p>
         </div>
       </div>
 
-      {/* Customer Box */}
+      {/* Customer & Shipping Addresses (Bill To & Ship To) */}
       <div className="pos-print-customer-box">
         <div className="pos-print-col">
-          <h4>Billed To:</h4>
+          <h4>Bill To:</h4>
           <p className="pos-print-cust-name">{modalBillData.customer.name || 'Walk-in Customer'}</p>
-          <p>{modalBillData.customer.address || 'Sivakasi Yard Destination'}</p>
+          <p>{modalBillData.customer.address || 'Local Destination'}</p>
           <p>Phone: {modalBillData.customer.phone || 'N/A'}</p>
           <p>GSTIN: {modalBillData.customer.gstin || 'Unregistered / Personal'}</p>
         </div>
         <div className="pos-print-col">
-          <h4>Depot & Mill Yard:</h4>
-          <p>{settings.depotName}</p>
-          <p>Forest Timber Transit Permit: SFD/SVK/TMR/2026-884</p>
-          <p>Payment Terms: {settings.paymentTerms || 'Immediate / POS'}</p>
+          <h4>Ship To:</h4>
+          <p className="pos-print-cust-name">{modalBillData.shipping?.name || modalBillData.customer.name || 'Walk-in Customer'}</p>
+          <p>{modalBillData.shipping?.address || modalBillData.customer.address || 'Same as Billing Address'}</p>
+          <p>Phone: {modalBillData.shipping?.phone || modalBillData.customer.phone || 'N/A'}</p>
         </div>
       </div>
 
-      {/* Items Table */}
+      {/* Items Table with HSN Code, Separate CGST/SGST columns and clean Item Name */}
       <table className="pos-print-table">
         <thead>
           <tr>
-            <th>#</th>
-            <th>Item Description</th>
-            <th>Qty</th>
-            <th>Price (₹)</th>
-            <th>{modalBillData.taxType === 'intra' ? 'GST (CGST+SGST)' : 'IGST'}</th>
-            <th>Total (₹)</th>
+            <th style={{ width: '5%' }}>#</th>
+            <th style={{ width: '32%' }}>Item Name</th>
+            <th style={{ width: '12%' }}>HSN/SAC</th>
+            <th style={{ width: '8%', textAlign: 'center' }}>Qty</th>
+            <th style={{ width: '12%', textAlign: 'right' }}>Price (₹)</th>
+            {modalBillData.taxType === 'inter' ? (
+              <th style={{ width: '15%', textAlign: 'center' }}>IGST</th>
+            ) : (
+              <>
+                <th style={{ width: '8%', textAlign: 'center' }}>CGST</th>
+                <th style={{ width: '8%', textAlign: 'center' }}>SGST</th>
+              </>
+            )}
+            <th style={{ width: '16%', textAlign: 'right' }}>Total (₹)</th>
           </tr>
         </thead>
         <tbody>
           {modalBillData.items.map((it, idx) => {
             const rowLine = (Number(it.quantity) || 1) * (Number(it.price) || 0)
-            const rate = it.gstRate || 0
+            const rate = Number(it.gstRate) || 0
+            const hsn = it.hsn || it.hsnCode || settings.hsnCode || '4407'
+            const cgstRate = rate / 2
+            const sgstRate = rate / 2
+            const cgstAmt = (rowLine * cgstRate) / 100
+            const sgstAmt = (rowLine * sgstRate) / 100
+            const igstAmt = (rowLine * rate) / 100
             return (
               <tr key={it.id || idx}>
                 <td>{idx + 1}</td>
                 <td>
                   <strong>{it.description || it.name || 'Timber Item'}</strong>
-                  {it.woodSpecies && (
-                    <span className="pos-print-subspec">
-                      {' '}
-                      • {it.woodSpecies} {it.finish ? `(${it.finish})` : ''}
-                    </span>
-                  )}
                 </td>
-                <td>{it.quantity || 1}</td>
-                <td>₹{Number(it.price || 0).toLocaleString('en-IN')}</td>
-                <td>
-                  {rate}%
-                  {modalBillData.taxType === 'intra' ? ` (${rate / 2}%+${rate / 2}%)` : ' (IGST)'}
-                </td>
-                <td>₹{rowLine.toLocaleString('en-IN')}</td>
+                <td>{hsn}</td>
+                <td style={{ textAlign: 'center' }}>{it.quantity || 1}</td>
+                <td style={{ textAlign: 'right' }}>₹{Number(it.price || 0).toLocaleString('en-IN')}</td>
+                {modalBillData.taxType === 'inter' ? (
+                  <td style={{ textAlign: 'center' }}>
+                    {rate > 0 ? `${rate}% (₹${igstAmt.toLocaleString('en-IN')})` : '0%'}
+                  </td>
+                ) : (
+                  <>
+                    <td style={{ textAlign: 'center' }}>
+                      {rate > 0 ? `${cgstRate}% (₹${cgstAmt.toLocaleString('en-IN')})` : '0%'}
+                    </td>
+                    <td style={{ textAlign: 'center' }}>
+                      {rate > 0 ? `${sgstRate}% (₹${sgstAmt.toLocaleString('en-IN')})` : '0%'}
+                    </td>
+                  </>
+                )}
+                <td style={{ textAlign: 'right' }}>₹{rowLine.toLocaleString('en-IN')}</td>
               </tr>
             )
           })}
@@ -840,9 +947,8 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
             </div>
           )}
           <div className="pos-print-sign-box">
-            <p>For {settings.depotName}</p>
             <div className="pos-print-sign-space" />
-            <p>Authorized Signatory: {settings.signatoryName || 'Rajesh Sivan'}</p>
+            <p>Authorized Signatory</p>
           </div>
         </div>
       </div>
@@ -1006,6 +1112,32 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
                           </td>
                           <td className="pos-col-actions" style={{ textAlign: 'center' }}>
                             <div className="pos-bill-actions-wrap">
+                              <button
+                                type="button"
+                                className="btn-bill-action btn-bill-edit"
+                                onClick={() => handleEditBill(bill)}
+                                title="Edit Bill"
+                                aria-label="Edit Bill"
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  width: '30px',
+                                  height: '30px',
+                                  borderRadius: '6px',
+                                  border: '1px solid #dbeafe',
+                                  backgroundColor: '#eff6ff',
+                                  color: '#2563eb',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.15s ease'
+                                }}
+                              >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                </svg>
+                              </button>
+
                               <button
                                 type="button"
                                 className="btn-bill-action btn-bill-view"
@@ -1256,6 +1388,66 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
                 <span>Save customer to directory for future bills</span>
               </label>
             </div>
+
+            {/* Ship To (Delivery / Site Address) */}
+            <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #f0e6de' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <span style={{ fontSize: '11px', fontWeight: 700, color: '#6A5649', letterSpacing: '0.04em' }}>
+                  SHIP TO (DELIVERY / SITE ADDRESS)
+                </span>
+                <button
+                  type="button"
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#2563eb',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => {
+                    updateCurrentBill({
+                      shipping: {
+                        name: customer.name || '',
+                        phone: customer.phone || '',
+                        address: customer.address || '',
+                      }
+                    })
+                  }}
+                >
+                  ↳ Same as Bill To
+                </button>
+              </div>
+              <div className="pos-customer-grid">
+                <div className="pos-input-group">
+                  <input
+                    type="text"
+                    className="pos-input"
+                    value={shipping.name || ''}
+                    onChange={(e) => handleShippingChange('name', e.target.value)}
+                    placeholder="Recipient / Site Contact (Ship To)"
+                  />
+                </div>
+                <div className="pos-input-group">
+                  <input
+                    type="text"
+                    className="pos-input"
+                    value={shipping.phone || ''}
+                    onChange={(e) => handleShippingChange('phone', e.target.value)}
+                    placeholder="Shipping Phone"
+                  />
+                </div>
+                <div className="pos-input-group pos-full-width">
+                  <input
+                    type="text"
+                    className="pos-input"
+                    value={shipping.address || ''}
+                    onChange={(e) => handleShippingChange('address', e.target.value)}
+                    placeholder="Shipping / Delivery Site Address (Optional)"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* 3. ITEMS Section */}
@@ -1376,22 +1568,35 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
                           onClick={() => toggleItemExpansion(item.id)}
                         >
                           <span className="pos-expand-icon">⚙️</span>
-                          <span>+ Add Dimensions, Wood Species & Finish (Optional) {isExpanded ? '▴' : '▾'}</span>
+                          <span>+ Add Dimensions & Wood (Optional) {isExpanded ? '▴' : '▾'}</span>
                         </button>
 
-                        <div className="pos-gst-selector-wrap">
-                          <span className="pos-gst-label">GST:</span>
-                          <select
-                            className="pos-select-gst"
-                            value={item.gstRate !== undefined ? item.gstRate : 0}
-                            onChange={(e) => handleItemChange(index, 'gstRate', Number(e.target.value))}
-                          >
-                            <option value="0">0% (Nil)</option>
-                            <option value="5">5%</option>
-                            <option value="12">12%</option>
-                            <option value="18">18%</option>
-                            <option value="28">28%</option>
-                          </select>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <span className="pos-gst-label">HSN:</span>
+                            <input
+                              type="text"
+                              style={{ width: '65px', padding: '2px 6px', fontSize: '11px', height: '24px', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                              value={item.hsn !== undefined ? item.hsn : (settings.hsnCode || '4407')}
+                              onChange={(e) => handleItemChange(index, 'hsn', e.target.value)}
+                              placeholder="4407"
+                            />
+                          </div>
+
+                          <div className="pos-gst-selector-wrap">
+                            <span className="pos-gst-label">{taxType === 'intra' ? 'GST (CGST+SGST):' : 'IGST:'}</span>
+                            <select
+                              className="pos-select-gst"
+                              value={item.gstRate !== undefined ? item.gstRate : 0}
+                              onChange={(e) => handleItemChange(index, 'gstRate', Number(e.target.value))}
+                            >
+                              <option value="0">0% (Nil)</option>
+                              <option value="5">{taxType === 'intra' ? '5% (2.5% CGST + 2.5% SGST)' : '5% (IGST)'}</option>
+                              <option value="12">{taxType === 'intra' ? '12% (6% CGST + 6% SGST)' : '12% (IGST)'}</option>
+                              <option value="18">{taxType === 'intra' ? '18% (9% CGST + 9% SGST)' : '18% (IGST)'}</option>
+                              <option value="28">{taxType === 'intra' ? '28% (14% CGST + 14% SGST)' : '28% (IGST)'}</option>
+                            </select>
+                          </div>
                         </div>
                       </div>
 
