@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { DataStore } from '../services/dataStore'
+import treeLogo from '../assets/tree-logo.png'
 import './Sidebar.css'
 
 export default function Sidebar({
@@ -166,9 +167,7 @@ export default function Sidebar({
       <div className="sidebar-header">
         {!isCollapsed ? (
           <div className="sidebar-brand">
-            {settings.logoUrl && (
-              <img src={settings.logoUrl} alt="Logo" className="sidebar-custom-logo" />
-            )}
+            <img src={settings.logoUrl || treeLogo} alt="Kerala Wood Furniture Logo" className="sidebar-custom-logo" />
             <div className="sidebar-brand-text-col">
               <span className="sidebar-brand-title">{settings.depotName ? settings.depotName.split('-')[0].trim() : 'Kerala Wood Furniture'}</span>
               <span className="sidebar-brand-subtitle">Sivakasi Branch</span>
@@ -176,11 +175,7 @@ export default function Sidebar({
           </div>
         ) : (
           <div className="sidebar-brand-mini" title={settings.depotName || 'Kerala Wood Furniture'}>
-            {settings.logoUrl ? (
-              <img src={settings.logoUrl} alt="Logo" className="sidebar-custom-logo-mini" />
-            ) : (
-              <span className="mini-emblem-text">KWF</span>
-            )}
+            <img src={settings.logoUrl || treeLogo} alt="Kerala Wood Furniture Logo" className="sidebar-custom-logo-mini" />
           </div>
         )}
 

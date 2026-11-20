@@ -350,14 +350,16 @@ export default function Products() {
                 <th>PRODUCT</th>
                 <th>CATEGORY</th>
                 <th>WOOD SPECIES</th>
-                <th>UNIT PRICE</th>
+                <th>COST PRICE</th>
+                <th>SELLING PRICE</th>
                 <th style={{ textAlign: 'right' }}>ACTIONS</th>
               </tr>
             </thead>
             <tbody>
               {paginatedProducts.length > 0 ? (
                 paginatedProducts.map((prod) => {
-                  const numPrice = Number(String(prod.sellingPrice || prod.unitPrice || prod.price || 0).replace(/[^0-9.]/g, '')) || 0
+                  const numCost = Number(String(prod.costPrice || 0).replace(/[^0-9.]/g, '')) || 0
+                  const numSelling = Number(String(prod.sellingPrice || prod.unitPrice || prod.price || 0).replace(/[^0-9.]/g, '')) || 0
 
                   return (
                     <tr key={prod.id || prod.sku}>
@@ -379,9 +381,16 @@ export default function Products() {
                       </td>
 
                       <td>
+                        <span className="product-cost-val" style={{ color: '#6D5C52', fontWeight: 600 }}>
+                          <span className="straight-rupee">₹</span>
+                          {numCost > 0 ? numCost.toLocaleString('en-IN') : '-'}
+                        </span>
+                      </td>
+
+                      <td>
                         <span className="product-price-val">
                           <span className="straight-rupee">₹</span>
-                          {numPrice.toLocaleString('en-IN')}
+                          {numSelling.toLocaleString('en-IN')}
                         </span>
                       </td>
 
@@ -624,12 +633,16 @@ export default function Products() {
 
               {/* Section 4: Pricing */}
               <div className="dossier-pricing-card">
-                <div className="dossier-price-row-top" style={{ marginBottom: 0 }}>
-                  <span className="dossier-price-label">UNIT CATALOG PRICE</span>
+                <div className="dossier-price-row-top" style={{ marginBottom: '8px' }}>
+                  <span className="dossier-price-label">SELLING PRICE</span>
                   <span className="dossier-price-large">
                     <span className="straight-rupee">₹</span>
                     {Number(String(previewProduct.sellingPrice || previewProduct.unitPrice || previewProduct.price || 0).replace(/[^0-9.]/g, '')).toLocaleString('en-IN')}
                   </span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11.5px', color: '#6D5C52', borderTop: '1px solid rgba(200, 141, 88, 0.2)', paddingTop: '6px' }}>
+                  <span>Cost Price:</span>
+                  <strong>₹{Number(String(previewProduct.costPrice || 0).replace(/[^0-9.]/g, '')).toLocaleString('en-IN')}</strong>
                 </div>
               </div>
 
@@ -698,20 +711,22 @@ export default function Products() {
               <th>Product Name</th>
               <th>Category</th>
               <th>Wood Species</th>
-              <th style={{ textAlign: 'right' }}>Price (₹)</th>
+              <th style={{ textAlign: 'right' }}>Cost Price (₹)</th>
+              <th style={{ textAlign: 'right' }}>Selling Price (₹)</th>
               <th style={{ textAlign: 'right' }}>Stock</th>
             </tr>
           </thead>
           <tbody>
             {filteredProducts.length === 0 ? (
               <tr>
-                <td colSpan="7" style={{ textAlign: 'center', padding: '16px' }}>
+                <td colSpan="8" style={{ textAlign: 'center', padding: '16px' }}>
                   No products in catalog.
                 </td>
               </tr>
             ) : (
               filteredProducts.map((p, idx) => {
-                const numPrice = Number(String(p.sellingPrice || p.unitPrice || p.price || 0).replace(/[^0-9.]/g, '')) || 0
+                const numCost = Number(String(p.costPrice || 0).replace(/[^0-9.]/g, '')) || 0
+                const numSelling = Number(String(p.sellingPrice || p.unitPrice || p.price || 0).replace(/[^0-9.]/g, '')) || 0
                 return (
                   <tr key={p.id || p.sku || idx}>
                     <td style={{ textAlign: 'center' }}>{idx + 1}</td>
@@ -719,7 +734,8 @@ export default function Products() {
                     <td><strong>{p.name}</strong></td>
                     <td>{p.category || '-'}</td>
                     <td>{p.woodSpecies || '-'}</td>
-                    <td style={{ textAlign: 'right' }}>₹{numPrice.toLocaleString('en-IN')}</td>
+                    <td style={{ textAlign: 'right' }}>{numCost > 0 ? `₹${numCost.toLocaleString('en-IN')}` : '-'}</td>
+                    <td style={{ textAlign: 'right' }}>₹{numSelling.toLocaleString('en-IN')}</td>
                     <td style={{ textAlign: 'right' }}>{p.stockQuantity !== undefined ? p.stockQuantity : '-'}</td>
                   </tr>
                 )

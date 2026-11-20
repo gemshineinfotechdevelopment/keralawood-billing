@@ -64,10 +64,20 @@ export default function AddProduct({ onProductSaved, onCancel, editProduct = nul
   )
   const [packagingType, setPackagingType] = useState(editProduct?.packagingType || '')
 
-  // Pricing
+  // Pricing: Cost Price & Selling Price
+  const [costPrice, setCostPrice] = useState(() => {
+    if (!editProduct) return ''
+    const val = editProduct.costPrice !== undefined ? editProduct.costPrice : ''
+    return String(val).replace(/[^0-9.]/g, '')
+  })
+  const [sellingPrice, setSellingPrice] = useState(() => {
+    if (!editProduct) return ''
+    const val = editProduct.sellingPrice !== undefined ? editProduct.sellingPrice : (editProduct.unitPrice || editProduct.price || '')
+    return String(val).replace(/[^0-9.]/g, '')
+  })
   const [unitPrice, setUnitPrice] = useState(() => {
     if (!editProduct) return ''
-    const val = editProduct.unitPrice !== undefined ? editProduct.unitPrice : editProduct.sellingPrice || editProduct.price || ''
+    const val = editProduct.sellingPrice !== undefined ? editProduct.sellingPrice : (editProduct.unitPrice || editProduct.price || '')
     return String(val).replace(/[^0-9.]/g, '')
   })
   const [isSaving, setIsSaving] = useState(false)
@@ -93,6 +103,8 @@ export default function AddProduct({ onProductSaved, onCancel, editProduct = nul
     setLowStockThreshold('')
     setDepotLocation('Sivakasi Central Depot')
     setPackagingType('')
+    setCostPrice('')
+    setSellingPrice('')
     setUnitPrice('')
     setSavedSuccess(false)
     setToastMsg('Form cleared for new product entry')
@@ -168,7 +180,8 @@ export default function AddProduct({ onProductSaved, onCancel, editProduct = nul
 
   const handleSaveProduct = async () => {
     setIsSaving(true)
-    const numericPrice = Number(unitPrice.replace(/[^0-9.]/g, '')) || 0
+    const numericSellingPrice = Number(String(sellingPrice || unitPrice).replace(/[^0-9.]/g, '')) || 0
+    const numericCostPrice = Number(String(costPrice).replace(/[^0-9.]/g, '')) || 0
     const inputQty = Number(stockQuantity) || 0
     const prevQty = editProduct ? (Number(editProduct.stockQuantity) || 0) : 0
     const existingStockOut = editProduct ? (Number(editProduct.stockOut) || 0) : 0
@@ -199,9 +212,10 @@ export default function AddProduct({ onProductSaved, onCancel, editProduct = nul
       lowStockThreshold: Number(lowStockThreshold) || 2,
       depotLocation,
       packagingType,
-      unitPrice: numericPrice,
-      sellingPrice: String(numericPrice),
-      costPrice: '',
+      unitPrice: numericSellingPrice,
+      sellingPrice: String(numericSellingPrice),
+      costPrice: numericCostPrice,
+      price: numericSellingPrice,
       gstSlab: '',
       tradeDiscount: '',
       transitPass: true,
@@ -664,20 +678,55 @@ export default function AddProduct({ onProductSaved, onCancel, editProduct = nul
                   <line x1="9" y1="21" x2="9" y2="9" />
                 </svg>
               </span>
-              <h2 className="card-section-title">Pricing</h2>
+              <h2 className="card-section-title">Pricing & Margins</h2>
             </div>
           </div>
 
-          <div className="form-field-group">
-            <label className="field-label">Unit Price (₹) *</label>
-            <input
-              type="text"
-              className="input-styled"
-              placeholder="e.g. 29500"
-              value={unitPrice}
-              onChange={(e) => setUnitPrice(e.target.value)}
-            />
+          <div className="form-row-2col">
+            <div className="form-field-group">
+              <label className="field-label">Cost Price (₹) *</label>
+              <input
+                type="text"
+                className="input-styled"
+                placeholder="e.g. 18000"
+                value={costPrice}
+                onChange={(e) => setCostPrice(e.target.value)}
+              />
+            </div>
+            <div className="form-field-group">
+              <label className="field-label">Selling Price (₹) *</label>
+              <input
+                type="text"
+                className="input-styled"
+                placeholder="e.g. 29500"
+                value={sellingPrice}
+                onChange={(e) => {
+                  setSellingPrice(e.target.value)
+                  setUnitPrice(e.target.value)
+                }}
+              />
+            </div>
           </div>
+
+          {Number(sellingPrice) > 0 && Number(costPrice) > 0 && (
+            <div style={{
+              marginTop: '10px',
+              padding: '8px 14px',
+              backgroundColor: '#FAF5EE',
+              border: '1px solid #EAD8C7',
+              borderRadius: '6px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              fontSize: '11.5px',
+              color: '#4A2E18'
+            }}>
+              <span>Estimated Profit: <strong>₹{(Number(sellingPrice) - Number(costPrice)).toLocaleString('en-IN')}</strong></span>
+              <span style={{ fontWeight: 700, color: Number(sellingPrice) >= Number(costPrice) ? '#166534' : '#991B1B' }}>
+                Markup: {(((Number(sellingPrice) - Number(costPrice)) / Number(costPrice)) * 100).toFixed(1)}%
+              </span>
+            </div>
+          )}
         </div>
       </div>
 

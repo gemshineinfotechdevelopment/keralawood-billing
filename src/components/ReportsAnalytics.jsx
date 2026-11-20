@@ -10,6 +10,8 @@ export default function ReportsAnalytics() {
     : now.getFullYear().toString()
 
   const [selectedYear, setSelectedYear] = useState(currentYear)
+  const [fromDate, setFromDate] = useState('')
+  const [toDate, setToDate] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [exportSuccess, setExportSuccess] = useState(false)
@@ -31,6 +33,7 @@ export default function ReportsAnalytics() {
             id: s.invoice,
             invoice: s.invoice,
             date: s.date ? new Date(s.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Nov 17, 2026',
+            rawDate: s.date ? new Date(s.date).toISOString().split('T')[0] : '',
             year: s.year || (s.date ? new Date(s.date).getFullYear().toString() : '2026'),
             monthYear: s.monthYear || 'November 2026',
             customer: s.customer,
@@ -40,6 +43,7 @@ export default function ReportsAnalytics() {
             amount: Number(s.amount || 0).toLocaleString('en-IN'),
             rawAmount: Number(s.amount || 0),
             status: s.paymentStatus || s.status || 'Paid',
+            createdAt: s.createdAt || s.date,
           }))
           setTransactions(formatted)
           DataStore.saveTransactions(formatted)
@@ -81,6 +85,22 @@ export default function ReportsAnalytics() {
     { value: 'all', label: 'All-Time' },
   ]
 
+  // Helper to extract ISO YYYY-MM-DD from any transaction date format
+  const getTxDateString = (tx) => {
+    if (tx.rawDate) return tx.rawDate.split('T')[0]
+    if (tx.createdAt) {
+      const d = new Date(tx.createdAt)
+      if (!isNaN(d.getTime())) return d.toISOString().split('T')[0]
+    }
+    if (tx.date) {
+      const d = new Date(tx.date)
+      if (!isNaN(d.getTime())) return d.toISOString().split('T')[0]
+      const m = String(tx.date).match(/\b(\d{4}-\d{2}-\d{2})\b/)
+      if (m) return m[1]
+    }
+    return ''
+  }
+
   // Filter transactions for the selected year (strictly excluding any legacy 2024 data)
   const isMatchYear = (tx, targetYear) => {
     if (String(tx.year) === '2024' || String(tx.date).includes('2024')) return false
@@ -99,9 +119,23 @@ export default function ReportsAnalytics() {
     return false
   }
 
-  const yearTransactions = transactions.filter((tx) => isMatchYear(tx, selectedYear))
+  // Date range or Year matching
+  const isDateRangeActive = Boolean(fromDate || toDate)
+  const isMatchDateRange = (tx) => {
+    if (String(tx.year) === '2024' || String(tx.date).includes('2024')) return false
+    if (isDateRangeActive) {
+      const txDateStr = getTxDateString(tx)
+      if (!txDateStr) return false
+      if (fromDate && txDateStr < fromDate) return false
+      if (toDate && txDateStr > toDate) return false
+      return true
+    }
+    return isMatchYear(tx, selectedYear)
+  }
 
-  // Filter transactions dynamically by search query within the selected year
+  const yearTransactions = transactions.filter(isMatchDateRange)
+
+  // Filter transactions dynamically by search query within the selected date range
   const filtered = yearTransactions.filter((tx) => {
     const q = searchQuery.toLowerCase().trim()
     if (!q) return true
@@ -114,15 +148,43 @@ export default function ReportsAnalytics() {
     )
   })
 
-  // Dynamic calculations based strictly on the selected year
+  // Dynamic calculations based strictly on the selected range
   const totalRawAmount = yearTransactions.reduce((sum, tx) => {
     if (tx.rawAmount) return sum + tx.rawAmount
     const cleaned = Number(String(tx.amount).replace(/[^0-9]/g, '')) || 0
     return sum + cleaned
   }, 0)
 
-  const totalVolumeCFT = yearTransactions.reduce((sum, tx) => sum + (Number(tx.volume) || 0), 0)
   const orderCount = yearTransactions.length
+
+  const handleSetToday = () => {
+    const today = new Date().toISOString().split('T')[0]
+    setFromDate(today)
+    setToDate(today)
+    setCurrentPage(1)
+  }
+
+  const handleSetThisMonth = () => {
+    const now = new Date()
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]
+    const today = now.toISOString().split('T')[0]
+    setFromDate(firstDay)
+    setToDate(today)
+    setCurrentPage(1)
+  }
+
+  const handleClearDateFilter = () => {
+    setFromDate('')
+    setToDate('')
+    setSelectedYear(currentYear)
+    setCurrentPage(1)
+  }
+
+  const dateRangeLabel = isDateRangeActive
+    ? `${fromDate || 'Beginning'} → ${toDate || 'Today'}`
+    : selectedYear === 'all'
+    ? 'All-Time'
+    : `Year ${selectedYear}`
 
   // Pagination states: minimum 20 transactions per page
   const [itemsPerPage, setItemsPerPage] = useState(20)
@@ -157,12 +219,11 @@ export default function ReportsAnalytics() {
     const specTxs = yearTransactions.filter((tx) =>
       (tx.wood || '').toLowerCase().includes(spec.name.toLowerCase().split(' ')[0])
     )
-    const specVolume = specTxs.reduce((sum, tx) => sum + (Number(tx.volume) || 0), 0)
     const specRaw = specTxs.reduce((sum, tx) => sum + (Number(tx.rawAmount) || 0), 0)
-    const pct = totalVolumeCFT > 0 ? Math.round((specVolume / totalVolumeCFT) * 100) : 0
+    const pct = totalRawAmount > 0 ? Math.round((specRaw / totalRawAmount) * 100) : 0
     return {
       ...spec,
-      volume: specVolume,
+      orders: specTxs.length,
       raw: specRaw,
       percent: pct,
     }
@@ -175,7 +236,7 @@ export default function ReportsAnalytics() {
         <div className="reports-title-wrap">
           <h1 className="reports-main-title">Reports & Analytics</h1>
           <p className="reports-main-subtitle">
-            Annual sales summary, revenue metrics, and orders.
+            Sales summary, revenue metrics, and invoice clearance reports.
           </p>
         </div>
 
@@ -203,6 +264,8 @@ export default function ReportsAnalytics() {
               value={selectedYear}
               onChange={(e) => {
                 setSelectedYear(e.target.value)
+                setFromDate('')
+                setToDate('')
                 setCurrentPage(1)
               }}
             >
@@ -252,12 +315,140 @@ export default function ReportsAnalytics() {
         </div>
       </div>
 
+      {/* Date Range Filter Bar (From Date to To Date) */}
+      <div className="reports-date-filter-bar" style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '12px',
+        padding: '12px 18px',
+        backgroundColor: '#FFFFFF',
+        border: '1px solid #EAE0D8',
+        borderRadius: '8px',
+        boxShadow: '0 1px 3px rgba(49, 25, 11, 0.02)'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '11px', fontWeight: 700, color: '#6A5649', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+            📅 Filter by Date:
+          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <label style={{ fontSize: '11px', color: '#8C7B72', fontWeight: 600 }}>From:</label>
+            <input
+              type="date"
+              value={fromDate}
+              onChange={(e) => {
+                setFromDate(e.target.value)
+                setCurrentPage(1)
+              }}
+              style={{
+                padding: '4px 8px',
+                fontSize: '11.5px',
+                border: '1px solid #E2CEBE',
+                borderRadius: '5px',
+                backgroundColor: '#FAF5F1',
+                color: '#31190B',
+                outline: 'none',
+                fontWeight: 500
+              }}
+            />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <label style={{ fontSize: '11px', color: '#8C7B72', fontWeight: 600 }}>To:</label>
+            <input
+              type="date"
+              value={toDate}
+              onChange={(e) => {
+                setToDate(e.target.value)
+                setCurrentPage(1)
+              }}
+              style={{
+                padding: '4px 8px',
+                fontSize: '11.5px',
+                border: '1px solid #E2CEBE',
+                borderRadius: '5px',
+                backgroundColor: '#FAF5F1',
+                color: '#31190B',
+                outline: 'none',
+                fontWeight: 500
+              }}
+            />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <button
+              type="button"
+              onClick={handleSetToday}
+              style={{
+                padding: '4px 10px',
+                fontSize: '11px',
+                fontWeight: 600,
+                borderRadius: '4px',
+                border: '1px solid #E2CEBE',
+                backgroundColor: '#FFFFFF',
+                color: '#31190B',
+                cursor: 'pointer'
+              }}
+            >
+              Today
+            </button>
+            <button
+              type="button"
+              onClick={handleSetThisMonth}
+              style={{
+                padding: '4px 10px',
+                fontSize: '11px',
+                fontWeight: 600,
+                borderRadius: '4px',
+                border: '1px solid #E2CEBE',
+                backgroundColor: '#FFFFFF',
+                color: '#31190B',
+                cursor: 'pointer'
+              }}
+            >
+              This Month
+            </button>
+            {isDateRangeActive && (
+              <button
+                type="button"
+                onClick={handleClearDateFilter}
+                style={{
+                  padding: '4px 10px',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  borderRadius: '4px',
+                  border: '1px solid #E57373',
+                  backgroundColor: '#FFEBEE',
+                  color: '#C62828',
+                  cursor: 'pointer'
+                }}
+              >
+                ✕ Clear Date Filter
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '11px', color: '#8C7B72' }}>Active Period:</span>
+          <span style={{
+            fontSize: '11px',
+            fontWeight: 700,
+            padding: '3px 8px',
+            borderRadius: '4px',
+            backgroundColor: isDateRangeActive ? '#E8F5E9' : '#F6ECE5',
+            color: isDateRangeActive ? '#2E7D32' : '#9A6638'
+          }}>
+            {dateRangeLabel} ({filtered.length} {filtered.length === 1 ? 'bill' : 'bills'})
+          </span>
+        </div>
+      </div>
+
       {/* Row 1: 3 KPI Summary Cards */}
       <div className="reports-kpi-grid">
         {/* Card 1: Total Annual Revenue */}
         <div className="reports-kpi-card">
           <div className="reports-kpi-top">
-            <span className="reports-kpi-label">TOTAL ANNUAL REVENUE</span>
+            <span className="reports-kpi-label">TOTAL SALES REVENUE</span>
             <div className="reports-kpi-icon">
               <svg
                 width="16"
@@ -284,9 +475,9 @@ export default function ReportsAnalytics() {
 
           <div className="reports-kpi-meta-row">
             <span className={orderCount > 0 ? 'kpi-trend-green' : 'kpi-subtext'}>
-              {orderCount > 0 ? '↗ Active Sales' : '• Year Starting (Fresh)'}
+              {orderCount > 0 ? '↗ Active Sales' : '• Standby'}
             </span>
-            <span className="kpi-subtext">{selectedYear === 'all' ? 'All recorded years' : `Year ${selectedYear}`}</span>
+            <span className="kpi-subtext">{dateRangeLabel}</span>
           </div>
 
           <div className="reports-kpi-divider" />
@@ -297,10 +488,10 @@ export default function ReportsAnalytics() {
           </div>
         </div>
 
-        {/* Card 2: Timber Dispatched */}
+        {/* Card 2: Total Invoices */}
         <div className="reports-kpi-card">
           <div className="reports-kpi-top">
-            <span className="reports-kpi-label">TIMBER DISPATCHED</span>
+            <span className="reports-kpi-label">TOTAL INVOICES</span>
             <div className="reports-kpi-icon">
               <svg
                 width="16"
@@ -312,30 +503,31 @@ export default function ReportsAnalytics() {
                 strokeLinecap="round"
                 strokeLinejoin="round"
               >
-                <rect x="1" y="3" width="15" height="13" rx="1" />
-                <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
-                <circle cx="5.5" cy="18.5" r="2.5" />
-                <circle cx="18.5" cy="18.5" r="2.5" />
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="16" y1="13" x2="8" y2="13" />
+                <line x1="16" y1="17" x2="8" y2="17" />
+                <polyline points="10 9 9 9 8 9" />
               </svg>
             </div>
           </div>
 
           <div className="reports-kpi-main">
             <span className="reports-kpi-val">
-              {totalVolumeCFT.toLocaleString('en-IN')} <span className="kpi-unit">CFT</span>
+              {orderCount} <span className="kpi-unit">{orderCount === 1 ? 'Bill' : 'Bills'}</span>
             </span>
           </div>
 
           <div className="reports-kpi-meta-row">
-            <span className="kpi-badge-orders">{orderCount} {orderCount === 1 ? 'order' : 'orders'}</span>
-            <span className="kpi-subtext">fulfilled in {selectedYear === 'all' ? 'all-time' : selectedYear}</span>
+            <span className="kpi-badge-orders">100% Tax Compliant</span>
+            <span className="kpi-subtext">fulfilled in {dateRangeLabel}</span>
           </div>
 
           <div className="reports-kpi-divider" />
 
           <div className="reports-kpi-footer">
             <span className="kpi-footer-label">Yard Location</span>
-            <span className="kpi-footer-status amber">Sivakasi Yard</span>
+            <span className="kpi-footer-status amber">Sivakasi Yard Depot</span>
           </div>
         </div>
 
@@ -529,7 +721,7 @@ export default function ReportsAnalytics() {
           <div>
             <h2 className="reports-table-title">Recent Sales Report</h2>
             <p className="reports-table-subtitle">
-              Detailed transactions, volume metrics, and invoice clearance.
+              Detailed transactions, customer billing records, and invoice clearance.
             </p>
           </div>
 
@@ -569,6 +761,8 @@ export default function ReportsAnalytics() {
                 value={selectedYear}
                 onChange={(e) => {
                   setSelectedYear(e.target.value)
+                  setFromDate('')
+                  setToDate('')
                   setCurrentPage(1)
                 }}
               >
@@ -589,8 +783,8 @@ export default function ReportsAnalytics() {
               <tr>
                 <th>BILL # / DATE</th>
                 <th>CUSTOMER / PROJECT</th>
-                <th>WOOD / ITEM</th>
-                <th>VOLUME</th>
+                <th>WOOD SPECIES</th>
+                <th>ORDER ITEMS</th>
                 <th>AMOUNT</th>
                 <th>STATUS</th>
               </tr>
@@ -609,11 +803,11 @@ export default function ReportsAnalytics() {
                     </td>
                     <td>
                       <div className="sales-primary-text">{tx.wood}</div>
-                      <div className="sales-sub-text">{tx.item}</div>
                     </td>
                     <td>
-                      <span className="sales-vol-num">{tx.volume}</span>{' '}
-                      <span className="sales-vol-unit">CFT</span>
+                      <div className="sales-sub-text" style={{ maxWidth: '220px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {tx.item || 'Timber items'}
+                      </div>
                     </td>
                     <td>
                       <span className="sales-amount">
@@ -646,7 +840,7 @@ export default function ReportsAnalytics() {
                   <td colSpan="6" className="sales-no-results">
                     {searchQuery
                       ? `No dispatched sales transactions found matching "${searchQuery}"`
-                      : `No sales or dispatches recorded for Year ${selectedYear === currentYear ? `${currentYear} (This Year)` : selectedYear}. When each year starts, reports reset to 0; as bills are created in Billing POS, annual sales will appear here automatically.`}
+                      : `No sales or bills recorded for ${dateRangeLabel}. As bills are generated in Billing POS, records will appear here automatically.`}
                   </td>
                 </tr>
               )}
@@ -658,7 +852,7 @@ export default function ReportsAnalytics() {
         <div className="reports-table-footer">
           <div className="footer-left-meta">
             <span className="showing-records-text">
-              Showing <strong>{filtered.length > 0 ? `${(currentPage - 1) * itemsPerPage + 1}-${Math.min(currentPage * itemsPerPage, filtered.length)}` : '0-0'}</strong> of <strong>{filtered.length}</strong> Transactions for {selectedYear === 'all' ? 'All Years' : `Year ${selectedYear}`}
+              Showing <strong>{filtered.length > 0 ? `${(currentPage - 1) * itemsPerPage + 1}-${Math.min(currentPage * itemsPerPage, filtered.length)}` : '0-0'}</strong> of <strong>{filtered.length}</strong> Transactions for {dateRangeLabel}
             </span>
             <span className="footer-pipe-divider">•</span>
             <select

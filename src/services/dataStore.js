@@ -342,6 +342,7 @@ export const DataStore = {
       packagingType: item.packagingType || '',
       shippingClass: item.shippingClass || '',
       tradeDiscount: item.tradeDiscount || '',
+      costPrice: Number(item.costPrice) || 0,
     }
     list.unshift(newProduct)
     this.saveProducts(list)
@@ -409,6 +410,7 @@ export const DataStore = {
           packagingType: item.packagingType || p.packagingType,
           shippingClass: item.shippingClass || p.shippingClass,
           tradeDiscount: item.tradeDiscount || p.tradeDiscount,
+          costPrice: item.costPrice !== undefined ? Number(item.costPrice) : (p.costPrice || 0),
         }
         return updatedItem
       }
@@ -744,12 +746,17 @@ export const DataStore = {
       : new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
 
     const itemNames = items.map((i) => `${i.quantity || 1}x ${i.description || i.name || 'Furniture'}`).join(', ')
+    const taxType = bill.taxType || 'intra'
+    const cgstAmount = taxType === 'intra' ? totalGst / 2 : 0
+    const sgstAmount = taxType === 'intra' ? totalGst / 2 : 0
+    const igstAmount = taxType === 'inter' ? totalGst : 0
+    const invDate = bill.invoiceDate || new Date().toISOString().split('T')[0]
 
     const newTx = {
       id: bill.invoiceNumber || `INV-${Date.now().toString().slice(-4)}`,
       invoice: bill.invoiceNumber || `INV-${Date.now().toString().slice(-4)}`,
       date: `${txDateStr}, ${txTimeStr}`,
-      rawDate: new Date().toISOString().split('T')[0],
+      rawDate: invDate,
       year: txYear,
       createdAt: new Date().toISOString(),
       monthYear: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
@@ -763,7 +770,10 @@ export const DataStore = {
       item: itemNames || 'Artisan Furniture Order',
       items: itemNames || 'Artisan Furniture Order',
       itemDetails: items,
-      volume: totalVolume || 36,
+      taxType,
+      cgstAmount,
+      sgstAmount,
+      igstAmount,
       amount: grandTotal.toLocaleString('en-IN'),
       rawAmount: grandTotal,
       subtotal,

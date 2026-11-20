@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { DataStore } from '../services/dataStore'
+import treeLogo from '../assets/tree-logo.png'
 import './BillingPOS.css'
 
 // Accurate Indian Number-to-Words converter (e.g. 1,500 -> One Thousand Five Hundred Rupees Only)
@@ -240,12 +241,19 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
     return sum + qty * prc
   }, 0)
 
+  // GST Tax Mode: 'intra' (CGST + SGST Mandatory) vs 'inter' (IGST Optional)
+  const taxType = currentBill.taxType || 'intra'
+
   const totalGst = items.reduce((sum, item) => {
     const qty = Number(item.quantity) || 0
     const prc = Number(item.price) || 0
     const gstRate = Number(item.gstRate) || 0
     return sum + (qty * prc * gstRate) / 100
   }, 0)
+
+  const cgstAmount = taxType === 'intra' ? totalGst / 2 : 0
+  const sgstAmount = taxType === 'intra' ? totalGst / 2 : 0
+  const igstAmount = taxType === 'inter' ? totalGst : 0
 
   const grandTotal = Math.max(0, Math.round(itemsSubtotal + totalGst + deliveryCharge - discount))
   const balanceDue = paymentStatus === 'Paid' ? 0 : Math.max(0, grandTotal - amountPaid)
@@ -525,7 +533,11 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
         itemsSubtotal,
         discount,
         deliveryCharge,
+        taxType,
         totalGst,
+        cgstAmount,
+        sgstAmount,
+        igstAmount,
         grandTotal,
         balanceDue,
       }
@@ -568,6 +580,11 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
     const bal = st === 'Paid' ? 0 : previewBill.balanceDue || 0
     const nt = previewBill.notes || ''
 
+    const activeTaxType = previewBill.taxType || 'intra'
+    const cgstAmt = previewBill.cgstAmount !== undefined ? previewBill.cgstAmount : (activeTaxType === 'intra' ? gstAmt / 2 : 0)
+    const sgstAmt = previewBill.sgstAmount !== undefined ? previewBill.sgstAmount : (activeTaxType === 'intra' ? gstAmt / 2 : 0)
+    const igstAmt = previewBill.igstAmount !== undefined ? previewBill.igstAmount : (activeTaxType === 'inter' ? gstAmt : 0)
+
     return {
       invoiceNumber: inv,
       invoiceDate: dt,
@@ -580,7 +597,11 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
       itemsSubtotal: sub,
       discount: disc,
       deliveryCharge: deliv,
+      taxType: activeTaxType,
       totalGst: gstAmt,
+      cgstAmount: cgstAmt,
+      sgstAmount: sgstAmt,
+      igstAmount: igstAmt,
       grandTotal: gTotal,
       balanceDue: bal,
     }
@@ -634,6 +655,10 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
       items,
       discount,
       deliveryCharge,
+      taxType,
+      cgstAmount,
+      sgstAmount,
+      igstAmount,
       paymentStatus,
       paymentMode,
       amountPaid: paymentStatus === 'Paid' ? grandTotal : amountPaid,
@@ -671,9 +696,7 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
       {/* Invoice Header */}
       <div className="pos-print-top">
         <div className="pos-print-brand">
-          {settings.logoUrl && (
-            <img src={settings.logoUrl} alt="Logo" className="pos-print-custom-logo" />
-          )}
+          <img src={settings.logoUrl || treeLogo} alt="Kerala Wood Furniture Logo" className="pos-print-custom-logo" />
           <h2>{settings.depotName || 'Kerala Wood Furniture — Sivakasi Depot'}</h2>
           <p>{settings.address || 'Sivakasi Central Depot & Mill Yard, Sivakasi'}</p>
           <p>
@@ -722,13 +745,14 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
             <th>Item Description</th>
             <th>Qty</th>
             <th>Price (₹)</th>
-            <th>GST</th>
+            <th>{modalBillData.taxType === 'intra' ? 'GST (CGST+SGST)' : 'IGST'}</th>
             <th>Total (₹)</th>
           </tr>
         </thead>
         <tbody>
           {modalBillData.items.map((it, idx) => {
             const rowLine = (Number(it.quantity) || 1) * (Number(it.price) || 0)
+            const rate = it.gstRate || 0
             return (
               <tr key={it.id || idx}>
                 <td>{idx + 1}</td>
@@ -743,7 +767,10 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
                 </td>
                 <td>{it.quantity || 1}</td>
                 <td>₹{Number(it.price || 0).toLocaleString('en-IN')}</td>
-                <td>{it.gstRate || 0}%</td>
+                <td>
+                  {rate}%
+                  {modalBillData.taxType === 'intra' ? ` (${rate / 2}%+${rate / 2}%)` : ' (IGST)'}
+                </td>
                 <td>₹{rowLine.toLocaleString('en-IN')}</td>
               </tr>
             )
@@ -784,10 +811,23 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
             </div>
           )}
           {modalBillData.totalGst > 0 && (
-            <div className="pos-print-line">
-              <span>GST Amount:</span>
-              <span>+₹{modalBillData.totalGst.toLocaleString('en-IN')}</span>
-            </div>
+            modalBillData.taxType === 'inter' ? (
+              <div className="pos-print-line">
+                <span>IGST (Inter-State):</span>
+                <span>+₹{modalBillData.totalGst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              </div>
+            ) : (
+              <>
+                <div className="pos-print-line">
+                  <span>CGST (Mandatory):</span>
+                  <span>+₹{(modalBillData.cgstAmount ?? (modalBillData.totalGst / 2)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+                <div className="pos-print-line">
+                  <span>SGST (Mandatory):</span>
+                  <span>+₹{(modalBillData.sgstAmount ?? (modalBillData.totalGst / 2)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+              </>
+            )
           )}
           <div className="pos-print-line pos-print-grand">
             <strong>Grand Total:</strong>
@@ -1031,7 +1071,14 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
             >
               ← Back to Bills List
             </button>
-            <span className="pos-editor-mode-label">Editing Customer Bill • {invoiceNumber}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <img
+                src={settings.logoUrl || treeLogo}
+                alt="Logo"
+                style={{ width: '26px', height: '26px', objectFit: 'contain', borderRadius: '4px' }}
+              />
+              <span className="pos-editor-mode-label">Editing Customer Bill • {invoiceNumber}</span>
+            </div>
           </div>
 
           {/* Top Bar with Concurrent Draft Tabs */}
@@ -1449,12 +1496,12 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
             </div>
           </div>
 
-          {/* Discount & Delivery Options (Inline, No Dropdown) */}
+          {/* Discount, Delivery & GST Tax Options */}
           <div className="pos-card pos-additional-options-card">
             <div className="pos-card-header-clean" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
               <span style={{ fontSize: '14px' }}>🏷️</span>
               <h3 style={{ fontSize: '13.5px', fontWeight: 700, margin: 0, color: '#31190B', letterSpacing: '-0.01em' }}>
-                Trade Discount & Delivery Logistics
+                Discounts, Logistics & GST Tax Mode
               </h3>
             </div>
             <div className="pos-additional-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
@@ -1480,6 +1527,53 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
                   onChange={(e) => updateCurrentBill({ deliveryCharge: Math.max(0, Number(e.target.value) || 0) })}
                   placeholder="0"
                 />
+              </div>
+            </div>
+
+            {/* GST Tax Application Mode */}
+            <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid #e2e8f0' }}>
+              <label className="pos-label" style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>
+                GST Tax Application Mode:
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                <button
+                  type="button"
+                  style={{
+                    padding: '8px 10px',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    borderRadius: '6px',
+                    border: taxType === 'intra' ? '2px solid #2563eb' : '1px solid #cbd5e1',
+                    backgroundColor: taxType === 'intra' ? '#eff6ff' : '#ffffff',
+                    color: taxType === 'intra' ? '#1d4ed8' : '#64748b',
+                    cursor: 'pointer',
+                    textAlign: 'center',
+                    transition: 'all 0.15s ease'
+                  }}
+                  onClick={() => updateCurrentBill({ taxType: 'intra' })}
+                >
+                  <span style={{ display: 'block', fontWeight: 700 }}>CGST + SGST</span>
+                  <span style={{ fontSize: '10px', opacity: 0.85 }}>(Mandatory • Intra-State)</span>
+                </button>
+                <button
+                  type="button"
+                  style={{
+                    padding: '8px 10px',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    borderRadius: '6px',
+                    border: taxType === 'inter' ? '2px solid #2563eb' : '1px solid #cbd5e1',
+                    backgroundColor: taxType === 'inter' ? '#eff6ff' : '#ffffff',
+                    color: taxType === 'inter' ? '#1d4ed8' : '#64748b',
+                    cursor: 'pointer',
+                    textAlign: 'center',
+                    transition: 'all 0.15s ease'
+                  }}
+                  onClick={() => updateCurrentBill({ taxType: 'inter' })}
+                >
+                  <span style={{ display: 'block', fontWeight: 700 }}>IGST</span>
+                  <span style={{ fontSize: '10px', opacity: 0.85 }}>(Optional • Inter-State)</span>
+                </button>
               </div>
             </div>
           </div>
@@ -1602,12 +1696,29 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
                   )}
 
                   {totalGst > 0 && (
-                    <div className="bill-dossier-calc-line">
-                      <span className="bill-dossier-calc-label">Tax / GST Breakdown:</span>
-                      <span className="bill-dossier-calc-val">
-                        +₹{totalGst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </span>
-                    </div>
+                    taxType === 'inter' ? (
+                      <div className="bill-dossier-calc-line">
+                        <span className="bill-dossier-calc-label">IGST (Inter-State):</span>
+                        <span className="bill-dossier-calc-val">
+                          +₹{totalGst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="bill-dossier-calc-line">
+                          <span className="bill-dossier-calc-label">CGST (Mandatory):</span>
+                          <span className="bill-dossier-calc-val">
+                            +₹{cgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                        <div className="bill-dossier-calc-line">
+                          <span className="bill-dossier-calc-label">SGST (Mandatory):</span>
+                          <span className="bill-dossier-calc-val">
+                            +₹{sgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                      </>
+                    )
                   )}
 
                   <div className="bill-dossier-divider" />
@@ -1773,9 +1884,16 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
         <div className="pos-modal-overlay" onClick={handleCloseInvoiceModal}>
           <div className="pos-invoice-modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="pos-modal-header">
-              <div className="pos-modal-header-info">
-                <h3>Kerala Wood Furniture — Tax Invoice</h3>
-                <p>Official Sivakasi Central Depot Tax Document</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <img
+                  src={settings.logoUrl || treeLogo}
+                  alt="Logo"
+                  style={{ width: '38px', height: '38px', objectFit: 'contain', borderRadius: '4px', background: '#fff', padding: '2px' }}
+                />
+                <div className="pos-modal-header-info">
+                  <h3>Kerala Wood Furniture — Tax Invoice</h3>
+                  <p>Official Sivakasi Central Depot Tax Document</p>
+                </div>
               </div>
               <div className="pos-modal-header-actions">
                 <button type="button" className="pos-btn-print-now" onClick={handlePrint}>
