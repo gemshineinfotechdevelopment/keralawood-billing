@@ -94,7 +94,7 @@ const EMPTY_INITIAL_CUSTOMER = {
 const INITIAL_BILLS = [
   {
     id: 'bill-1',
-    invoiceNumber: 'INV-101',
+    invoiceNumber: 'INV-1001',
     invoiceDate: new Date().toISOString().split('T')[0],
     dueDate: new Date(Date.now() + 15 * 86400000).toISOString().split('T')[0],
     name: 'Bill #1',
@@ -342,7 +342,23 @@ export const DataStore = {
 
   // SALES PERSONS
   getSalesPersons() {
-    return loadFromStorage(STORAGE_KEYS.SALES_PERSONS, INITIAL_SALES_PERSONS)
+    const raw = loadFromStorage(STORAGE_KEYS.SALES_PERSONS, INITIAL_SALES_PERSONS)
+    const txs = this.getTransactions()
+    // Calculate exact ordersClosed from real sales records (1 bill = 1 count)
+    return (Array.isArray(raw) ? raw : []).map((sp) => {
+      const spName = (sp.name || '').trim().toLowerCase()
+      const spCode = (sp.code || '').trim().toLowerCase()
+      const realOrderCount = txs.filter((t) => {
+        const b = (t.billedBy || '').trim().toLowerCase()
+        const s = (t.salesPerson || '').trim().toLowerCase()
+        return (spName && (b === spName || s === spName)) || (spCode && (b === spCode || s === spCode))
+      }).length
+
+      return {
+        ...sp,
+        ordersClosed: realOrderCount,
+      }
+    })
   },
   saveSalesPersons(list) {
     saveToStorage(STORAGE_KEYS.SALES_PERSONS, list)
@@ -757,6 +773,32 @@ export const DataStore = {
     const activeId = this.getActiveBillId()
     return bills.find((b) => b.id === activeId) || bills[0] || null
   },
+  getNextInvoiceNumber(excludeBillId = null) {
+    const bills = this.getBills().filter((b) => !excludeBillId || b.id !== excludeBillId)
+    const txs = this.getTransactions()
+    const existingInvoices = [
+      ...bills.map((b) => b.invoiceNumber || ''),
+      ...txs.map((t) => t.invoice || t.id || ''),
+    ]
+
+    const usedNums = new Set()
+    existingInvoices.forEach((inv) => {
+      const m = String(inv).match(/INV-(\d+)/i)
+      if (m) {
+        const n = parseInt(m[1], 10)
+        if (!isNaN(n) && n > 0) {
+          usedNums.add(n)
+        }
+      }
+    })
+
+    // Start checking from 1001 upwards to reuse deleted or missing sequence numbers
+    let seq = 1001
+    while (usedNums.has(seq)) {
+      seq++
+    }
+    return `INV-${seq}`
+  },
   createNewDraft(preselectedCustomer = null) {
     const bills = this.getBills()
     const emptyCustomer = {
@@ -774,19 +816,8 @@ export const DataStore = {
     const seq = bills.length + 1
     const newId = `bill-${Date.now()}`
 
-    // Auto-generate next sequential invoice number like INV-1004, INV-1005
-    const existingInvoices = [
-      ...bills.map((b) => b.invoiceNumber || ''),
-      ...this.getTransactions().map((t) => t.invoice || t.id || ''),
-    ]
-    const extractedNums = existingInvoices
-      .map((inv) => {
-        const m = String(inv).match(/INV-(\d+)/i)
-        return m ? parseInt(m[1], 10) : 0
-      })
-      .filter((n) => !isNaN(n) && n > 0)
-    const nextSeq = extractedNums.length > 0 ? Math.max(...extractedNums) + 1 : 1001
-    const autoInv = `INV-${nextSeq}`
+    // Auto-generate invoice number: reuses gaps from deleted invoices or picks next sequential number
+    const autoInv = this.getNextInvoiceNumber()
 
     // Today's date formatted as YYYY-MM-DD
     const today = new Date().toISOString().split('T')[0]
@@ -928,9 +959,7 @@ export const DataStore = {
       txYear = d.getFullYear().toString()
     }
 
-    const txTimeStr = settings.systemTime?.trim()
-      ? settings.systemTime.trim()
-      : new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
+    const txTimeStr = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
 
     const itemNames = items.map((i) => `${i.quantity || 1}x ${i.description || i.name || 'Furniture'}`).join(', ')
     const taxType = bill.taxType || 'intra'

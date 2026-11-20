@@ -1286,7 +1286,9 @@
   }
 
   /* Show ONLY the isolated print portal attached directly to <body> */
-  body > #pos-print-isolated-portal {
+  body > #pos-print-isolated-portal,
+  #pos-print-isolated-portal,
+  .pos-print-isolated-portal {
     display: block !important;
     position: static !important;
     left: auto !important;
@@ -1303,7 +1305,9 @@
     z-index: 9999999 !important;
   }
 
-  body > #pos-print-isolated-portal * {
+  body > #pos-print-isolated-portal *,
+  #pos-print-isolated-portal *,
+  .pos-print-isolated-portal * {
     visibility: visible !important;
   }
 
@@ -1317,34 +1321,55 @@
     padding: 0 !important;
     margin: 0 !important;
     background: #FFFFFF !important;
+    break-inside: auto !important;
     page-break-inside: auto !important;
   }
 
   .pos-print-top {
     display: flex !important;
     justify-content: space-between !important;
+    break-inside: avoid !important;
     page-break-inside: avoid !important;
   }
 
   .pos-print-customer-box {
-    display: grid !important;
-    grid-template-columns: 1fr 1fr !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    gap: 20px !important;
+    break-inside: avoid !important;
     page-break-inside: avoid !important;
+  }
+
+  .pos-print-customer-box .pos-print-col {
+    flex: 1 !important;
   }
 
   .pos-print-table {
     width: 100% !important;
+    break-inside: auto !important;
     page-break-inside: auto !important;
   }
 
   .pos-print-table tr {
+    break-inside: avoid !important;
     page-break-inside: avoid !important;
   }
 
   .pos-print-footer {
-    display: grid !important;
-    grid-template-columns: 1fr 280px !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    gap: 24px !important;
+    break-inside: avoid !important;
     page-break-inside: avoid !important;
+  }
+
+  .pos-print-footer .pos-print-words-and-notes {
+    flex: 1 !important;
+  }
+
+  .pos-print-footer .pos-print-summary-totals {
+    width: 280px !important;
+    flex-shrink: 0 !important;
   }
 }
 

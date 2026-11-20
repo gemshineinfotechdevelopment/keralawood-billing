@@ -1257,7 +1257,8 @@
     font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif !important;
   }
 
-  body * {
+  /* Scope hidden rule to when products print wrapper exists, preventing leakage to Billing / Invoice printing */
+  body:has(.products-print-only-wrapper) * {
     visibility: hidden;
   }
 
