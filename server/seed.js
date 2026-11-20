@@ -57,7 +57,7 @@ export async function seedInitialData() {
         signatoryName: 'Rajesh Sivan',
         signatoryDesignation: 'Depot Lead & Store Manager',
         disclaimer:
-          'Natural variations in teak & rosewood grain are organic characteristics. Claims accepted within 7 days of yard delivery.',
+          'We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct',
         systemTime: '10:30 AM',
         systemDate: '',
       });

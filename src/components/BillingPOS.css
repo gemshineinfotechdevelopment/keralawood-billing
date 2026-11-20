@@ -1132,11 +1132,22 @@
   margin-bottom: 12px !important;
 }
 
+.pos-print-declaration-wrap {
+  margin-top: 14px;
+}
+
+.pos-print-declaration-label {
+  font-weight: 700;
+  font-size: 11px;
+  color: #31190B;
+  margin-bottom: 3px;
+}
+
 .pos-print-disclaimer {
   font-size: 10.5px !important;
   color: #7D6C63;
   line-height: 1.4;
-  margin-top: 14px !important;
+  margin-top: 2px !important;
 }
 
 .pos-print-summary-totals {

@@ -1038,7 +1038,14 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
               <strong>Note:</strong> {modalBillData.notes}
             </p>
           )}
-          <p className="pos-print-disclaimer">{settings.disclaimer}</p>
+          <div className="pos-print-declaration-wrap">
+            <p className="pos-print-declaration-label">Declaration:</p>
+            <p className="pos-print-disclaimer">
+              {settings.disclaimer && !settings.disclaimer.includes('Natural variations')
+                ? settings.disclaimer
+                : 'We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct'}
+            </p>
+          </div>
         </div>
 
         <div className="pos-print-summary-totals">

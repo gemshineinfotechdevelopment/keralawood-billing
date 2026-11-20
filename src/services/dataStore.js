@@ -56,7 +56,7 @@ const INITIAL_SETTINGS = {
   paymentTerms: 'Immediate / POS',
   signatoryName: 'Rajesh Sivan',
   signatoryDesignation: 'Depot Lead & Store Manager',
-  disclaimer: 'Natural variations in teak & rosewood grain are organic characteristics. Claims accepted within 7 days of yard delivery.',
+  disclaimer: 'We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct',
   logoUrl: '',
   systemTime: '10:30 AM',
   systemDate: '',
@@ -209,7 +209,12 @@ export const DataStore = {
 
   // SETTINGS
   getSettings() {
-    return loadFromStorage(STORAGE_KEYS.SETTINGS, INITIAL_SETTINGS)
+    const s = loadFromStorage(STORAGE_KEYS.SETTINGS, INITIAL_SETTINGS)
+    if (!s.disclaimer || s.disclaimer.includes('Natural variations in teak')) {
+      s.disclaimer = 'We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct'
+      saveToStorage(STORAGE_KEYS.SETTINGS, s)
+    }
+    return s
   },
   saveSettings(settings) {
     saveToStorage(STORAGE_KEYS.SETTINGS, settings)
