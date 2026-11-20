@@ -682,24 +682,38 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
     const due = previewBill.dueDate || '15 Days Net'
     const st = previewBill.paymentStatus || previewBill.status || 'Paid'
     const md = previewBill.paymentMode || 'UPI'
+
+    const custName = typeof previewBill.customer === 'object' && previewBill.customer !== null
+      ? (previewBill.customer.name || 'Walk-in Patron')
+      : (typeof previewBill.customer === 'string' && previewBill.customer.trim() ? previewBill.customer : 'Walk-in Patron')
+    const custPhone = (typeof previewBill.customer === 'object' && previewBill.customer !== null ? previewBill.customer.phone : null) || previewBill.customerPhone || previewBill.phone || 'N/A'
+    const custAddress = (typeof previewBill.customer === 'object' && previewBill.customer !== null ? previewBill.customer.address : null) || previewBill.customerAddress || previewBill.address || previewBill.location || 'Sivakasi Yard Sale'
+    const custGstin = (typeof previewBill.customer === 'object' && previewBill.customer !== null ? previewBill.customer.gstin : null) || previewBill.customerGstin || previewBill.gstin || 'Unregistered / Personal'
+
     const cust = {
-      name: previewBill.customer || 'Walk-in Patron',
-      phone: previewBill.customerPhone || previewBill.phone || 'N/A',
-      address: previewBill.customerAddress || previewBill.address || previewBill.location || 'Sivakasi Yard Sale',
-      gstin: previewBill.customerGstin || previewBill.gstin || 'Unregistered / Personal',
+      name: custName,
+      phone: custPhone,
+      address: custAddress,
+      gstin: custGstin,
     }
+
     const shp = {
-      name: previewBill.shipping?.name || previewBill.shippingName || cust.name,
-      phone: previewBill.shipping?.phone || previewBill.shippingPhone || cust.phone,
-      address: previewBill.shipping?.address || previewBill.shippingAddress || cust.address,
+      name: (typeof previewBill.shipping === 'object' && previewBill.shipping !== null ? previewBill.shipping.name : null) || previewBill.shippingName || cust.name,
+      phone: (typeof previewBill.shipping === 'object' && previewBill.shipping !== null ? previewBill.shipping.phone : null) || previewBill.shippingPhone || cust.phone,
+      address: (typeof previewBill.shipping === 'object' && previewBill.shipping !== null ? previewBill.shipping.address : null) || previewBill.shippingAddress || cust.address,
     }
+
     const itms =
-      Array.isArray(previewBill.itemDetails) && previewBill.itemDetails.length > 0
+      Array.isArray(previewBill.items) && previewBill.items.length > 0 && typeof previewBill.items[0] === 'object'
+        ? previewBill.items
+        : Array.isArray(previewBill.itemDetails) && previewBill.itemDetails.length > 0
         ? previewBill.itemDetails
         : [
             {
               id: 'item-prev-1',
-              description: previewBill.items || previewBill.item || 'Timber Furniture Order',
+              description: typeof previewBill.items === 'string' && previewBill.items.trim()
+                ? previewBill.items
+                : (typeof previewBill.item === 'string' && previewBill.item.trim() ? previewBill.item : 'Timber Furniture Order'),
               quantity: 1,
               price:
                 previewBill.rawAmount ||
@@ -772,15 +786,26 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
   // Save & Print Actions
   // -------------------------------------------------------------
   const handleSaveBill = (showModalAfter = false, directPrintAfter = false) => {
-    const validItems = items.filter((i) => (i.description && i.description.trim()) || Number(i.price) > 0)
+    // Collect valid items or fallback
+    const validItems = items
+      .filter((i) => (i.description && i.description.trim()) || Number(i.price) > 0)
+      .map((i, idx) => ({
+        ...i,
+        description: i.description?.trim() || `Timber Order Item #${idx + 1}`,
+        price: Number(i.price) || 0,
+        quantity: Number(i.quantity) || 1,
+        hsn: i.hsn || i.hsnCode || settings.hsnCode || '4407',
+      }))
+
     if (validItems.length === 0) {
+      alert('⚠️ Please enter at least one item description or rate before saving.')
       setPrintSuccessToast('⚠️ Please enter at least one item description or rate before saving.')
       setTimeout(() => setPrintSuccessToast(''), 3000)
       return
     }
 
     // 1. If "Save customer to directory" is checked, save customer to MongoDB & store
-    if (saveCustomerToDirectory && customer.name.trim()) {
+    if (saveCustomerToDirectory && customer.name && customer.name.trim()) {
       DataStore.addCustomer({
         name: customer.name.trim(),
         phone: customer.phone?.trim() || '',
@@ -800,7 +825,8 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
       dueDate,
       customer,
       shipping,
-      items: validItems.length > 0 ? validItems : items,
+      items: validItems,
+      itemDetails: validItems,
       discount,
       deliveryCharge,
       taxType,
@@ -819,26 +845,34 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
       notes,
     }
 
-    DataStore.recordSaleFromBill(billToRecord)
-    DataStore.deleteBill(currentBill.id)
-    setBills(DataStore.getBills())
-    setSavedBills(DataStore.getTransactions())
+    try {
+      DataStore.recordSaleFromBill(billToRecord)
+      const nextBill = DataStore.removeBill(currentBill.id)
+      setBills(DataStore.getBills())
+      if (nextBill) {
+        setActiveBillId(nextBill.id)
+      }
+      setSavedBills(DataStore.getTransactions())
 
-    if (directPrintAfter) {
-      setPreviewBill(billToRecord)
-      setInvoiceModalOpen(true)
-      setPrintSuccessToast(`✓ Bill ${invoiceNumber} saved! Opening print...`)
-      setTimeout(() => {
-        window.print()
+      if (directPrintAfter) {
+        setPreviewBill(billToRecord)
+        setInvoiceModalOpen(true)
+        setPrintSuccessToast(`✓ Bill ${invoiceNumber} saved! Opening print preview...`)
+        setTimeout(() => {
+          window.print()
+          setTimeout(() => setPrintSuccessToast(''), 3000)
+        }, 300)
+      } else if (showModalAfter) {
+        setPreviewBill(billToRecord)
+        setInvoiceModalOpen(true)
+      } else {
+        setPrintSuccessToast(`✓ Bill ${invoiceNumber} saved successfully!`)
+        setViewMode('list')
         setTimeout(() => setPrintSuccessToast(''), 3000)
-      }, 350)
-    } else if (showModalAfter) {
-      setPreviewBill(billToRecord)
-      setInvoiceModalOpen(true)
-    } else {
-      setPrintSuccessToast(`✓ Bill ${invoiceNumber} saved successfully!`)
-      setViewMode('list')
-      setTimeout(() => setPrintSuccessToast(''), 3000)
+      }
+    } catch (err) {
+      console.error('[BillingPOS] Save bill error:', err)
+      alert('Error saving bill: ' + err.message)
     }
   }
 

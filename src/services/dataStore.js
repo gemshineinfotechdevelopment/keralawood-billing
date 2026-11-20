@@ -849,6 +849,9 @@ export const DataStore = {
     }
     return remaining[0]
   },
+  deleteBill(billId) {
+    return this.removeBill(billId)
+  },
 
   // TRANSACTIONS / SALES
   getTransactions() {

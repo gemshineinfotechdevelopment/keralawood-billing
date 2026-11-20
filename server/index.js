@@ -696,6 +696,23 @@ app.post('/api/sales', async (req, res) => {
       }
     }
 
+    // Increment ordersClosed for salesPerson in MongoDB if matched
+    const spIdentifier = (data.billedBy || data.salesPerson || '').trim();
+    if (spIdentifier) {
+      const sp = await SalesPerson.findOne({
+        $or: [
+          { name: new RegExp(`^${spIdentifier}$`, 'i') },
+          { code: new RegExp(`^${spIdentifier}$`, 'i') }
+        ]
+      });
+      if (sp) {
+        sp.ordersClosed = (Number(sp.ordersClosed) || 0) + 1;
+        sp.achievedSales = (Number(sp.achievedSales) || 0) + rawAmt;
+        await sp.save();
+        console.log(`[MongoDB] Incremented ordersClosed for sales person: ${sp.name} (Total: ${sp.ordersClosed})`);
+      }
+    }
+
     res.status(201).json({ success: true, sale: saved });
   } catch (err) {
     console.error('[API] /api/sales POST error:', err);
