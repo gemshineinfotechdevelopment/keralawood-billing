@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { DataStore } from '../services/dataStore'
 import treeLogo from '../assets/tree-logo.png'
 import './BillingPOS.css'
@@ -93,6 +93,22 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
   const [saveCustomerToDirectory, setSaveCustomerToDirectory] = useState(false)
   const [additionalOptionsOpen, setAdditionalOptionsOpen] = useState(false)
   const [expandedItemDetails, setExpandedItemDetails] = useState({}) // { [itemId]: boolean }
+
+  // Customer search & sameAsBillTo state
+  const [customerSearchQuery, setCustomerSearchQuery] = useState('')
+  const [customerSearchOpen, setCustomerSearchOpen] = useState(false)
+  const [sameAsBillTo, setSameAsBillTo] = useState(false)
+  const customerSearchRef = useRef(null)
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (customerSearchRef.current && !customerSearchRef.current.contains(e.target)) {
+        setCustomerSearchOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   useEffect(() => {
     if (initialViewMode) {
@@ -300,8 +316,16 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
   // Customer Field Changes
   const handleCustomerChange = (field, val) => {
     const updated = { ...customer, [field]: val }
+    const updatedShip = sameAsBillTo
+      ? {
+          ...shipping,
+          [field]: val,
+        }
+      : shipping
+
     updateCurrentBill({
       customer: updated,
+      shipping: updatedShip,
       name: updated.name ? `${currentBill.name.split('•')[0].trim()} • ${updated.name}` : currentBill.name,
     })
   }
@@ -316,35 +340,34 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
     })
   }
 
-  // Autofill Customer from Dropdown
-  const handleAutofillCustomer = (e) => {
-    const selectedId = e.target.value
-    if (!selectedId || selectedId === 'clear') {
+  // Select customer from search dropdown
+  const handleSelectCustomer = (c) => {
+    if (!c) {
       updateCurrentBill({
         customer: { name: '', phone: '', address: '', deliveryAddress: '', gstin: '' },
-        shipping: { name: '', phone: '', address: '' },
+        shipping: sameAsBillTo ? { name: '', phone: '', address: '' } : shipping,
       })
-      return
-    }
-    const found = customers.find((c) => String(c.id) === String(selectedId) || c.name === selectedId)
-    if (found) {
+      setCustomerSearchQuery('')
+    } else {
       updateCurrentBill({
         customer: {
-          id: found.id,
-          name: found.name,
-          phone: found.phone || '',
-          address: found.address || found.location || '',
-          deliveryAddress: found.deliveryAddress || found.address || '',
-          gstin: found.gstin || '',
+          id: c.id,
+          name: c.name,
+          phone: c.phone || '',
+          address: c.address || c.location || '',
+          deliveryAddress: c.deliveryAddress || c.address || '',
+          gstin: c.gstin || '',
         },
-        shipping: {
-          name: found.name,
-          phone: found.phone || '',
-          address: found.deliveryAddress || found.address || '',
-        },
-        name: `${currentBill.name.split('•')[0].trim()} • ${found.name}`,
+        shipping: sameAsBillTo ? {
+          name: c.name,
+          phone: c.phone || '',
+          address: c.deliveryAddress || c.address || '',
+        } : shipping,
+        name: `${currentBill.name.split('•')[0].trim()} • ${c.name}`,
       })
+      setCustomerSearchQuery(c.name)
     }
+    setCustomerSearchOpen(false)
   }
 
   // -------------------------------------------------------------
@@ -373,6 +396,12 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
   const handlePickFromCatalog = (e) => {
     const prodIdOrSku = e.target.value
     if (!prodIdOrSku) return
+
+    if (prodIdOrSku === '__blank__') {
+      handleAddBlankRow()
+      e.target.value = ''
+      return
+    }
 
     const prod = products.find((p) => p.id === prodIdOrSku || p.sku === prodIdOrSku || p.name === prodIdOrSku)
     if (!prod) return
@@ -1459,16 +1488,19 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
               </div>
 
               <div className="pos-input-group">
-                <label className="pos-label">Due Date</label>
-                <div className="pos-date-wrapper">
-                  <input
-                    type="date"
-                    className="pos-input pos-date-input"
-                    value={dueDate}
-                    onChange={(e) => updateCurrentBill({ dueDate: e.target.value })}
-                  />
-                  <span className="pos-calendar-icon">📅</span>
-                </div>
+                <label className="pos-label">Payment Mode *</label>
+                <select
+                  className="pos-input"
+                  style={{ height: '38px', cursor: 'pointer', fontWeight: 600, color: '#31190B' }}
+                  value={paymentMode}
+                  onChange={(e) => updateCurrentBill({ paymentMode: e.target.value })}
+                >
+                  <option value="UPI">UPI</option>
+                  <option value="Cash">Cash</option>
+                  <option value="Card">Card</option>
+                  <option value="Net Banking">Net Banking</option>
+                  <option value="Cheque">Cheque</option>
+                </select>
               </div>
             </div>
           </div>
@@ -1477,18 +1509,126 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
           <div className="pos-card pos-customer-card">
             <div className="pos-card-header">
               <h3 className="pos-card-title">CUSTOMER DETAILS</h3>
-              <div className="pos-card-header-actions">
-                <select className="pos-select-autofill" onChange={handleAutofillCustomer} defaultValue="">
-                  <option value="" disabled>
-                    Autofill Saved Customer... ▾
-                  </option>
-                  <option value="clear">— Clear / New Customer —</option>
-                  {customers.map((c) => (
-                    <option key={c.id || c.name} value={c.id || c.name}>
-                      {c.name} {c.phone ? `(${c.phone})` : ''}
-                    </option>
-                  ))}
-                </select>
+              <div className="pos-card-header-actions" ref={customerSearchRef} style={{ position: 'relative' }}>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <input
+                    type="text"
+                    className="pos-input"
+                    style={{
+                      width: '240px',
+                      height: '34px',
+                      fontSize: '12px',
+                      paddingLeft: '28px',
+                      paddingRight: customerSearchQuery ? '26px' : '10px',
+                      backgroundColor: '#FEF9F6',
+                      borderColor: customerSearchOpen ? '#C88D58' : '#D3C4B8'
+                    }}
+                    placeholder="Search customer by name/phone..."
+                    value={customerSearchQuery}
+                    onChange={(e) => {
+                      setCustomerSearchQuery(e.target.value)
+                      setCustomerSearchOpen(true)
+                    }}
+                    onFocus={() => setCustomerSearchOpen(true)}
+                  />
+                  <span style={{ position: 'absolute', left: '9px', fontSize: '12px', color: '#8A7B72', pointerEvents: 'none' }}>
+                    🔍
+                  </span>
+                  {customerSearchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCustomerSearchQuery('')
+                        setCustomerSearchOpen(false)
+                      }}
+                      style={{
+                        position: 'absolute',
+                        right: '8px',
+                        background: 'none',
+                        border: 'none',
+                        color: '#999',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        padding: 0
+                      }}
+                      title="Clear search"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+
+                {customerSearchOpen && (
+                  <div
+                    className="pos-customer-search-dropdown"
+                    style={{
+                      position: 'absolute',
+                      top: 'calc(100% + 4px)',
+                      right: 0,
+                      width: '280px',
+                      zIndex: 100,
+                      backgroundColor: '#FFFFFF',
+                      border: '1.5px solid #D3C4B8',
+                      borderRadius: '8px',
+                      boxShadow: '0 8px 24px rgba(49, 25, 11, 0.15)',
+                      maxHeight: '230px',
+                      overflowY: 'auto'
+                    }}
+                  >
+                    <div
+                      onClick={() => handleSelectCustomer(null)}
+                      style={{
+                        padding: '8px 12px',
+                        fontSize: '11.5px',
+                        color: '#b45309',
+                        fontWeight: 700,
+                        backgroundColor: '#FEF6EE',
+                        borderBottom: '1px solid #F5D7BA',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      — Clear / New Customer —
+                    </div>
+                    {customers
+                      .filter((c) => {
+                        if (!customerSearchQuery.trim()) return true
+                        const q = customerSearchQuery.toLowerCase()
+                        return (
+                          (c.name && c.name.toLowerCase().includes(q)) ||
+                          (c.phone && c.phone.includes(q)) ||
+                          (c.address && c.address.toLowerCase().includes(q))
+                        )
+                      })
+                      .map((c) => (
+                        <div
+                          key={c.id || c.name}
+                          onClick={() => handleSelectCustomer(c)}
+                          style={{
+                            padding: '9px 12px',
+                            fontSize: '12px',
+                            borderBottom: '1px solid #F8EFE9',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '2px',
+                            transition: 'background-color 0.1s'
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#FAF1EE')}
+                          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#FFFFFF')}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <strong style={{ color: '#31190B' }}>{c.name}</strong>
+                            {c.phone && <span style={{ fontSize: '11px', color: '#8C5325', fontWeight: 600 }}>{c.phone}</span>}
+                          </div>
+                          {(c.address || c.deliveryAddress) && (
+                            <span style={{ fontSize: '11px', color: '#8A7B72', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {c.deliveryAddress || c.address}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1536,33 +1676,42 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
             </div>
 
             {/* Ship To (Delivery / Site Address) */}
-            <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px solid #f0e6de' }}>
+            <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid #f0e6de' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
                 <span style={{ fontSize: '11px', fontWeight: 700, color: '#6A5649', letterSpacing: '0.04em' }}>
                   SHIP TO (DELIVERY / SITE ADDRESS)
                 </span>
-                <button
-                  type="button"
+                <label
                   style={{
-                    background: 'none',
-                    border: 'none',
-                    color: '#2563eb',
-                    fontSize: '11px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    cursor: 'pointer',
+                    fontSize: '11.5px',
                     fontWeight: 600,
-                    cursor: 'pointer'
-                  }}
-                  onClick={() => {
-                    updateCurrentBill({
-                      shipping: {
-                        name: customer.name || '',
-                        phone: customer.phone || '',
-                        address: customer.address || '',
-                      }
-                    })
+                    color: '#31190B'
                   }}
                 >
-                  ↳ Same as Bill To
-                </button>
+                  <input
+                    type="checkbox"
+                    checked={sameAsBillTo}
+                    onChange={(e) => {
+                      const checked = e.target.checked
+                      setSameAsBillTo(checked)
+                      if (checked) {
+                        updateCurrentBill({
+                          shipping: {
+                            name: customer.name || '',
+                            phone: customer.phone || '',
+                            address: customer.address || '',
+                          }
+                        })
+                      }
+                    }}
+                    style={{ accentColor: '#8C5325', width: '15px', height: '15px', cursor: 'pointer' }}
+                  />
+                  <span>Same as Bill To</span>
+                </label>
               </div>
               <div className="pos-customer-grid">
                 <div className="pos-input-group">
@@ -1605,16 +1754,13 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
                   <option value="" disabled>
                     + Pick from Products Catalog... ▾
                   </option>
+                  <option value="__blank__">+ Add Custom / Blank Item</option>
                   {products.map((p) => (
                     <option key={p.id || p.sku} value={p.sku || p.name}>
                       {p.name} — ₹{Number(p.sellingPrice || p.unitPrice || 0).toLocaleString('en-IN')}
                     </option>
                   ))}
                 </select>
-
-                <button type="button" className="pos-btn-add-blank-row" onClick={handleAddBlankRow}>
-                  <span className="pos-plus-icon">⊕</span> Add Blank Row
-                </button>
               </div>
             </div>
 
@@ -1625,7 +1771,8 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
                 <div className="pos-col-desc">ITEM DESCRIPTION</div>
                 <div className="pos-col-qty">QUANTITY</div>
                 <div className="pos-col-rate">PRICE / RATE (₹)</div>
-                <div className="pos-col-total">TOTAL & ACTIONS</div>
+                <div className="pos-col-total">TOTAL (₹)</div>
+                <div className="pos-col-actions">ACTIONS</div>
               </div>
 
               <div className="pos-items-rows-container">
@@ -1633,7 +1780,6 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
                   const qty = Number(item.quantity) || 0
                   const prc = Number(item.price) || 0
                   const lineTotal = qty * prc
-                  const isExpanded = !!expandedItemDetails[item.id]
 
                   return (
                     <div key={item.id || index} className="pos-item-row-block">
@@ -1647,6 +1793,7 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
                         <div className="pos-col-desc">
                           <input
                             type="text"
+                            id={`item-desc-${item.id || index}`}
                             list="pos-catalog-datalist"
                             className="pos-input pos-item-desc-input"
                             value={item.description || ''}
@@ -1682,127 +1829,104 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
                           </div>
                         </div>
 
-                        {/* Total & Action Buttons */}
+                        {/* Total Column */}
                         <div className="pos-col-total">
                           <span className="pos-item-line-total">
                             ₹{lineTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </span>
+                        </div>
+
+                        {/* Actions Column */}
+                        <div className="pos-col-actions">
                           <button
                             type="button"
-                            className="pos-row-action-btn pos-btn-copy"
-                            onClick={() => handleDuplicateRow(index)}
-                            title="Duplicate Row"
+                            className="btn-bill-action btn-bill-edit"
+                            onClick={() => {
+                              const el = document.getElementById(`item-desc-${item.id || index}`)
+                              if (el) {
+                                el.focus()
+                                el.select()
+                              }
+                            }}
+                            title="Edit Item Description"
+                            aria-label="Edit Item"
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              width: '30px',
+                              height: '30px',
+                              borderRadius: '6px',
+                              border: '1px solid #dbeafe',
+                              backgroundColor: '#eff6ff',
+                              color: '#2563eb',
+                              cursor: 'pointer',
+                              transition: 'all 0.15s ease'
+                            }}
                           >
-                            📋
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                            </svg>
                           </button>
                           <button
                             type="button"
-                            className="pos-row-action-btn pos-btn-delete"
+                            className="btn-bill-action btn-bill-delete"
                             onClick={() => handleDeleteRow(index)}
                             title="Delete Row"
+                            aria-label="Delete Row"
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              width: '30px',
+                              height: '30px',
+                              borderRadius: '6px',
+                              border: '1px solid #fee2e2',
+                              backgroundColor: '#fef2f2',
+                              color: '#dc2626',
+                              cursor: 'pointer',
+                              transition: 'all 0.15s ease'
+                            }}
                           >
-                            🗑️
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="3 6 5 6 21 6" />
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                            </svg>
                           </button>
                         </div>
                       </div>
 
-                      {/* Expandable row strip under each row */}
-                      <div className="pos-item-row-substrip">
-                        <button
-                          type="button"
-                          className="pos-btn-expand-specs"
-                          onClick={() => toggleItemExpansion(item.id)}
-                        >
-                          <span className="pos-expand-icon">⚙️</span>
-                          <span>+ Add Dimensions & Wood (Optional) {isExpanded ? '▴' : '▾'}</span>
-                        </button>
+                      {/* Row substrip for statutory HSN & GST */}
+                      <div className="pos-item-row-substrip" style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '14px', padding: '6px 8px', marginTop: '6px', borderTop: '1px dashed #F0E4DC' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span className="pos-gst-label" style={{ fontWeight: 600, fontSize: '11px', color: '#6A5649' }}>HSN:</span>
+                          <input
+                            type="text"
+                            style={{ width: '70px', padding: '2px 6px', fontSize: '11px', height: '26px', border: '1px solid #D3C4B8', borderRadius: '4px' }}
+                            value={item.hsn !== undefined ? item.hsn : (settings.hsnCode || '4407')}
+                            onChange={(e) => handleItemChange(index, 'hsn', e.target.value)}
+                            placeholder="4407"
+                          />
+                        </div>
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <span className="pos-gst-label">HSN:</span>
-                            <input
-                              type="text"
-                              style={{ width: '65px', padding: '2px 6px', fontSize: '11px', height: '24px', border: '1px solid #cbd5e1', borderRadius: '4px' }}
-                              value={item.hsn !== undefined ? item.hsn : (settings.hsnCode || '4407')}
-                              onChange={(e) => handleItemChange(index, 'hsn', e.target.value)}
-                              placeholder="4407"
-                            />
-                          </div>
-
-                          <div className="pos-gst-selector-wrap">
-                            <span className="pos-gst-label">{taxType === 'intra' ? 'GST (CGST+SGST):' : 'IGST:'}</span>
-                            <select
-                              className="pos-select-gst"
-                              value={item.gstRate !== undefined ? item.gstRate : 0}
-                              onChange={(e) => handleItemChange(index, 'gstRate', Number(e.target.value))}
-                            >
-                              <option value="0">0% (Nil)</option>
-                              <option value="5">{taxType === 'intra' ? '5% (2.5% CGST + 2.5% SGST)' : '5% (IGST)'}</option>
-                              <option value="12">{taxType === 'intra' ? '12% (6% CGST + 6% SGST)' : '12% (IGST)'}</option>
-                              <option value="18">{taxType === 'intra' ? '18% (9% CGST + 9% SGST)' : '18% (IGST)'}</option>
-                              <option value="28">{taxType === 'intra' ? '28% (14% CGST + 14% SGST)' : '28% (IGST)'}</option>
-                            </select>
-                          </div>
+                        <div className="pos-gst-selector-wrap" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span className="pos-gst-label" style={{ fontWeight: 600, fontSize: '11px', color: '#6A5649' }}>
+                            {taxType === 'intra' ? 'GST (CGST+SGST):' : 'IGST:'}
+                          </span>
+                          <select
+                            className="pos-select-gst"
+                            value={item.gstRate !== undefined ? item.gstRate : 0}
+                            onChange={(e) => handleItemChange(index, 'gstRate', Number(e.target.value))}
+                          >
+                            <option value="0">0% (Nil)</option>
+                            <option value="5">{taxType === 'intra' ? '5% (2.5% CGST + 2.5% SGST)' : '5% (IGST)'}</option>
+                            <option value="12">{taxType === 'intra' ? '12% (6% CGST + 6% SGST)' : '12% (IGST)'}</option>
+                            <option value="18">{taxType === 'intra' ? '18% (9% CGST + 9% SGST)' : '18% (IGST)'}</option>
+                            <option value="28">{taxType === 'intra' ? '28% (14% CGST + 14% SGST)' : '28% (IGST)'}</option>
+                          </select>
                         </div>
                       </div>
-
-                      {/* Expanded Timber Specifications (Optional) */}
-                      {isExpanded && (
-                        <div className="pos-item-specs-drawer">
-                          <div className="pos-specs-grid">
-                            <div>
-                              <label className="pos-specs-label">Length (cm)</label>
-                              <input
-                                type="text"
-                                className="pos-input"
-                                value={item.length || ''}
-                                onChange={(e) => handleItemChange(index, 'length', e.target.value)}
-                                placeholder="e.g. 210"
-                              />
-                            </div>
-                            <div>
-                              <label className="pos-specs-label">Width (cm)</label>
-                              <input
-                                type="text"
-                                className="pos-input"
-                                value={item.width || ''}
-                                onChange={(e) => handleItemChange(index, 'width', e.target.value)}
-                                placeholder="e.g. 100"
-                              />
-                            </div>
-                            <div>
-                              <label className="pos-specs-label">Height (cm)</label>
-                              <input
-                                type="text"
-                                className="pos-input"
-                                value={item.height || ''}
-                                onChange={(e) => handleItemChange(index, 'height', e.target.value)}
-                                placeholder="e.g. 76"
-                              />
-                            </div>
-                            <div>
-                              <label className="pos-specs-label">Wood Species</label>
-                              <input
-                                type="text"
-                                className="pos-input"
-                                value={item.woodSpecies || ''}
-                                onChange={(e) => handleItemChange(index, 'woodSpecies', e.target.value)}
-                                placeholder="Teak / Rosewood"
-                              />
-                            </div>
-                            <div>
-                              <label className="pos-specs-label">Finish / Polish</label>
-                              <input
-                                type="text"
-                                className="pos-input"
-                                value={item.finish || ''}
-                                onChange={(e) => handleItemChange(index, 'finish', e.target.value)}
-                                placeholder="Organic Beeswax"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      )}
                     </div>
                   )
                 })}
