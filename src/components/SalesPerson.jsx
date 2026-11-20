@@ -145,10 +145,7 @@ export default function SalesPerson() {
     }
 
     if (editingPerson) {
-      const updatedList = salesPersons.map((s) =>
-        s.id === editingPerson.id || s.code === editingPerson.code ? { ...s, ...payload } : s
-      )
-      DataStore.saveSalesPersons(updatedList)
+      DataStore.updateSalesPerson({ ...editingPerson, ...payload })
       showToast(`Sales Person "${payload.name}" updated successfully!`)
     } else {
       DataStore.addSalesPerson(payload)

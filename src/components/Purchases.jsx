@@ -125,8 +125,7 @@ export default function Purchases() {
     }
 
     if (editingPurchase) {
-      const updatedList = purchases.map((p) => (p.id === editingPurchase.id ? { ...p, ...payload } : p))
-      DataStore.savePurchases(updatedList)
+      DataStore.updatePurchase({ ...editingPurchase, ...payload })
       showToast(`✓ Updated purchase ${payload.invoiceNumber}`)
     } else {
       DataStore.addPurchase(payload)

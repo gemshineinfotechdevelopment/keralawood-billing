@@ -321,6 +321,54 @@ export const DataStore = {
         }
       }
 
+      // 5. Sync Purchases from Backend MongoDB
+      const resPurchases = await fetch(`${API_BASE}/api/purchases`).catch(() => null)
+      if (resPurchases && resPurchases.ok) {
+        const data = await resPurchases.json()
+        if (data && Array.isArray(data.purchases) && data.purchases.length > 0) {
+          const formatted = data.purchases.map((p) => ({
+            id: p._id || p.invoiceNumber,
+            invoiceNumber: p.invoiceNumber,
+            supplier: p.supplier,
+            supplierPhone: p.supplierPhone || '',
+            date: p.date,
+            item: p.item,
+            category: p.category,
+            quantity: p.quantity,
+            amount: p.amount,
+            gstAmount: p.gstAmount,
+            paymentMode: p.paymentMode,
+            notes: p.notes,
+          }))
+          saveToStorage(STORAGE_KEYS.PURCHASES, formatted)
+        }
+      }
+
+      // 6. Sync Sales Persons from Backend MongoDB
+      const resSalesPersons = await fetch(`${API_BASE}/api/sales-persons`).catch(() => null)
+      if (resSalesPersons && resSalesPersons.ok) {
+        const data = await resSalesPersons.json()
+        if (data && Array.isArray(data.salesPersons) && data.salesPersons.length > 0) {
+          const formatted = data.salesPersons.map((sp) => ({
+            id: sp._id || sp.code,
+            code: sp.code,
+            name: sp.name,
+            phone: sp.phone || '',
+            email: sp.email || '',
+            role: sp.role,
+            territory: sp.territory,
+            target: sp.target,
+            achievedSales: sp.achievedSales,
+            commissionRate: sp.commissionRate,
+            paymentMode: sp.paymentMode,
+            ordersClosed: sp.ordersClosed,
+            joiningDate: sp.joiningDate,
+            notes: sp.notes,
+          }))
+          saveToStorage(STORAGE_KEYS.SALES_PERSONS, formatted)
+        }
+      }
+
       notifyStoreUpdate()
     } catch (err) {
       console.warn('[dataStore] Background sync failed, using offline cache:', err.message)
@@ -362,11 +410,44 @@ export const DataStore = {
     const item = { ...purchase, id, invoiceNumber: purchase.invoiceNumber || id }
     const updated = [item, ...list]
     this.savePurchases(updated)
+
+    // Sync to backend MongoDB
+    fetch(`${API_BASE}/api/purchases`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(item),
+    }).catch((err) => {
+      console.warn('[dataStore] Offline purchase saved locally:', err.message)
+    })
+
     return item
+  },
+  updatePurchase(purchase) {
+    const list = this.getPurchases()
+    const updated = list.map((p) =>
+      p.id === purchase.id || p.invoiceNumber === purchase.invoiceNumber ? { ...p, ...purchase } : p
+    )
+    this.savePurchases(updated)
+
+    const key = purchase._id || purchase.id || purchase.invoiceNumber
+    fetch(`${API_BASE}/api/purchases/${encodeURIComponent(key)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(purchase),
+    }).catch((err) => {
+      console.warn('[dataStore] Offline purchase update saved locally:', err.message)
+    })
   },
   deletePurchase(id) {
     const list = this.getPurchases().filter((p) => p.id !== id && p.invoiceNumber !== id)
     this.savePurchases(list)
+
+    // Sync deletion to backend MongoDB
+    fetch(`${API_BASE}/api/purchases/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    }).catch((err) => {
+      console.warn('[dataStore] Offline purchase delete saved locally:', err.message)
+    })
   },
 
   // SALES PERSONS
@@ -383,11 +464,42 @@ export const DataStore = {
     const item = { ...sp, id, code: sp.code || id }
     const updated = [item, ...list]
     this.saveSalesPersons(updated)
+
+    // Sync to backend MongoDB
+    fetch(`${API_BASE}/api/sales-persons`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(item),
+    }).catch((err) => {
+      console.warn('[dataStore] Offline sales person saved locally:', err.message)
+    })
+
     return item
+  },
+  updateSalesPerson(sp) {
+    const list = this.getSalesPersons()
+    const updated = list.map((s) => (s.id === sp.id || s.code === sp.code ? { ...s, ...sp } : s))
+    this.saveSalesPersons(updated)
+
+    const key = sp._id || sp.id || sp.code
+    fetch(`${API_BASE}/api/sales-persons/${encodeURIComponent(key)}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(sp),
+    }).catch((err) => {
+      console.warn('[dataStore] Offline sales person update saved locally:', err.message)
+    })
   },
   deleteSalesPerson(id) {
     const list = this.getSalesPersons().filter((s) => s.id !== id && s.code !== id)
     this.saveSalesPersons(list)
+
+    // Sync deletion to backend MongoDB
+    fetch(`${API_BASE}/api/sales-persons/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    }).catch((err) => {
+      console.warn('[dataStore] Offline sales person delete saved locally:', err.message)
+    })
   },
 
   // PRODUCTS

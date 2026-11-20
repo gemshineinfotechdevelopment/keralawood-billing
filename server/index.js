@@ -11,6 +11,8 @@ import { Customer } from './models/Customer.js';
 import { Settings } from './models/Settings.js';
 import { Dashboard } from './models/Dashboard.js';
 import { Stock } from './models/Stock.js';
+import { Purchase } from './models/Purchase.js';
+import { SalesPerson } from './models/SalesPerson.js';
 import { seedInitialData } from './seed.js';
 
 // Resolve __dirname for ES modules
@@ -769,6 +771,216 @@ app.post('/api/stocks', async (req, res) => {
   } catch (err) {
     console.error('[API] /api/stocks POST error:', err);
     res.status(500).json({ success: false, message: 'Failed to record stock movement', error: err.message });
+  }
+});
+
+// -------------------------------------------------------------
+// PURCHASES API
+// -------------------------------------------------------------
+app.get('/api/purchases', async (req, res) => {
+  try {
+    const { search, paymentMode } = req.query;
+    const query = {};
+
+    if (paymentMode && paymentMode !== 'all') {
+      query.paymentMode = new RegExp(`^${paymentMode.trim()}$`, 'i');
+    }
+
+    if (search && search.trim()) {
+      const reg = new RegExp(search.trim(), 'i');
+      query.$or = [
+        { invoiceNumber: reg },
+        { supplier: reg },
+        { item: reg },
+        { category: reg },
+      ];
+    }
+
+    const purchases = await Purchase.find(query).sort({ createdAt: -1 });
+    res.json({ success: true, count: purchases.length, purchases });
+  } catch (err) {
+    console.error('[API] /api/purchases GET error:', err);
+    res.status(500).json({ success: false, message: 'Failed to fetch purchases', error: err.message });
+  }
+});
+
+app.post('/api/purchases', async (req, res) => {
+  try {
+    const data = req.body;
+    if (!data.supplier || !data.supplier.trim()) {
+      return res.status(400).json({ success: false, message: 'Supplier name is required' });
+    }
+
+    const totalCount = await Purchase.countDocuments();
+    const invoiceNumber = data.invoiceNumber?.trim() || `PUR-${100 + totalCount + 1}`;
+
+    const newPurchase = new Purchase({
+      invoiceNumber,
+      supplier: data.supplier.trim(),
+      supplierPhone: data.supplierPhone || '',
+      date: data.date || new Date().toISOString().split('T')[0],
+      item: data.item?.trim() || 'Artisan Timber Consignment',
+      category: data.category || 'Timber Logs',
+      quantity: data.quantity || '',
+      amount: Number(data.amount) || 0,
+      gstAmount: Number(data.gstAmount) || 0,
+      paymentMode: data.paymentMode || 'Bank Wire',
+      notes: data.notes || '',
+    });
+
+    const saved = await newPurchase.save();
+    console.log('[API] Created new purchase consignment in MongoDB:', saved.invoiceNumber, saved.supplier);
+    res.status(201).json({ success: true, purchase: saved });
+  } catch (err) {
+    console.error('[API] /api/purchases POST error:', err);
+    res.status(500).json({ success: false, message: 'Failed to create purchase record', error: err.message });
+  }
+});
+
+app.put('/api/purchases/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    let updated = null;
+
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      updated = await Purchase.findByIdAndUpdate(id, req.body, { new: true });
+    } else {
+      updated = await Purchase.findOneAndUpdate({ invoiceNumber: id }, req.body, { new: true });
+    }
+
+    if (!updated) {
+      return res.status(404).json({ success: false, message: 'Purchase record not found' });
+    }
+
+    console.log('[API] Updated purchase consignment in MongoDB:', updated.invoiceNumber);
+    res.json({ success: true, purchase: updated });
+  } catch (err) {
+    console.error('[API] /api/purchases PUT error:', err);
+    res.status(500).json({ success: false, message: 'Failed to update purchase record', error: err.message });
+  }
+});
+
+app.delete('/api/purchases/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      await Purchase.findByIdAndDelete(id);
+    } else {
+      await Purchase.deleteMany({ $or: [{ invoiceNumber: id }, { id }] });
+    }
+
+    console.log('[API] Deleted purchase record:', id);
+    res.json({ success: true, message: 'Purchase record deleted successfully' });
+  } catch (err) {
+    console.error('[API] /api/purchases DELETE error:', err);
+    res.status(500).json({ success: false, message: 'Failed to delete purchase record', error: err.message });
+  }
+});
+
+// -------------------------------------------------------------
+// SALES PERSONS API
+// -------------------------------------------------------------
+app.get('/api/sales-persons', async (req, res) => {
+  try {
+    const { search, paymentMode } = req.query;
+    const query = {};
+
+    if (paymentMode && paymentMode !== 'all') {
+      query.paymentMode = new RegExp(`^${paymentMode.trim()}$`, 'i');
+    }
+
+    if (search && search.trim()) {
+      const reg = new RegExp(search.trim(), 'i');
+      query.$or = [
+        { code: reg },
+        { name: reg },
+        { phone: reg },
+        { email: reg },
+        { role: reg },
+        { territory: reg },
+      ];
+    }
+
+    const salesPersons = await SalesPerson.find(query).sort({ createdAt: -1 });
+    res.json({ success: true, count: salesPersons.length, salesPersons });
+  } catch (err) {
+    console.error('[API] /api/sales-persons GET error:', err);
+    res.status(500).json({ success: false, message: 'Failed to fetch sales persons', error: err.message });
+  }
+});
+
+app.post('/api/sales-persons', async (req, res) => {
+  try {
+    const data = req.body;
+    if (!data.name || !data.name.trim()) {
+      return res.status(400).json({ success: false, message: 'Sales Person name is required' });
+    }
+
+    const totalCount = await SalesPerson.countDocuments();
+    const code = data.code?.trim() || `SP-${100 + totalCount + 1}`;
+
+    const newPerson = new SalesPerson({
+      code,
+      name: data.name.trim(),
+      phone: data.phone || '',
+      email: data.email || '',
+      role: data.role || 'Sales Executive',
+      territory: data.territory || 'Sivakasi & Virudhunagar',
+      target: Number(data.target) || 0,
+      achievedSales: Number(data.achievedSales) || 0,
+      commissionRate: Number(data.commissionRate) || 3.0,
+      paymentMode: data.paymentMode || 'Bank Wire',
+      ordersClosed: Number(data.ordersClosed) || 0,
+      joiningDate: data.joiningDate || new Date().toISOString().split('T')[0],
+      notes: data.notes || '',
+    });
+
+    const saved = await newPerson.save();
+    console.log('[API] Created new sales executive in MongoDB:', saved.code, saved.name);
+    res.status(201).json({ success: true, salesPerson: saved });
+  } catch (err) {
+    console.error('[API] /api/sales-persons POST error:', err);
+    res.status(500).json({ success: false, message: 'Failed to create sales person', error: err.message });
+  }
+});
+
+app.put('/api/sales-persons/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    let updated = null;
+
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      updated = await SalesPerson.findByIdAndUpdate(id, req.body, { new: true });
+    } else {
+      updated = await SalesPerson.findOneAndUpdate({ code: id }, req.body, { new: true });
+    }
+
+    if (!updated) {
+      return res.status(404).json({ success: false, message: 'Sales person not found' });
+    }
+
+    console.log('[API] Updated sales person in MongoDB:', updated.code, updated.name);
+    res.json({ success: true, salesPerson: updated });
+  } catch (err) {
+    console.error('[API] /api/sales-persons PUT error:', err);
+    res.status(500).json({ success: false, message: 'Failed to update sales person', error: err.message });
+  }
+});
+
+app.delete('/api/sales-persons/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      await SalesPerson.findByIdAndDelete(id);
+    } else {
+      await SalesPerson.deleteMany({ $or: [{ code: id }, { id }] });
+    }
+
+    console.log('[API] Deleted sales person:', id);
+    res.json({ success: true, message: 'Sales Person record deleted successfully' });
+  } catch (err) {
+    console.error('[API] /api/sales-persons DELETE error:', err);
+    res.status(500).json({ success: false, message: 'Failed to delete sales person', error: err.message });
   }
 });
 
