@@ -593,7 +593,7 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 6px;
+  gap: 8px;
 }
 
 .pos-item-line-total {
@@ -2206,10 +2206,24 @@
   cursor: pointer;
   transition: all 0.15s ease;
   color: #5C4537;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 .btn-bill-action:hover {
   transform: translateY(-1px);
+}
+
+.btn-bill-edit {
+  background: #EFF6FF !important;
+  border: 1px solid #DBEAFE !important;
+  color: #2563EB !important;
+}
+
+.btn-bill-edit:hover {
+  background: #DBEAFE !important;
+  border-color: #BFDBFE !important;
+  color: #1D4ED8 !important;
 }
 
 .btn-bill-view:hover {
