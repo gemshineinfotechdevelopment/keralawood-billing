@@ -16,7 +16,7 @@ const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_AP
 
 // One-time cache clear to remove old hardcoded seed data
 const DATA_VERSION_KEY = 'sivakasi_wood_data_version'
-const CURRENT_DATA_VERSION = '5'
+const CURRENT_DATA_VERSION = '6'
 ;(function clearOldSeedData() {
   try {
     const storedVersion = localStorage.getItem(DATA_VERSION_KEY)
@@ -25,9 +25,13 @@ const CURRENT_DATA_VERSION = '5'
       localStorage.removeItem('sivakasi_wood_transactions')
       localStorage.removeItem('sivakasi_wood_products')
       localStorage.removeItem('sivakasi_wood_bills')
+      localStorage.removeItem('sivakasi_wood_purchases')
+      localStorage.removeItem('sivakasi_wood_sales_persons')
       localStorage.setItem('sivakasi_wood_customers', JSON.stringify([]))
       localStorage.setItem('sivakasi_wood_transactions', JSON.stringify([]))
       localStorage.setItem('sivakasi_wood_products', JSON.stringify([]))
+      localStorage.setItem('sivakasi_wood_purchases', JSON.stringify([]))
+      localStorage.setItem('sivakasi_wood_sales_persons', JSON.stringify([]))
       localStorage.setItem(DATA_VERSION_KEY, CURRENT_DATA_VERSION)
     }
   } catch (e) { /* ignore */ }
@@ -71,91 +75,9 @@ const INITIAL_CUSTOMERS = []
 
 const INITIAL_TRANSACTIONS = []
 
-const INITIAL_PURCHASES = [
-  {
-    id: 'PUR-101',
-    invoiceNumber: 'PUR-101',
-    supplier: 'Wayanad Teak Forest Mills',
-    supplierPhone: '+91 94471 28910',
-    date: '2026-11-18',
-    item: 'Grade-A Nilambur Teak Planks (6x4)',
-    category: 'Timber Logs',
-    quantity: '60 Pcs',
-    amount: 145000,
-    paymentMode: 'Bank Wire',
-    gstAmount: 26100,
-  },
-  {
-    id: 'PUR-102',
-    invoiceNumber: 'PUR-102',
-    supplier: 'Kallai Rosewood Consortium',
-    supplierPhone: '+91 98492 41102',
-    date: '2026-11-15',
-    item: 'Seasoned Rosewood Sawn Timber',
-    category: 'Hardwood Timber',
-    quantity: '35 Pcs',
-    amount: 182000,
-    paymentMode: 'UPI',
-    gstAmount: 32760,
-  },
-  {
-    id: 'PUR-103',
-    invoiceNumber: 'PUR-103',
-    supplier: 'Malabar Timber Imports & Depot',
-    supplierPhone: '+91 97451 88320',
-    date: '2026-11-10',
-    item: 'Sal Wood Structural Beams',
-    category: 'Structural Lumber',
-    quantity: '80 Pcs',
-    amount: 98000,
-    paymentMode: 'Cheque',
-    gstAmount: 17640,
-  },
-  {
-    id: 'PUR-104',
-    invoiceNumber: 'PUR-104',
-    supplier: 'Godavari Hardwoods Ltd',
-    supplierPhone: '+91 88921 77310',
-    date: '2026-11-04',
-    item: 'Acacia Furniture Blocks & Billets',
-    category: 'Sawn Wood',
-    quantity: '110 Pcs',
-    amount: 76000,
-    paymentMode: 'Cash',
-    gstAmount: 13680,
-  },
-]
+const INITIAL_PURCHASES = []
 
-const INITIAL_SALES_PERSONS = [
-  {
-    id: 'SP-101',
-    code: 'SP-101',
-    name: 'Anand Kumar',
-    phone: '+91 98421 55670',
-    ordersClosed: 26,
-  },
-  {
-    id: 'SP-102',
-    code: 'SP-102',
-    name: 'Meenakshi Sundaram',
-    phone: '+91 97892 44102',
-    ordersClosed: 32,
-  },
-  {
-    id: 'SP-103',
-    code: 'SP-103',
-    name: 'Karthik Raja',
-    phone: '+91 99433 11890',
-    ordersClosed: 41,
-  },
-  {
-    id: 'SP-104',
-    code: 'SP-104',
-    name: 'Divya Prakash',
-    phone: '+91 94420 88210',
-    ordersClosed: 19,
-  },
-]
+const INITIAL_SALES_PERSONS = []
 
 const EMPTY_INITIAL_CUSTOMER = {
   id: 'cust-empty-1',

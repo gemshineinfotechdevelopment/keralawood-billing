@@ -119,99 +119,15 @@ export async function seedInitialData() {
       console.log('[Seed] Stock collection is initialized and ready for inward/outward timber logging.');
     }
 
-    // 8. Purchases Collection Initialization
-    const purchaseCount = await Purchase.countDocuments();
-    if (purchaseCount === 0) {
-      console.log('[Seed] Seeding initial timber purchases into MongoDB...');
-      await Purchase.insertMany([
-        {
-          invoiceNumber: 'PUR-101',
-          supplier: 'Wayanad Teak Forest Mills',
-          supplierPhone: '+91 94471 28910',
-          date: '2026-11-18',
-          item: 'Grade-A Nilambur Teak Planks (6x4)',
-          category: 'Timber Logs',
-          quantity: '60 Pcs',
-          amount: 145000,
-          gstAmount: 26100,
-          paymentMode: 'Bank Wire',
-          notes: 'High grain density timber logs delivered from Wayanad forest depot.',
-        },
-        {
-          invoiceNumber: 'PUR-102',
-          supplier: 'Kallai Rosewood Consortium',
-          supplierPhone: '+91 98492 41102',
-          date: '2026-11-15',
-          item: 'Seasoned Rosewood Sawn Timber',
-          category: 'Hardwood Timber',
-          quantity: '35 Pcs',
-          amount: 182000,
-          gstAmount: 32760,
-          paymentMode: 'UPI',
-          notes: 'Pre-seasoned timber for artisanal cabinet making.',
-        },
-        {
-          invoiceNumber: 'PUR-103',
-          supplier: 'Malabar Timber Imports & Depot',
-          supplierPhone: '+91 97451 88320',
-          date: '2026-11-10',
-          item: 'Sal Wood Structural Beams',
-          category: 'Structural Lumber',
-          quantity: '80 Pcs',
-          amount: 98000,
-          gstAmount: 17640,
-          paymentMode: 'Cheque',
-          notes: 'Structural grade beams for framing and architectural joinery.',
-        },
-        {
-          invoiceNumber: 'PUR-104',
-          supplier: 'Godavari Hardwoods Ltd',
-          supplierPhone: '+91 88921 77310',
-          date: '2026-11-04',
-          item: 'Acacia Furniture Blocks & Billets',
-          category: 'Sawn Wood',
-          quantity: '110 Pcs',
-          amount: 76000,
-          gstAmount: 13680,
-          paymentMode: 'Cash',
-          notes: 'Kiln dried billets ready for lathe processing.',
-        },
-      ]);
-      console.log('[Seed] Seeded initial purchases successfully.');
-    }
+    // 8. Purchases Collection - No dummy seed data (Only user/backend data)
+    await Purchase.deleteMany({
+      invoiceNumber: { $in: ['PUR-101', 'PUR-102', 'PUR-103', 'PUR-104'] },
+    });
 
-    // 9. Sales Person Collection Initialization
-    const salesPersonCount = await SalesPerson.countDocuments();
-    if (salesPersonCount === 0) {
-      console.log('[Seed] Seeding initial sales executives into MongoDB...');
-      await SalesPerson.insertMany([
-        {
-          code: 'SP-101',
-          name: 'Anand Kumar',
-          phone: '+91 98421 55670',
-          ordersClosed: 26,
-        },
-        {
-          code: 'SP-102',
-          name: 'Meenakshi Sundaram',
-          phone: '+91 97892 44102',
-          ordersClosed: 32,
-        },
-        {
-          code: 'SP-103',
-          name: 'Karthik Raja',
-          phone: '+91 99433 11890',
-          ordersClosed: 41,
-        },
-        {
-          code: 'SP-104',
-          name: 'Divya Prakash',
-          phone: '+91 94420 88210',
-          ordersClosed: 19,
-        },
-      ]);
-      console.log('[Seed] Seeded initial sales persons successfully.');
-    }
+    // 9. Sales Person Collection - No dummy seed data (Only user/backend data)
+    await SalesPerson.deleteMany({
+      code: { $in: ['SP-101', 'SP-102', 'SP-103', 'SP-104'] },
+    });
   } catch (error) {
     console.error('[Seed] Error seeding initial data:', error.message);
   }
