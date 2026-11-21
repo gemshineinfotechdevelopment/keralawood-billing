@@ -1176,7 +1176,7 @@ app.use((req, res) => {
 });
 
 // Start Server
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`[Server] Running on port ${PORT}`);
   console.log(`[Server] Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`[Server] Allowed CORS origin: ${FRONTEND_URL}`);

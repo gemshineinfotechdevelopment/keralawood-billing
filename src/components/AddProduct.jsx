@@ -296,7 +296,7 @@ export default function AddProduct({ onProductSaved, onCancel, editProduct = nul
           <h1 className="product-page-title">{editProduct ? 'Edit Wood Product' : 'Add New Product'}</h1>
           <p className="product-page-subtitle">
             {editProduct
-              ? `Update specifications, pricing, and yard inventory for SKU: ${editProduct.sku}`
+              ? `Update product details, pricing, and stock for SKU: ${editProduct.sku}`
               : 'Enter product details, pricing, and initial stock.'}
           </p>
         </div>
@@ -472,124 +472,11 @@ export default function AddProduct({ onProductSaved, onCancel, editProduct = nul
               onChange={(e) => setWoodSpecies(e.target.value)}
             />
           </div>
-
-          <div className="form-field-group">
-            <label className="field-label">Full Detailed Description</label>
-            <textarea
-              className="textarea-styled"
-              rows="3"
-              placeholder="Seasoned solid Nilambur teak furniture handcrafted with traditional artisan care..."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </div>
         </div>
 
         <div className="form-section-separator" />
 
-        {/* Section 2: Craft Specifications & Seasoning */}
-        <div className="form-section-block">
-          <div className="card-section-header">
-            <div className="card-title-group">
-              <span className="card-icon">
-                <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
-                </svg>
-              </span>
-              <h2 className="card-section-title">Specifications</h2>
-            </div>
-          </div>
-
-          <div className="form-row-4col">
-            <div className="form-field-group">
-              <label className="field-label">Length (cm)</label>
-              <input
-                type="text"
-                className="input-styled"
-                placeholder="e.g. 210"
-                value={length}
-                onChange={(e) => setLength(e.target.value)}
-              />
-            </div>
-            <div className="form-field-group">
-              <label className="field-label">Width (cm)</label>
-              <input
-                type="text"
-                className="input-styled"
-                placeholder="e.g. 100"
-                value={width}
-                onChange={(e) => setWidth(e.target.value)}
-              />
-            </div>
-            <div className="form-field-group">
-              <label className="field-label">Height (cm)</label>
-              <input
-                type="text"
-                className="input-styled"
-                placeholder="e.g. 76"
-                value={height}
-                onChange={(e) => setHeight(e.target.value)}
-              />
-            </div>
-            <div className="form-field-group">
-              <label className="field-label">Net Wt. (kg)</label>
-              <input
-                type="text"
-                className="input-styled"
-                placeholder="e.g. 68"
-                value={weight}
-                onChange={(e) => setWeight(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="form-field-group">
-            <label className="field-label">Wood Grade & Quality</label>
-            <input
-              type="text"
-              className="input-styled"
-              placeholder="e.g. Grade A - Nilambur Heartwood"
-              value={woodGrade}
-              onChange={(e) => setWoodGrade(e.target.value)}
-            />
-          </div>
-
-          <div className="form-row-2col">
-            <div className="form-field-group">
-              <label className="field-label">Surface Polish & Treatment</label>
-              <input
-                type="text"
-                className="input-styled"
-                placeholder="e.g. Natural Protective Organic-Beeswax"
-                value={surfacePolish}
-                onChange={(e) => setSurfacePolish(e.target.value)}
-              />
-            </div>
-            <div className="form-field-group">
-              <label className="field-label">Warranty & Craft Guarantee</label>
-              <input
-                type="text"
-                className="input-styled"
-                placeholder="e.g. 5-Yr Termite & Woodcraft Guarantee"
-                value={warranty}
-                onChange={(e) => setWarranty(e.target.value)}
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="form-section-separator" />
-
-        {/* Section 3: Inventory & Stock */}
+        {/* Section 2: Inventory & Stock */}
         <div className="form-section-block">
           <div className="card-section-header">
             <div className="card-title-group">
@@ -631,29 +518,6 @@ export default function AddProduct({ onProductSaved, onCancel, editProduct = nul
                 placeholder="e.g. 2"
                 value={lowStockThreshold}
                 onChange={(e) => setLowStockThreshold(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="form-row-2col">
-            <div className="form-field-group">
-              <label className="field-label">Depot Location</label>
-              <input
-                type="text"
-                className="input-styled"
-                placeholder="e.g. Sivakasi Central Depot"
-                value={depotLocation}
-                onChange={(e) => setDepotLocation(e.target.value)}
-              />
-            </div>
-            <div className="form-field-group">
-              <label className="field-label">Packaging Type</label>
-              <input
-                type="text"
-                className="input-styled"
-                placeholder="e.g. Corrugated Multi-layer Wood Wrap"
-                value={packagingType}
-                onChange={(e) => setPackagingType(e.target.value)}
               />
             </div>
           </div>

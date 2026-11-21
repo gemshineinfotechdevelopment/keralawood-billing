@@ -158,6 +158,27 @@ export default function ReportsAnalytics() {
 
   const orderCount = yearTransactions.length
 
+  // Dynamic payment settlement & clearance metrics
+  const paidTransactions = yearTransactions.filter(
+    (tx) => (tx.status || '').toLowerCase() === 'paid'
+  )
+  const paidCount = paidTransactions.length
+  const paidAmount = paidTransactions.reduce(
+    (sum, tx) => sum + (tx.rawAmount || Number(String(tx.amount).replace(/[^0-9]/g, '')) || 0),
+    0
+  )
+
+  const pendingTransactions = yearTransactions.filter(
+    (tx) => (tx.status || '').toLowerCase() !== 'paid'
+  )
+  const pendingCount = pendingTransactions.length
+  const pendingDueAmount = yearTransactions.reduce(
+    (sum, tx) => sum + (Number(tx.balanceDue) || (tx.status !== 'Paid' ? (tx.rawAmount || Number(String(tx.amount).replace(/[^0-9]/g, '')) || 0) : 0)),
+    0
+  )
+
+  const avgBillAmount = orderCount > 0 ? Math.round(totalRawAmount / orderCount) : 0
+
   const handleSetToday = () => {
     const today = new Date().toISOString().split('T')[0]
     setFromDate(today)
@@ -585,15 +606,15 @@ export default function ReportsAnalytics() {
         </div>
       </div>
 
-      {/* Row 2: Annual Performance Snapshot */}
+      {/* Row 2: Payment Settlement & Order Realization */}
       <div className="reports-middle-grid">
-        {/* Annual Performance Snapshot */}
+        {/* Payment Settlement & Clearance Card */}
         <div className="reports-panel-card">
           <div className="panel-card-header">
             <div>
-              <h2 className="panel-card-title">Annual Performance Snapshot</h2>
+              <h2 className="panel-card-title">Payment Settlement & Order Clearance</h2>
               <p className="panel-card-subtitle">
-                Order pipeline and billing settlement health ({selectedYear === 'all' ? 'All-Time' : `Year ${selectedYear}`}).
+                Live settlement health, collected revenue, and outstanding balance ({dateRangeLabel}).
               </p>
             </div>
             <div className="panel-card-icon">
@@ -615,7 +636,7 @@ export default function ReportsAnalytics() {
           </div>
 
           <div className="snapshot-cards-stack">
-            {/* Delivered Orders */}
+            {/* Cleared / Paid Invoices */}
             <div className="snapshot-item green">
               <div className="snapshot-left">
                 <div className="snapshot-icon-circle green">
@@ -634,18 +655,27 @@ export default function ReportsAnalytics() {
                   </svg>
                 </div>
                 <div className="snapshot-meta">
-                  <h3 className="snapshot-name">Delivered Orders</h3>
-                  <p className="snapshot-sub">Successfully installed & verified</p>
+                  <h3 className="snapshot-name">Paid & Cleared Invoices</h3>
+                  <p className="snapshot-sub">Fully realized bill payments</p>
                 </div>
               </div>
 
               <div className="snapshot-right">
-                <span className="snapshot-val">{orderCount}</span>
-                <span className="snapshot-tag green">{orderCount > 0 ? 'Complete' : 'Fresh'}</span>
+                <span className="snapshot-val">
+                  <span className="straight-rupee">₹</span>
+                  {paidAmount === 0
+                    ? '0'
+                    : paidAmount >= 100000
+                    ? `${(paidAmount / 100000).toFixed(2)}L`
+                    : paidAmount.toLocaleString('en-IN')}
+                </span>
+                <span className="snapshot-tag green">
+                  {paidCount} of {orderCount} Paid {orderCount > 0 ? `(${Math.round((paidCount / orderCount) * 100)}%)` : ''}
+                </span>
               </div>
             </div>
 
-            {/* In-Progress Orders */}
+            {/* Average Bill Value */}
             <div className="snapshot-item amber">
               <div className="snapshot-left">
                 <div className="snapshot-icon-circle amber">
@@ -659,23 +689,27 @@ export default function ReportsAnalytics() {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   >
-                    <circle cx="12" cy="12" r="10" />
-                    <polyline points="12 6 12 12 16 14" />
+                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
                   </svg>
                 </div>
                 <div className="snapshot-meta">
-                  <h3 className="snapshot-name">In-Progress Orders</h3>
-                  <p className="snapshot-sub">In joinery, sanding & finish</p>
+                  <h3 className="snapshot-name">Average Order Value (AOV)</h3>
+                  <p className="snapshot-sub">Mean ticket size per order</p>
                 </div>
               </div>
 
               <div className="snapshot-right">
-                <span className="snapshot-val">{orderCount > 0 ? Math.ceil(orderCount / 3) : 0}</span>
-                <span className="snapshot-tag amber">{orderCount > 0 ? 'Active' : 'Standby'}</span>
+                <span className="snapshot-val">
+                  <span className="straight-rupee">₹</span>
+                  {avgBillAmount.toLocaleString('en-IN')}
+                </span>
+                <span className="snapshot-tag amber">
+                  {orderCount > 0 ? `${orderCount} Orders Billed` : 'No Orders'}
+                </span>
               </div>
             </div>
 
-            {/* Pending Invoices */}
+            {/* Outstanding Balance Due */}
             <div className="snapshot-item red">
               <div className="snapshot-left">
                 <div className="snapshot-icon-circle red">
@@ -694,21 +728,23 @@ export default function ReportsAnalytics() {
                   </svg>
                 </div>
                 <div className="snapshot-meta">
-                  <h3 className="snapshot-name">Pending Invoices</h3>
-                  <p className="snapshot-sub">Outstanding realization balance</p>
+                  <h3 className="snapshot-name">Outstanding Balance Due</h3>
+                  <p className="snapshot-sub">Pending customer payment collection</p>
                 </div>
               </div>
 
               <div className="snapshot-right">
                 <span className="snapshot-val">
                   <span className="straight-rupee">₹</span>
-                  {totalRawAmount === 0
+                  {pendingDueAmount === 0
                     ? '0'
-                    : totalRawAmount * 0.1 >= 100000
-                    ? `${((totalRawAmount * 0.1) / 100000).toFixed(1)}L`
-                    : Math.round(totalRawAmount * 0.1).toLocaleString('en-IN')}
+                    : pendingDueAmount >= 100000
+                    ? `${(pendingDueAmount / 100000).toFixed(2)}L`
+                    : pendingDueAmount.toLocaleString('en-IN')}
                 </span>
-                <span className="snapshot-tag red">Net Due</span>
+                <span className="snapshot-tag red">
+                  {pendingCount > 0 ? `${pendingCount} Invoices Due` : 'Zero Due'}
+                </span>
               </div>
             </div>
           </div>
