@@ -502,30 +502,32 @@ export default function StockManagement({ onAddNewProduct }) {
         </div>
 
         {/* Pagination Row */}
-        <div className="stock-pagination-bar">
-          <div className="stock-pagination-info">
-            <span>
-              Showing {totalItems === 0 ? 0 : startIndex + 1} to {endIndex} of {totalItems} products
+        <div className="patron-table-footer">
+          <div className="patron-footer-left">
+            <span className="showing-records-text">
+              Showing <strong>{totalItems === 0 ? '0-0' : `${startIndex + 1}-${endIndex}`}</strong> of {totalItems} products
             </span>
-            <span>•</span>
-            <select
-              className="per-ledger-dropdown"
-              value={itemsPerPage}
-              onChange={(e) => {
-                setItemsPerPage(Number(e.target.value))
-                setCurrentPage(1)
-              }}
-            >
-              <option value={20}>20 per page</option>
-              <option value={50}>50 per page</option>
-              <option value={100}>100 per page</option>
-            </select>
+            <div className="patron-per-page-wrap">
+              <span className="patron-per-page-label">Show:</span>
+              <select
+                className="patron-per-page-select"
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value))
+                  setCurrentPage(1)
+                }}
+              >
+                <option value={10}>10 per page</option>
+                <option value={20}>20 per page</option>
+                <option value={50}>50 per page</option>
+              </select>
+            </div>
           </div>
 
-          <div className="stock-pagination-controls">
+          <div className="patron-pagination">
             <button
               type="button"
-              className="stock-page-btn arrow"
+              className="pagination-arrow"
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={safeCurrentPage <= 1}
             >
@@ -533,14 +535,14 @@ export default function StockManagement({ onAddNewProduct }) {
             </button>
             {getPageNumbers().map((pageNum, idx) =>
               pageNum === '...' ? (
-                <span key={`dots-${idx}`} className="stock-page-dots">
+                <span key={`dots-${idx}`} className="pagination-dots">
                   ...
                 </span>
               ) : (
                 <button
                   key={`page-${pageNum}`}
                   type="button"
-                  className={`stock-page-btn ${safeCurrentPage === pageNum ? 'active' : ''}`}
+                  className={`pagination-num ${safeCurrentPage === pageNum ? 'active' : ''}`}
                   onClick={() => setCurrentPage(pageNum)}
                 >
                   {pageNum}
@@ -549,7 +551,7 @@ export default function StockManagement({ onAddNewProduct }) {
             )}
             <button
               type="button"
-              className="stock-page-btn arrow"
+              className="pagination-arrow"
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               disabled={safeCurrentPage >= totalPages}
             >

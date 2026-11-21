@@ -61,7 +61,7 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
   const [products, setProducts] = useState(() => DataStore.getProducts())
   const [salesSearch, setSalesSearch] = useState('')
   const [salesPage, setSalesPage] = useState(1)
-  const salesPerPage = 20
+  const [salesPerPage, setSalesPerPage] = useState(20)
 
   useEffect(() => {
     const handleStoreUpdate = () => {
@@ -411,16 +411,32 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
         </table>
       </div>
 
-        {/* Pagination Bar: 20 per page */}
-        <div className="pagination-bar">
-          <span className="pagination-info">
-            Showing {filteredSales.length > 0 ? (salesPage - 1) * salesPerPage + 1 : 0} -{' '}
-            {Math.min(salesPage * salesPerPage, filteredSales.length)} of {filteredSales.length} transactions
-          </span>
-          <div className="pagination-controls">
+        {/* Table Footer with Pagination */}
+        <div className="patron-table-footer">
+          <div className="patron-footer-left">
+            <span className="showing-records-text">
+              Showing <strong>{filteredSales.length > 0 ? (salesPage - 1) * salesPerPage + 1 : 0}-{Math.min(salesPage * salesPerPage, filteredSales.length)}</strong> of {filteredSales.length} orders
+            </span>
+            <div className="patron-per-page-wrap">
+              <span className="patron-per-page-label">Show:</span>
+              <select
+                className="patron-per-page-select"
+                value={salesPerPage}
+                onChange={(e) => {
+                  setSalesPerPage(Number(e.target.value))
+                  setSalesPage(1)
+                }}
+              >
+                <option value={10}>10 per page</option>
+                <option value={20}>20 per page</option>
+                <option value={50}>50 per page</option>
+              </select>
+            </div>
+          </div>
+          <div className="patron-pagination">
             <button
               type="button"
-              className="page-btn arrow"
+              className="pagination-arrow"
               disabled={salesPage <= 1}
               onClick={() => setSalesPage((p) => Math.max(1, p - 1))}
             >
@@ -430,7 +446,7 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
               <button
                 key={num}
                 type="button"
-                className={`page-btn ${salesPage === num ? 'active' : ''}`}
+                className={`pagination-num ${salesPage === num ? 'active' : ''}`}
                 onClick={() => setSalesPage(num)}
               >
                 {num}
@@ -438,7 +454,7 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
             ))}
             <button
               type="button"
-              className="page-btn arrow"
+              className="pagination-arrow"
               disabled={salesPage >= totalSalesPages}
               onClick={() => setSalesPage((p) => Math.min(totalSalesPages, p + 1))}
             >

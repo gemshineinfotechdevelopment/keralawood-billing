@@ -498,6 +498,12 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
     })
   }, [savedBills, billsSearch])
 
+  const [billsPage, setBillsPage] = useState(1)
+  const [billsPerPage, setBillsPerPage] = useState(20)
+  const totalBillsPages = Math.max(1, Math.ceil(filteredSavedBills.length / billsPerPage))
+  const safeBillsPage = Math.min(billsPage, totalBillsPages)
+  const paginatedSavedBills = filteredSavedBills.slice((safeBillsPage - 1) * billsPerPage, safeBillsPage * billsPerPage)
+
   const handleStartNewBill = () => {
     const defaultBilledBy = salesPersonsList[0]?.name || ''
     // Ensure only exactly 1 fresh clean bill draft exists when starting a new bill
@@ -1340,7 +1346,7 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
                       </td>
                     </tr>
                   ) : (
-                    filteredSavedBills.map((bill, idx) => {
+                    paginatedSavedBills.map((bill, idx) => {
                       const inv = bill.invoice || bill.invoiceNumber || bill.id || `INV-${idx + 1}`
                       const rawAmt = bill.rawAmount !== undefined
                         ? bill.rawAmount
@@ -1463,8 +1469,57 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
               </table>
             </div>
 
-            <div className="pos-bills-footer-info">
-              <span>Showing {filteredSavedBills.length} of {savedBills.length} invoices</span>
+            {/* Table Footer with Pagination */}
+            <div className="patron-table-footer">
+              <div className="patron-footer-left">
+                <span className="showing-records-text">
+                  Showing <strong>{filteredSavedBills.length > 0 ? (safeBillsPage - 1) * billsPerPage + 1 : 0}-{Math.min(safeBillsPage * billsPerPage, filteredSavedBills.length)}</strong> of {filteredSavedBills.length} invoices
+                </span>
+                <div className="patron-per-page-wrap">
+                  <span className="patron-per-page-label">Show:</span>
+                  <select
+                    className="patron-per-page-select"
+                    value={billsPerPage}
+                    onChange={(e) => {
+                      setBillsPerPage(Number(e.target.value))
+                      setBillsPage(1)
+                    }}
+                  >
+                    <option value={10}>10 per page</option>
+                    <option value={20}>20 per page</option>
+                    <option value={50}>50 per page</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="patron-pagination">
+                <button
+                  type="button"
+                  className="pagination-arrow"
+                  disabled={safeBillsPage <= 1}
+                  onClick={() => setBillsPage((p) => Math.max(1, p - 1))}
+                >
+                  ‹
+                </button>
+                {Array.from({ length: totalBillsPages }, (_, idx) => idx + 1).map((num) => (
+                  <button
+                    key={num}
+                    type="button"
+                    className={`pagination-num ${safeBillsPage === num ? 'active' : ''}`}
+                    onClick={() => setBillsPage(num)}
+                  >
+                    {num}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  className="pagination-arrow"
+                  disabled={safeBillsPage >= totalBillsPages}
+                  onClick={() => setBillsPage((p) => Math.min(totalBillsPages, p + 1))}
+                >
+                  ›
+                </button>
+              </div>
             </div>
           </div>
         </div>

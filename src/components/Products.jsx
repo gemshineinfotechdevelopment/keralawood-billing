@@ -474,33 +474,32 @@ export default function Products({ initialViewMode = 'list' }) {
         </div>
 
         {/* Table Footer with Pagination */}
-        <div className="products-table-footer">
-          <div className="footer-left-info">
+        <div className="patron-table-footer">
+          <div className="patron-footer-left">
             <span className="showing-records-text">
-              Showing <strong>{filteredProducts.length > 0 ? `${startIndex + 1}-${endIndex}` : '0-0'}</strong> of <strong>{filteredProducts.length}</strong> Products
+              Showing <strong>{filteredProducts.length > 0 ? `${startIndex + 1}-${endIndex}` : '0-0'}</strong> of {filteredProducts.length} products
             </span>
-            <span className="footer-pipe">•</span>
-            <div className="per-page-wrap">
-              <span className="per-page-label">Rows:</span>
+            <div className="patron-per-page-wrap">
+              <span className="patron-per-page-label">Show:</span>
               <select
-                className="per-page-select"
+                className="patron-per-page-select"
                 value={itemsPerPage}
                 onChange={(e) => {
                   setItemsPerPage(Number(e.target.value))
                   setCurrentPage(1)
                 }}
               >
+                <option value={10}>10 per page</option>
                 <option value={20}>20 per page</option>
-                <option value={40}>40 per page</option>
-                <option value={60}>60 per page</option>
+                <option value={50}>50 per page</option>
               </select>
             </div>
           </div>
 
-          <div className="pagination-controls">
+          <div className="patron-pagination">
             <button
               type="button"
-              className="pagination-btn arrow"
+              className="pagination-arrow"
               disabled={safePage <= 1}
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             >
@@ -510,7 +509,7 @@ export default function Products({ initialViewMode = 'list' }) {
               <button
                 key={num}
                 type="button"
-                className={`pagination-btn ${safePage === num ? 'active' : ''}`}
+                className={`pagination-num ${safePage === num ? 'active' : ''}`}
                 onClick={() => setCurrentPage(num)}
               >
                 {num}
@@ -518,7 +517,7 @@ export default function Products({ initialViewMode = 'list' }) {
             ))}
             <button
               type="button"
-              className="pagination-btn arrow"
+              className="pagination-arrow"
               disabled={safePage >= totalPages}
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
             >

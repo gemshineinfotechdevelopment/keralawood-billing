@@ -43,6 +43,9 @@ export default function Purchases() {
     setTimeout(() => setToastMessage(''), 3000)
   }
 
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(20)
+
   // Filtered Purchases
   const filteredPurchases = useMemo(() => {
     return purchases.filter((p) => {
@@ -61,6 +64,10 @@ export default function Purchases() {
       return matchSearch && matchMode
     })
   }, [purchases, searchQuery, paymentModeFilter])
+
+  const totalPages = Math.max(1, Math.ceil(filteredPurchases.length / itemsPerPage))
+  const safePage = Math.min(currentPage, totalPages)
+  const paginatedPurchases = filteredPurchases.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage)
 
   // KPIs
   const totalSpend = useMemo(() => {
@@ -306,7 +313,7 @@ export default function Purchases() {
                   </td>
                 </tr>
               ) : (
-                filteredPurchases.map((p) => (
+                paginatedPurchases.map((p) => (
                   <tr key={p.id}>
                     <td>
                       <div className="purchases-invoice-no">{p.invoiceNumber || p.id}</div>
@@ -388,9 +395,57 @@ export default function Purchases() {
           </table>
         </div>
 
-        <div className="purchases-table-footer">
-          <span>Showing {filteredPurchases.length} of {purchases.length} inward timber consignments</span>
-          <span>Kerala Wood Furniture • Sivakasi Inward Ledger</span>
+        {/* Table Footer with Pagination */}
+        <div className="patron-table-footer">
+          <div className="patron-footer-left">
+            <span className="showing-records-text">
+              Showing <strong>{filteredPurchases.length > 0 ? (safePage - 1) * itemsPerPage + 1 : 0}-{Math.min(safePage * itemsPerPage, filteredPurchases.length)}</strong> of {filteredPurchases.length} consignments
+            </span>
+            <div className="patron-per-page-wrap">
+              <span className="patron-per-page-label">Show:</span>
+              <select
+                className="patron-per-page-select"
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value))
+                  setCurrentPage(1)
+                }}
+              >
+                <option value={10}>10 per page</option>
+                <option value={20}>20 per page</option>
+                <option value={50}>50 per page</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="patron-pagination">
+            <button
+              type="button"
+              className="pagination-arrow"
+              disabled={safePage <= 1}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            >
+              ‹
+            </button>
+            {Array.from({ length: totalPages }, (_, idx) => idx + 1).map((num) => (
+              <button
+                key={num}
+                type="button"
+                className={`pagination-num ${safePage === num ? 'active' : ''}`}
+                onClick={() => setCurrentPage(num)}
+              >
+                {num}
+              </button>
+            ))}
+            <button
+              type="button"
+              className="pagination-arrow"
+              disabled={safePage >= totalPages}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            >
+              ›
+            </button>
+          </div>
         </div>
       </div>
 

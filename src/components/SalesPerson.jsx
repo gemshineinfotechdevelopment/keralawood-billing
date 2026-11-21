@@ -48,6 +48,12 @@ export default function SalesPerson() {
     })
   }, [salesPersons, searchQuery])
 
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(20)
+  const totalPages = Math.max(1, Math.ceil(filteredList.length / itemsPerPage))
+  const safePage = Math.min(currentPage, totalPages)
+  const paginatedList = filteredList.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage)
+
   // KPIs
   const totalOrdersClosed = useMemo(() => {
     return salesPersons.reduce((acc, sp) => acc + (Number(sp.ordersClosed) || 0), 0)
@@ -210,7 +216,7 @@ export default function SalesPerson() {
                 </td>
               </tr>
             ) : (
-              filteredList.map((sp) => {
+              paginatedList.map((sp) => {
                 return (
                   <tr key={sp.id || sp.code}>
                     {/* Staff ID */}
@@ -287,6 +293,59 @@ export default function SalesPerson() {
             )}
           </tbody>
         </table>
+
+        {/* Table Footer with Pagination */}
+        <div className="patron-table-footer">
+          <div className="patron-footer-left">
+            <span className="showing-records-text">
+              Showing <strong>{filteredList.length > 0 ? (safePage - 1) * itemsPerPage + 1 : 0}-{Math.min(safePage * itemsPerPage, filteredList.length)}</strong> of {filteredList.length} staff
+            </span>
+            <div className="patron-per-page-wrap">
+              <span className="patron-per-page-label">Show:</span>
+              <select
+                className="patron-per-page-select"
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value))
+                  setCurrentPage(1)
+                }}
+              >
+                <option value={10}>10 per page</option>
+                <option value={20}>20 per page</option>
+                <option value={50}>50 per page</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="patron-pagination">
+            <button
+              type="button"
+              className="pagination-arrow"
+              disabled={safePage <= 1}
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            >
+              ‹
+            </button>
+            {Array.from({ length: totalPages }, (_, idx) => idx + 1).map((num) => (
+              <button
+                key={num}
+                type="button"
+                className={`pagination-num ${safePage === num ? 'active' : ''}`}
+                onClick={() => setCurrentPage(num)}
+              >
+                {num}
+              </button>
+            ))}
+            <button
+              type="button"
+              className="pagination-arrow"
+              disabled={safePage >= totalPages}
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            >
+              ›
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Add / Edit Modal - Strictly Staff ID, Name, Phone Number, Orders Closed */}

@@ -883,81 +883,55 @@ export default function ReportsAnalytics() {
           </table>
         </div>
 
-        {/* Table Footer with Audit Trust Badge & Pagination */}
-        <div className="reports-table-footer">
-          <div className="footer-left-meta">
+        {/* Table Footer with Pagination */}
+        <div className="patron-table-footer">
+          <div className="patron-footer-left">
             <span className="showing-records-text">
-              Showing <strong>{filtered.length > 0 ? `${(currentPage - 1) * itemsPerPage + 1}-${Math.min(currentPage * itemsPerPage, filtered.length)}` : '0-0'}</strong> of <strong>{filtered.length}</strong> Transactions for {dateRangeLabel}
+              Showing <strong>{filtered.length > 0 ? `${(currentPage - 1) * itemsPerPage + 1}-${Math.min(currentPage * itemsPerPage, filtered.length)}` : '0-0'}</strong> of {filtered.length} transactions
             </span>
-            <span className="footer-pipe-divider">•</span>
-            <select
-              className="per-ledger-dropdown"
-              value={itemsPerPage}
-              onChange={(e) => {
-                setItemsPerPage(Number(e.target.value))
-                setCurrentPage(1)
-              }}
-              style={{
-                padding: '3px 8px',
-                fontSize: '11px',
-                borderRadius: '5px',
-                border: '1px solid #E2CEBE',
-                backgroundColor: '#FFFFFF',
-                color: '#31190B',
-                cursor: 'pointer',
-              }}
-            >
-              <option value={20}>20 per page</option>
-              <option value={50}>50 per page</option>
-              <option value={100}>100 per page</option>
-            </select>
-            <span className="footer-pipe-divider">|</span>
-            <div className="audit-trust-badge">
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+            <div className="patron-per-page-wrap">
+              <span className="patron-per-page-label">Show:</span>
+              <select
+                className="patron-per-page-select"
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value))
+                  setCurrentPage(1)
+                }}
               >
-                <circle cx="12" cy="12" r="10" />
-                <polyline points="9 12 12 15 16 10" />
-              </svg>
-              <span>All transactions audited & GST compliant</span>
+                <option value={10}>10 per page</option>
+                <option value={20}>20 per page</option>
+                <option value={50}>50 per page</option>
+              </select>
             </div>
           </div>
 
-          <div className="reports-pagination-wrap">
+          <div className="patron-pagination">
             <button
               type="button"
-              className="pagination-nav-btn"
-              disabled={currentPage === 1}
+              className="pagination-arrow"
+              disabled={currentPage <= 1}
               onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
             >
-              Previous
+              ‹
             </button>
-
-            {Array.from({ length: Math.min(totalPages, 3) }, (_, i) => i + 1).map((num) => (
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((num) => (
               <button
                 key={num}
                 type="button"
-                className={`pagination-num-btn ${currentPage === num ? 'active' : ''}`}
+                className={`pagination-num ${currentPage === num ? 'active' : ''}`}
                 onClick={() => setCurrentPage(num)}
               >
                 {num}
               </button>
             ))}
-
             <button
               type="button"
-              className="pagination-nav-btn"
-              disabled={currentPage === totalPages}
+              className="pagination-arrow"
+              disabled={currentPage >= totalPages}
               onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
             >
-              Next
+              ›
             </button>
           </div>
         </div>
