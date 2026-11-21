@@ -479,13 +479,55 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
 
   const handleStartNewBill = () => {
     const defaultBilledBy = salesPersonsList[0]?.name || ''
-    const fresh = DataStore.createNewDraft()
-    fresh.billedBy = defaultBilledBy
-    fresh.salesPerson = defaultBilledBy
-    DataStore.saveBill(fresh)
-    setBills(DataStore.getBills())
+    // Ensure only exactly 1 fresh clean bill draft exists when starting a new bill
+    const nextInv = DataStore.getNextInvoiceNumber()
+    const today = new Date().toISOString().split('T')[0]
+    const due = new Date(Date.now() + 15 * 86400000).toISOString().split('T')[0]
+    const fresh = {
+      id: `bill-${Date.now()}`,
+      invoiceNumber: nextInv,
+      invoiceDate: today,
+      dueDate: due,
+      name: 'Bill #1',
+      status: 'active',
+      customer: {
+        id: `cust-${Date.now()}`,
+        name: '',
+        phone: '',
+        address: '',
+        deliveryAddress: '',
+        location: '',
+        gstin: '',
+        totalOrders: 0,
+        lifetimeValue: 0,
+      },
+      shipping: {
+        name: '',
+        phone: '',
+        address: '',
+      },
+      items: [],
+      paymentStatus: 'Pending',
+      paymentMode: 'UPI',
+      billedBy: defaultBilledBy,
+      salesPerson: defaultBilledBy,
+      amountPaid: 0,
+      discount: 0,
+      deliveryCharge: 0,
+      notes: '',
+    }
+    // Set bills list to ONLY this single bill draft
+    DataStore.saveBills([fresh])
+    DataStore.setActiveBillId(fresh.id)
+    setBills([fresh])
     setActiveBillId(fresh.id)
+    setCustomerSearchQuery('')
+    setCustomerSearchOpen(false)
+    setSameAsBillTo(false)
     setSaveCustomerToDirectory(false)
+    setAdditionalOptionsOpen(false)
+    setExpandedItemDetails({})
+    setBillDossierOpen(false)
     setViewMode('editor')
   }
 
