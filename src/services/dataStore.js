@@ -431,9 +431,25 @@ export const DataStore = {
     const list = this.getProducts()
     const target = list.find((p) => p.id === productId || p.sku === productId || p.name === productId)
     if (target) {
-      const add = Math.max(1, Number(qtyToAdd) || 1)
-      target.stockIn = (Number(target.stockIn) || 0) + add
-      target.stockQuantity = (Number(target.stockQuantity) || 0) + add
+      const newInwardQty = Math.max(1, Number(qtyToAdd) || 1)
+      // Reset stock in to the new lot quantity and reset stock out to 0
+      target.stockIn = newInwardQty
+      target.stockOut = 0
+      target.stockQuantity = newInwardQty
+
+      let stockType = 'in-stock'
+      let stockLabel = `${newInwardQty} in stock`
+      const threshold = Number(target.lowStockThreshold || 2)
+      if (newInwardQty <= 1) {
+        stockType = 'critical'
+        stockLabel = `${newInwardQty} left (Critical)`
+      } else if (newInwardQty <= threshold) {
+        stockType = 'low'
+        stockLabel = `${newInwardQty} left (Low)`
+      }
+      target.stockType = stockType
+      target.stockLabel = stockLabel
+
       this.saveProducts(list)
     }
   },

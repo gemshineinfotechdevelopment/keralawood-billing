@@ -114,9 +114,9 @@ export default function StockManagement({ onAddNewProduct }) {
           const localList = DataStore.getProducts()
           const merged = data.products.map((rp) => {
             const lp = localList.find((p) => p.id === rp.id || p.sku === rp.sku || p.name === rp.name)
-            const stockOut = Math.max(Number(rp.stockOut) || 0, Number(lp?.stockOut) || 0)
-            const stockQty = rp.stockQuantity !== undefined ? Number(rp.stockQuantity) : (lp?.stockQuantity || 0)
-            const stockIn = rp.stockIn !== undefined ? Number(rp.stockIn) : (stockQty + stockOut)
+            const stockOut = rp.stockOut !== undefined ? Number(rp.stockOut) : (lp?.stockOut !== undefined ? Number(lp.stockOut) : 0)
+            const stockQty = rp.stockQuantity !== undefined ? Number(rp.stockQuantity) : (lp?.stockQuantity !== undefined ? Number(lp.stockQuantity) : 0)
+            const stockIn = rp.stockIn !== undefined ? Number(rp.stockIn) : (lp?.stockIn !== undefined ? Number(lp.stockIn) : (stockQty + stockOut))
             return {
               ...rp,
               stockQuantity: stockQty,
@@ -692,26 +692,33 @@ export default function StockManagement({ onAddNewProduct }) {
                     : parseInt(sel.stock) || 0
                   : 0
                 const chg = Number(movementQty) || 0
-                const next = movementType === 'in' ? cur + chg : Math.max(0, cur - chg)
+                const next = movementType === 'in' ? chg : Math.max(0, cur - chg)
                 return (
-                  <div className="quick-preview-box">
-                    <div className="preview-stat">
-                      <span className="preview-label">CURRENT RESERVE</span>
-                      <span className="preview-val">{cur} units</span>
-                    </div>
-                    <span className="preview-arrow">
-                      {movementType === 'in' ? '+' : '−'} {chg} →
-                    </span>
-                    <div className="preview-stat">
-                      <span className="preview-label">NEW BALANCE</span>
-                      <span
-                        className={`preview-val highlight ${
-                          next <= 1 ? 'critical' : next <= 2 ? 'low' : ''
-                        }`}
-                      >
-                        {next} units
+                  <div>
+                    <div className="quick-preview-box">
+                      <div className="preview-stat">
+                        <span className="preview-label">CURRENT RESERVE</span>
+                        <span className="preview-val">{cur} units</span>
+                      </div>
+                      <span className="preview-arrow">
+                        {movementType === 'in' ? '→' : '−'} {chg} →
                       </span>
+                      <div className="preview-stat">
+                        <span className="preview-label">NEW BALANCE</span>
+                        <span
+                          className={`preview-val highlight ${
+                            next <= 1 ? 'critical' : next <= 2 ? 'low' : ''
+                          }`}
+                        >
+                          {next} units
+                        </span>
+                      </div>
                     </div>
+                    {movementType === 'in' && (
+                      <div style={{ marginTop: '8px', padding: '6px 10px', backgroundColor: '#F0FDF4', border: '1px solid #DCFCE7', borderRadius: '6px', fontSize: '11px', color: '#166534', fontWeight: 600 }}>
+                        ✓ Reset Cycle: Stock In will be +{chg} pcs and Stock Out resets to 0 pcs.
+                      </div>
+                    )}
                   </div>
                 )
               })()}
@@ -720,7 +727,7 @@ export default function StockManagement({ onAddNewProduct }) {
               <div className="drawer-form-group">
                 <label className="drawer-field-label">
                   {movementType === 'in'
-                    ? 'Inward Quantity to Add'
+                    ? 'Inward Stock Quantity (Resets Stock Out to 0)'
                     : 'Dispatch Quantity to Deduct'}
                 </label>
                 <div className="stepper-row">
