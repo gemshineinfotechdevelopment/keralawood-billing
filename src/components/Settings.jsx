@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { DataStore } from '../services/dataStore'
+import { uploadImageToCloudinary } from '../services/cloudinaryService'
 import './Settings.css'
 
 export default function Settings() {
@@ -68,19 +69,39 @@ export default function Settings() {
       .catch(() => {})
   }, [])
 
-  const handleLogoUpload = (e) => {
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false)
+  const [logoUploadMsg, setLogoUploadMsg] = useState('')
+
+  const handleLogoUpload = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
-    if (file.size > 2 * 1024 * 1024) {
-      alert('Logo image should be under 2MB')
+    if (file.size > 8 * 1024 * 1024) {
+      alert('Logo image should be under 8MB')
       return
     }
-    const reader = new FileReader()
-    reader.onload = (event) => {
-      const res = event.target?.result
-      if (res) setLogoUrl(res)
+
+    try {
+      setIsUploadingLogo(true)
+      setLogoUploadMsg('Uploading to Cloudinary CDN...')
+      const result = await uploadImageToCloudinary(file, 'kerala_wood_billing/logos', 'depot_logo')
+      if (result?.url) {
+        setLogoUrl(result.url)
+        setLogoUploadMsg('✓ Uploaded to Cloudinary CDN successfully!')
+        setTimeout(() => setLogoUploadMsg(''), 4000)
+      }
+    } catch (err) {
+      console.warn('[Cloudinary] Backend upload failed, using local preview:', err)
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        const res = event.target?.result
+        if (res) setLogoUrl(res)
+      }
+      reader.readAsDataURL(file)
+      setLogoUploadMsg('Saved locally')
+      setTimeout(() => setLogoUploadMsg(''), 3000)
+    } finally {
+      setIsUploadingLogo(false)
     }
-    reader.readAsDataURL(file)
   }
 
   const handleRemoveLogo = () => {
@@ -206,15 +227,16 @@ export default function Settings() {
                   Upload an image for Kerala Wood Furniture. This logo appears on your bills, tax invoices, and header.
                 </p>
                 <div className="settings-logo-actions-bar">
-                  <label className="btn-settings-choose-logo">
+                  <label className={`btn-settings-choose-logo ${isUploadingLogo ? 'uploading' : ''}`}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                       <polyline points="17 8 12 3 7 8" />
                       <line x1="12" y1="3" x2="12" y2="15" />
                     </svg>
-                    <span>Upload Logo Image</span>
+                    <span>{isUploadingLogo ? '☁️ Uploading to Cloudinary...' : 'Upload Logo to Cloudinary'}</span>
                     <input
                       type="file"
+                      disabled={isUploadingLogo}
                       accept="image/png, image/jpeg, image/jpg, image/svg+xml, image/webp"
                       style={{ display: 'none' }}
                       onChange={handleLogoUpload}
@@ -232,6 +254,34 @@ export default function Settings() {
                     </button>
                   )}
                 </div>
+
+                {logoUploadMsg && (
+                  <p style={{
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    margin: '6px 0 0 0',
+                    color: logoUploadMsg.startsWith('✓') ? '#2E7D32' : '#C0392B'
+                  }}>
+                    {logoUploadMsg}
+                  </p>
+                )}
+
+                {logoUrl && logoUrl.includes('cloudinary') && (
+                  <div style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    margin: '6px 0 0 0',
+                    padding: '3px 8px',
+                    backgroundColor: '#E8F5E9',
+                    borderRadius: '4px',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    color: '#2E7D32'
+                  }}>
+                    <span>☁️ Hosted on Cloudinary CDN</span>
+                  </div>
+                )}
 
                 <div className="settings-logo-url-row">
                   <span className="settings-logo-url-label">Or Image URL:</span>

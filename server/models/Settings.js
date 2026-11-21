@@ -31,6 +31,7 @@ const settingsSchema = new mongoose.Schema(
         'We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct',
     },
     logoUrl: { type: String, default: '' },
+    logoPublicId: { type: String, default: '' },
     systemTime: { type: String, default: '10:30 AM' },
     systemDate: { type: String, default: '' },
   },

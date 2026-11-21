@@ -34,6 +34,8 @@ const productSchema = new mongoose.Schema(
     gstSlab: { type: String, default: '' },
     tradeDiscount: { type: String, default: '' },
     transitPass: { type: Boolean, default: false },
+    imageUrl: { type: String, default: '' },
+    imagePublicId: { type: String, default: '' },
   },
   { timestamps: true }
 );

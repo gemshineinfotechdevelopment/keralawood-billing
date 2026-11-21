@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { DataStore } from '../services/dataStore'
+import { uploadImageToCloudinary } from '../services/cloudinaryService'
 import './AddProduct.css'
 
 const DEFAULT_CATEGORIES = [
@@ -39,6 +40,10 @@ export default function AddProduct({ onProductSaved, onCancel, editProduct = nul
   })
   const [woodSpecies, setWoodSpecies] = useState(editProduct?.woodSpecies || '')
   const [description, setDescription] = useState(editProduct?.description || '')
+  const [imageUrl, setImageUrl] = useState(editProduct?.imageUrl || '')
+  const [imagePublicId, setImagePublicId] = useState(editProduct?.imagePublicId || '')
+  const [isUploadingImage, setIsUploadingImage] = useState(false)
+  const [imageUploadMsg, setImageUploadMsg] = useState('')
 
   // Category Modal states
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false)
@@ -106,6 +111,8 @@ export default function AddProduct({ onProductSaved, onCancel, editProduct = nul
     setCostPrice('')
     setSellingPrice('')
     setUnitPrice('')
+    setImageUrl('')
+    setImagePublicId('')
     setSavedSuccess(false)
     setToastMsg('Form cleared for new product entry')
     setTimeout(() => setToastMsg(''), 2200)
@@ -178,6 +185,43 @@ export default function AddProduct({ onProductSaved, onCancel, editProduct = nul
     setSkuCode(generateAutoSku())
   }
 
+  const handleProductImageUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 10 * 1024 * 1024) {
+      alert('Product image should be under 10MB')
+      return
+    }
+
+    try {
+      setIsUploadingImage(true)
+      setImageUploadMsg('Uploading to Cloudinary...')
+      const result = await uploadImageToCloudinary(file, 'kerala_wood_billing/products', `${skuCode || 'prod'}_photo`)
+      if (result?.url) {
+        setImageUrl(result.url)
+        setImagePublicId(result.public_id || '')
+        setImageUploadMsg('✓ Uploaded to Cloudinary CDN')
+        setTimeout(() => setImageUploadMsg(''), 4000)
+      }
+    } catch (err) {
+      console.warn('[Cloudinary] Upload failed, using local preview:', err)
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        if (event.target?.result) setImageUrl(event.target.result)
+      }
+      reader.readAsDataURL(file)
+      setImageUploadMsg('Saved locally')
+      setTimeout(() => setImageUploadMsg(''), 3000)
+    } finally {
+      setIsUploadingImage(false)
+    }
+  }
+
+  const handleRemoveProductImage = () => {
+    setImageUrl('')
+    setImagePublicId('')
+  }
+
   const handleSaveProduct = async () => {
     setIsSaving(true)
     const numericSellingPrice = Number(String(sellingPrice || unitPrice).replace(/[^0-9.]/g, '')) || 0
@@ -216,6 +260,8 @@ export default function AddProduct({ onProductSaved, onCancel, editProduct = nul
       sellingPrice: String(numericSellingPrice),
       costPrice: numericCostPrice,
       price: numericSellingPrice,
+      imageUrl,
+      imagePublicId,
       gstSlab: '',
       tradeDiscount: '',
       transitPass: true,
