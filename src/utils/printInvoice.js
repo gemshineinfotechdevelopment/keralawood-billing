@@ -527,14 +527,15 @@ export function printInvoiceDocument(modalBillData, settings = {}, defaultLogo =
 </body>
 </html>`
 
-  // Create isolated hidden iframe
+  // Create isolated off-screen iframe with true A4 rendering viewport (prevents Chrome 0x0 truncation)
   const iframe = document.createElement('iframe')
   iframe.style.position = 'fixed'
-  iframe.style.right = '0'
-  iframe.style.bottom = '0'
-  iframe.style.width = '0'
-  iframe.style.height = '0'
+  iframe.style.left = '-10000px'
+  iframe.style.top = '0'
+  iframe.style.width = '210mm'
+  iframe.style.height = '297mm'
   iframe.style.border = '0'
+  iframe.style.visibility = 'visible'
   iframe.style.zIndex = '-9999'
   document.body.appendChild(iframe)
 
@@ -543,7 +544,7 @@ export function printInvoiceDocument(modalBillData, settings = {}, defaultLogo =
   doc.write(html)
   doc.close()
 
-  setTimeout(() => {
+  const executePrint = () => {
     try {
       iframe.contentWindow.focus()
       iframe.contentWindow.print()
@@ -555,7 +556,10 @@ export function printInvoiceDocument(modalBillData, settings = {}, defaultLogo =
         if (iframe.parentNode) {
           iframe.parentNode.removeChild(iframe)
         }
-      }, 3000)
+      }, 5000)
     }
-  }, 250)
+  }
+
+  // Allow iframe document, styles, and images to settle before opening print preview
+  setTimeout(executePrint, 300)
 }

@@ -943,16 +943,16 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
       <div className="pos-print-customer-box">
         <div className="pos-print-col">
           <h4>Bill To:</h4>
-          <p className="pos-print-cust-name">{modalBillData.customer.name || 'Walk-in Customer'}</p>
-          <p>{modalBillData.customer.address || 'Local Destination'}</p>
-          <p>Phone: {modalBillData.customer.phone || 'N/A'}</p>
-          <p>GSTIN: {modalBillData.customer.gstin || 'Unregistered / Personal'}</p>
+          <p className="pos-print-cust-name">{typeof modalBillData.customer === 'object' && modalBillData.customer !== null ? (modalBillData.customer.name || 'Walk-in Customer') : (modalBillData.customer || 'Walk-in Customer')}</p>
+          <p>{typeof modalBillData.customer === 'object' && modalBillData.customer !== null ? (modalBillData.customer.address || 'Local Destination') : 'Local Destination'}</p>
+          <p>Phone: {(typeof modalBillData.customer === 'object' && modalBillData.customer !== null ? modalBillData.customer.phone : null) || modalBillData.customerPhone || 'N/A'}</p>
+          <p>GSTIN: {(typeof modalBillData.customer === 'object' && modalBillData.customer !== null ? modalBillData.customer.gstin : null) || modalBillData.customerGstin || 'Unregistered / Personal'}</p>
         </div>
         <div className="pos-print-col">
           <h4>Ship To:</h4>
-          <p className="pos-print-cust-name">{modalBillData.shipping?.name || modalBillData.customer.name || 'Walk-in Customer'}</p>
-          <p>{modalBillData.shipping?.address || modalBillData.customer.address || 'Same as Billing Address'}</p>
-          <p>Phone: {modalBillData.shipping?.phone || modalBillData.customer.phone || 'N/A'}</p>
+          <p className="pos-print-cust-name">{modalBillData.shipping?.name || (typeof modalBillData.customer === 'object' && modalBillData.customer !== null ? modalBillData.customer.name : modalBillData.customer) || 'Walk-in Customer'}</p>
+          <p>{modalBillData.shipping?.address || (typeof modalBillData.customer === 'object' && modalBillData.customer !== null ? modalBillData.customer.address : '') || 'Same as Billing Address'}</p>
+          <p>Phone: {modalBillData.shipping?.phone || (typeof modalBillData.customer === 'object' && modalBillData.customer !== null ? modalBillData.customer.phone : null) || modalBillData.customerPhone || 'N/A'}</p>
         </div>
       </div>
 

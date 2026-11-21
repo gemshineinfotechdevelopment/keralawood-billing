@@ -781,23 +781,21 @@ export const DataStore = {
       ...txs.map((t) => t.invoice || t.id || ''),
     ]
 
-    const usedNums = new Set()
+    const allNums = []
     existingInvoices.forEach((inv) => {
       const m = String(inv).match(/INV-(\d+)/i)
       if (m) {
         const n = parseInt(m[1], 10)
         if (!isNaN(n) && n > 0) {
-          usedNums.add(n)
+          allNums.push(n)
         }
       }
     })
 
-    // Start checking from 1001 upwards to reuse deleted or missing sequence numbers
-    let seq = 1001
-    while (usedNums.has(seq)) {
-      seq++
-    }
-    return `INV-${seq}`
+    // Take the highest existing invoice number and increment by 1 (e.g. 1003 -> 1004)
+    const maxNum = allNums.length > 0 ? Math.max(...allNums) : 1000
+    const nextSeq = Math.max(1001, maxNum + 1)
+    return `INV-${nextSeq}`
   },
   createNewDraft(preselectedCustomer = null) {
     const bills = this.getBills()
