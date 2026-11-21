@@ -773,13 +773,14 @@ export const DataStore = {
     const activeId = this.getActiveBillId()
     return bills.find((b) => b.id === activeId) || bills[0] || null
   },
-  getNextInvoiceNumber(excludeBillId = null) {
-    const bills = this.getBills().filter((b) => !excludeBillId || b.id !== excludeBillId)
+  getNextInvoiceNumber(excludeBillId = null, includeDrafts = false) {
     const txs = this.getTransactions()
-    const existingInvoices = [
-      ...bills.map((b) => b.invoiceNumber || ''),
-      ...txs.map((t) => t.invoice || t.id || ''),
-    ]
+    const existingInvoices = txs.map((t) => t.invoice || t.id || '')
+
+    if (includeDrafts) {
+      const bills = this.getBills().filter((b) => !excludeBillId || b.id !== excludeBillId)
+      existingInvoices.push(...bills.map((b) => b.invoiceNumber || ''))
+    }
 
     const allNums = []
     existingInvoices.forEach((inv) => {
@@ -814,8 +815,8 @@ export const DataStore = {
     const seq = bills.length + 1
     const newId = `bill-${Date.now()}`
 
-    // Auto-generate invoice number: reuses gaps from deleted invoices or picks next sequential number
-    const autoInv = this.getNextInvoiceNumber()
+    // Only consider other open drafts if active drafts already exist (multiple concurrent tabs)
+    const autoInv = this.getNextInvoiceNumber(null, bills.length > 0)
 
     // Today's date formatted as YYYY-MM-DD
     const today = new Date().toISOString().split('T')[0]
