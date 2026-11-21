@@ -188,7 +188,7 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
           quantity: 1,
           unit: 'Pieces (Nos)',
           price: 0,
-          gstRate: 0,
+          gstRate: 18,
           length: '',
           width: '',
           height: '',
@@ -220,9 +220,13 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
   const totalGst = items.reduce((sum, item) => {
     const qty = Number(item.quantity) || 0
     const prc = Number(item.price) || 0
-    const gstRate = Number(item.gstRate) || 0
+    const gstRate = item.gstRate !== undefined ? Number(item.gstRate) : 18
     return sum + (qty * prc * gstRate) / 100
   }, 0)
+
+  const cgstRate = Number(settings.cgstRate) || 9
+  const sgstRate = Number(settings.sgstRate) || 9
+  const igstRate = cgstRate + sgstRate
 
   const cgstAmount = taxType === 'intra' ? totalGst / 2 : 0
   const sgstAmount = taxType === 'intra' ? totalGst / 2 : 0
@@ -329,7 +333,7 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
       quantity: 1,
       unit: 'Pieces (Nos)',
       price: 0,
-      gstRate: 0,
+      gstRate: 18,
       length: '',
       width: '',
       height: '',
@@ -1044,24 +1048,22 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
               <span>+₹{modalBillData.deliveryCharge.toLocaleString('en-IN')}</span>
             </div>
           )}
-          {modalBillData.totalGst > 0 && (
-            modalBillData.taxType === 'inter' ? (
+          {modalBillData.taxType === 'inter' ? (
+            <div className="pos-print-line">
+              <span>IGST ({(Number(settings.cgstRate) || 9) + (Number(settings.sgstRate) || 9)}%):</span>
+              <span>+₹{(Number(modalBillData.totalGst || modalBillData.igstAmount || 0)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            </div>
+          ) : (
+            <>
               <div className="pos-print-line">
-                <span>IGST:</span>
-                <span>+₹{modalBillData.totalGst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                <span>CGST ({Number(settings.cgstRate) || 9}%):</span>
+                <span>+₹{(modalBillData.cgstAmount ?? ((Number(modalBillData.totalGst) || 0) / 2)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
-            ) : (
-              <>
-                <div className="pos-print-line">
-                  <span>CGST:</span>
-                  <span>+₹{(modalBillData.cgstAmount ?? (modalBillData.totalGst / 2)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                </div>
-                <div className="pos-print-line">
-                  <span>SGST:</span>
-                  <span>+₹{(modalBillData.sgstAmount ?? (modalBillData.totalGst / 2)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                </div>
-              </>
-            )
+              <div className="pos-print-line">
+                <span>SGST ({Number(settings.sgstRate) || 9}%):</span>
+                <span>+₹{(modalBillData.sgstAmount ?? ((Number(modalBillData.totalGst) || 0) / 2)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              </div>
+            </>
           )}
           <div className="pos-print-line pos-print-grand">
             <strong>Grand Total:</strong>
@@ -1308,7 +1310,7 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
             <div className="patron-table-footer">
               <div className="patron-footer-left">
                 <span className="showing-records-text">
-                  Showing <strong>{filteredSavedBills.length > 0 ? (safeBillsPage - 1) * billsPerPage + 1 : 0}-{Math.min(safeBillsPage * billsPerPage, filteredSavedBills.length)}</strong> of {filteredSavedBills.length} invoices
+                  Showing <strong>{filteredSavedBills.length > 0 ? `${(safeBillsPage - 1) * billsPerPage + 1}-${Math.min(safeBillsPage * billsPerPage, filteredSavedBills.length)}` : '0'}</strong> of {filteredSavedBills.length} invoices
                 </span>
                 <div className="patron-per-page-wrap">
                   <span className="patron-per-page-label">Show:</span>
@@ -1920,14 +1922,14 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
                           </span>
                           <select
                             className="pos-select-gst"
-                            value={item.gstRate !== undefined ? item.gstRate : 0}
+                            value={item.gstRate !== undefined ? item.gstRate : 18}
                             onChange={(e) => handleItemChange(index, 'gstRate', Number(e.target.value))}
                           >
-                            <option value="0">0% (Nil)</option>
-                            <option value="5">{taxType === 'intra' ? '5% (2.5% CGST + 2.5% SGST)' : '5% (IGST)'}</option>
-                            <option value="12">{taxType === 'intra' ? '12% (6% CGST + 6% SGST)' : '12% (IGST)'}</option>
                             <option value="18">{taxType === 'intra' ? '18% (9% CGST + 9% SGST)' : '18% (IGST)'}</option>
+                            <option value="12">{taxType === 'intra' ? '12% (6% CGST + 6% SGST)' : '12% (IGST)'}</option>
+                            <option value="5">{taxType === 'intra' ? '5% (2.5% CGST + 2.5% SGST)' : '5% (IGST)'}</option>
                             <option value="28">{taxType === 'intra' ? '28% (14% CGST + 14% SGST)' : '28% (IGST)'}</option>
+                            <option value="0">0% (Nil)</option>
                           </select>
                         </div>
                       </div>
@@ -2200,30 +2202,28 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
                     </div>
                   )}
 
-                  {totalGst > 0 && (
-                    taxType === 'inter' ? (
+                  {taxType === 'inter' ? (
+                    <div className="bill-dossier-calc-line">
+                      <span className="bill-dossier-calc-label">IGST ({(Number(settings.cgstRate) || 9) + (Number(settings.sgstRate) || 9)}%):</span>
+                      <span className="bill-dossier-calc-val">
+                        +₹{(Number(totalGst) || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  ) : (
+                    <>
                       <div className="bill-dossier-calc-line">
-                        <span className="bill-dossier-calc-label">IGST (Inter-State):</span>
+                        <span className="bill-dossier-calc-label">CGST ({Number(settings.cgstRate) || 9}%):</span>
                         <span className="bill-dossier-calc-val">
-                          +₹{totalGst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          +₹{(cgstAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
                       </div>
-                    ) : (
-                      <>
-                        <div className="bill-dossier-calc-line">
-                          <span className="bill-dossier-calc-label">CGST (Mandatory):</span>
-                          <span className="bill-dossier-calc-val">
-                            +₹{cgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          </span>
-                        </div>
-                        <div className="bill-dossier-calc-line">
-                          <span className="bill-dossier-calc-label">SGST (Mandatory):</span>
-                          <span className="bill-dossier-calc-val">
-                            +₹{sgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          </span>
-                        </div>
-                      </>
-                    )
+                      <div className="bill-dossier-calc-line">
+                        <span className="bill-dossier-calc-label">SGST ({Number(settings.sgstRate) || 9}%):</span>
+                        <span className="bill-dossier-calc-val">
+                          +₹{(sgstAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                    </>
                   )}
 
                   <div className="bill-dossier-divider" />

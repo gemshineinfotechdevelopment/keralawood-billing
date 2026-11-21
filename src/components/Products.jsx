@@ -477,7 +477,7 @@ export default function Products({ initialViewMode = 'list' }) {
         <div className="patron-table-footer">
           <div className="patron-footer-left">
             <span className="showing-records-text">
-              Showing <strong>{filteredProducts.length > 0 ? `${startIndex + 1}-${endIndex}` : '0-0'}</strong> of {filteredProducts.length} products
+              Showing <strong>{filteredProducts.length > 0 ? `${startIndex + 1}-${endIndex}` : '0'}</strong> of {filteredProducts.length} products
             </span>
             <div className="patron-per-page-wrap">
               <span className="patron-per-page-label">Show:</span>

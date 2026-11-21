@@ -415,7 +415,7 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
         <div className="patron-table-footer">
           <div className="patron-footer-left">
             <span className="showing-records-text">
-              Showing <strong>{filteredSales.length > 0 ? (salesPage - 1) * salesPerPage + 1 : 0}-{Math.min(salesPage * salesPerPage, filteredSales.length)}</strong> of {filteredSales.length} orders
+              Showing <strong>{filteredSales.length > 0 ? `${(salesPage - 1) * salesPerPage + 1}-${Math.min(salesPage * salesPerPage, filteredSales.length)}` : '0'}</strong> of {filteredSales.length} orders
             </span>
             <div className="patron-per-page-wrap">
               <span className="patron-per-page-label">Show:</span>

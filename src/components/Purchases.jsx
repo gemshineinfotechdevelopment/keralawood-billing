@@ -399,7 +399,7 @@ export default function Purchases() {
         <div className="patron-table-footer">
           <div className="patron-footer-left">
             <span className="showing-records-text">
-              Showing <strong>{filteredPurchases.length > 0 ? (safePage - 1) * itemsPerPage + 1 : 0}-{Math.min(safePage * itemsPerPage, filteredPurchases.length)}</strong> of {filteredPurchases.length} consignments
+              Showing <strong>{filteredPurchases.length > 0 ? `${(safePage - 1) * itemsPerPage + 1}-${Math.min(safePage * itemsPerPage, filteredPurchases.length)}` : '0'}</strong> of {filteredPurchases.length} consignments
             </span>
             <div className="patron-per-page-wrap">
               <span className="patron-per-page-label">Show:</span>

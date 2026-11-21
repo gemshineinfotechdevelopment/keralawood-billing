@@ -1072,7 +1072,7 @@ export const DataStore = {
     const subtotal = items.reduce((sum, item) => sum + (Number(item.price || item.unitPrice || 0) * Number(item.quantity || 1)), 0)
     const totalGst = items.reduce((sum, item) => {
       const lineCost = Number(item.price || item.unitPrice || 0) * Number(item.quantity || 1)
-      const gstRate = item.gstRate !== undefined ? Number(item.gstRate) : 0
+      const gstRate = item.gstRate !== undefined ? Number(item.gstRate) : 18
       return sum + (lineCost * gstRate) / 100
     }, 0)
     const discount = Number(bill.discount) || 0

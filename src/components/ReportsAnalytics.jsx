@@ -887,7 +887,7 @@ export default function ReportsAnalytics() {
         <div className="patron-table-footer">
           <div className="patron-footer-left">
             <span className="showing-records-text">
-              Showing <strong>{filtered.length > 0 ? `${(currentPage - 1) * itemsPerPage + 1}-${Math.min(currentPage * itemsPerPage, filtered.length)}` : '0-0'}</strong> of {filtered.length} transactions
+              Showing <strong>{filtered.length > 0 ? `${(currentPage - 1) * itemsPerPage + 1}-${Math.min(currentPage * itemsPerPage, filtered.length)}` : '0'}</strong> of {filtered.length} transactions
             </span>
             <div className="patron-per-page-wrap">
               <span className="patron-per-page-label">Show:</span>

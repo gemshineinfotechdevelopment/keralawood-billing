@@ -92,13 +92,16 @@ export function printInvoiceDocument(modalBillData, settings = {}, defaultLogo =
             : (typeof modalBillData.item === 'string' && modalBillData.item.trim() ? modalBillData.item : 'Timber Furniture Order'),
           quantity: 1,
           price: modalBillData.rawAmount || Number(String(modalBillData.amount || 0).replace(/[^0-9.]/g, '')) || 0,
-          gstRate: 0,
+          gstRate: 18,
           hsn: modalBillData.hsnCode || settings.hsnCode || '4407',
         },
       ]
 
   const taxType = modalBillData.taxType || 'intra'
   const isInter = taxType === 'inter'
+  const cgstRate = Number(settings.cgstRate) || 9
+  const sgstRate = Number(settings.sgstRate) || 9
+  const igstRate = cgstRate + sgstRate
 
   // Totals
   const grandTotal = modalBillData.rawAmount !== undefined
@@ -109,9 +112,22 @@ export function printInvoiceDocument(modalBillData, settings = {}, defaultLogo =
     : (modalBillData.subtotal !== undefined ? Number(modalBillData.subtotal) : grandTotal)
   const discount = Number(modalBillData.discount) || 0
   const deliveryCharge = Number(modalBillData.deliveryCharge) || 0
-  const totalGst = Number(modalBillData.totalGst || modalBillData.taxAmount) || 0
+  
+  let totalGst = modalBillData.totalGst !== undefined 
+    ? Number(modalBillData.totalGst) 
+    : (modalBillData.taxAmount !== undefined ? Number(modalBillData.taxAmount) : NaN)
+  if (isNaN(totalGst)) {
+    totalGst = rawItems.reduce((sum, it) => {
+      const q = Number(it.quantity) || 1
+      const p = Number(it.price) || 0
+      const r = it.gstRate !== undefined ? Number(it.gstRate) : 18
+      return sum + (q * p * r) / 100
+    }, 0)
+  }
+
   const cgstAmount = modalBillData.cgstAmount !== undefined ? Number(modalBillData.cgstAmount) : (!isInter ? totalGst / 2 : 0)
   const sgstAmount = modalBillData.sgstAmount !== undefined ? Number(modalBillData.sgstAmount) : (!isInter ? totalGst / 2 : 0)
+  const igstAmount = modalBillData.igstAmount !== undefined ? Number(modalBillData.igstAmount) : (isInter ? totalGst : 0)
   const paymentStatus = modalBillData.paymentStatus || modalBillData.status || 'Paid'
   const balanceDue = Number(modalBillData.balanceDue) || 0
   const notes = modalBillData.notes || ''
@@ -378,21 +394,21 @@ export function printInvoiceDocument(modalBillData, settings = {}, defaultLogo =
               <span>+₹${deliveryCharge.toLocaleString('en-IN')}</span>
             </div>
           ` : ''}
-          ${totalGst > 0 ? (isInter ? `
+          ${isInter ? `
             <div class="summary-line">
-              <span>IGST:</span>
-              <span>+₹${totalGst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              <span>IGST (${igstRate}%):</span>
+              <span>+₹${(igstAmount || totalGst).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
           ` : `
             <div class="summary-line">
-              <span>CGST:</span>
+              <span>CGST (${cgstRate}%):</span>
               <span>+₹${cgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
             <div class="summary-line">
-              <span>SGST:</span>
+              <span>SGST (${sgstRate}%):</span>
               <span>+₹${sgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
-          `) : ''}
+          `}
           <div class="grand-line">
             <span>Grand Total:</span>
             <span>₹${grandTotal.toLocaleString('en-IN')}</span>

@@ -298,7 +298,7 @@ export default function SalesPerson() {
         <div className="patron-table-footer">
           <div className="patron-footer-left">
             <span className="showing-records-text">
-              Showing <strong>{filteredList.length > 0 ? (safePage - 1) * itemsPerPage + 1 : 0}-{Math.min(safePage * itemsPerPage, filteredList.length)}</strong> of {filteredList.length} staff
+              Showing <strong>{filteredList.length > 0 ? `${(safePage - 1) * itemsPerPage + 1}-${Math.min(safePage * itemsPerPage, filteredList.length)}` : '0'}</strong> of {filteredList.length} staff
             </span>
             <div className="patron-per-page-wrap">
               <span className="patron-per-page-label">Show:</span>

@@ -505,7 +505,7 @@ export default function StockManagement({ onAddNewProduct }) {
         <div className="patron-table-footer">
           <div className="patron-footer-left">
             <span className="showing-records-text">
-              Showing <strong>{totalItems === 0 ? '0-0' : `${startIndex + 1}-${endIndex}`}</strong> of {totalItems} products
+              Showing <strong>{totalItems === 0 ? '0' : `${startIndex + 1}-${endIndex}`}</strong> of {totalItems} products
             </span>
             <div className="patron-per-page-wrap">
               <span className="patron-per-page-label">Show:</span>
