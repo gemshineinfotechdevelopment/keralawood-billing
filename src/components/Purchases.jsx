@@ -81,6 +81,20 @@ export default function Purchases() {
 
   const totalConsignments = purchases.length
 
+  const { primaryMode, primaryModeCount } = useMemo(() => {
+    if (purchases.length === 0) return { primaryMode: '-', primaryModeCount: 0 }
+    const counts = purchases.reduce((acc, p) => {
+      const mode = p.paymentMode || 'Bank Wire'
+      acc[mode] = (acc[mode] || 0) + 1
+      return acc
+    }, {})
+    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1])
+    return {
+      primaryMode: sorted[0] ? sorted[0][0] : '-',
+      primaryModeCount: sorted[0] ? sorted[0][1] : 0,
+    }
+  }, [purchases])
+
   // Handlers
   const handleOpenAdd = () => {
     setEditingPurchase(null)
@@ -249,8 +263,10 @@ export default function Purchases() {
         <div className="purchases-kpi-card">
           <div className="purchases-kpi-left">
             <span className="purchases-kpi-label">PRIMARY MODE</span>
-            <div className="purchases-kpi-value" style={{ fontSize: '18px' }}>Bank Wire / UPI</div>
-            <span className="purchases-kpi-sub">100% Tax & GST audited</span>
+            <div className="purchases-kpi-value" style={{ fontSize: '18px' }}>{primaryMode}</div>
+            <span className="purchases-kpi-sub">
+              {purchases.length > 0 ? `${primaryModeCount} consignment${primaryModeCount === 1 ? '' : 's'} recorded` : 'No purchase records'}
+            </span>
           </div>
           <div className="purchases-kpi-icon">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -309,7 +325,13 @@ export default function Purchases() {
               {filteredPurchases.length === 0 ? (
                 <tr>
                   <td colSpan="7" style={{ textAlign: 'center', padding: '40px 16px', color: '#8A7B72' }}>
-                    No purchase consignments found matching your filter.
+                    <div style={{ fontSize: '1.8rem', marginBottom: '8px' }}>📦</div>
+                    <div style={{ fontWeight: 600, fontSize: '0.95rem', color: '#2C1810', marginBottom: '4px' }}>
+                      {searchQuery ? `No purchases found matching "${searchQuery}"` : 'No purchase consignments recorded yet'}
+                    </div>
+                    <div style={{ fontSize: '0.85rem' }}>
+                      Click &quot;+ Record Purchase&quot; above to log your first timber inward consignment.
+                    </div>
                   </td>
                 </tr>
               ) : (

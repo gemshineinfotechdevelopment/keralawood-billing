@@ -997,6 +997,17 @@ app.put('/api/purchases/:id', async (req, res) => {
   }
 });
 
+app.delete('/api/purchases', async (req, res) => {
+  try {
+    const result = await Purchase.deleteMany({});
+    console.log('[API] Cleared all purchase records from MongoDB. Count:', result.deletedCount);
+    res.json({ success: true, message: 'All purchase records cleared successfully', count: result.deletedCount });
+  } catch (err) {
+    console.error('[API] /api/purchases clear error:', err);
+    res.status(500).json({ success: false, message: 'Failed to clear purchases', error: err.message });
+  }
+});
+
 app.delete('/api/purchases/:id', async (req, res) => {
   try {
     const { id } = req.params;

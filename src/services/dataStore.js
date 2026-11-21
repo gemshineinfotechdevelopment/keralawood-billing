@@ -16,7 +16,7 @@ const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_AP
 
 // One-time cache clear to remove old hardcoded seed data
 const DATA_VERSION_KEY = 'sivakasi_wood_data_version'
-const CURRENT_DATA_VERSION = '6'
+const CURRENT_DATA_VERSION = '7'
 ;(function clearOldSeedData() {
   try {
     const storedVersion = localStorage.getItem(DATA_VERSION_KEY)
