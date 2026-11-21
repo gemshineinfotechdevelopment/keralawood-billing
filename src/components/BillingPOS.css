@@ -331,6 +331,13 @@
   transition: border-color 0.15s;
 }
 
+.pos-select-pick-catalog option:disabled {
+  color: #9CA3AF !important;
+  background-color: #F3F4F6 !important;
+  cursor: not-allowed !important;
+  font-style: italic;
+}
+
 .pos-select-pick-catalog:hover {
   border-color: #C88D58;
 }

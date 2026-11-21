@@ -352,7 +352,28 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
     }
 
     const prod = products.find((p) => p.id === prodIdOrSku || p.sku === prodIdOrSku || p.name === prodIdOrSku)
-    if (!prod) return
+    if (!prod) {
+      e.target.value = ''
+      return
+    }
+
+    const stock = Number(
+      prod.stockQuantity !== undefined
+        ? prod.stockQuantity
+        : prod.stock !== undefined
+        ? prod.stock
+        : prod.quantity !== undefined
+        ? prod.quantity
+        : 0
+    )
+
+    if (stock <= 0) {
+      alert(`⚠️ "${prod.name}" is currently Out of Stock (0 units available). Cannot be added to bill.`)
+      setPrintSuccessToast(`⚠️ "${prod.name}" is Out of Stock!`)
+      setTimeout(() => setPrintSuccessToast(''), 3000)
+      e.target.value = ''
+      return
+    }
 
     const newRow = {
       id: `item-${Date.now()}-${items.length + 1}`,
@@ -784,6 +805,34 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
       setPrintSuccessToast('⚠️ Please enter at least one item description or rate before saving.')
       setTimeout(() => setPrintSuccessToast(''), 3000)
       return
+    }
+
+    // Check if any item selected is out of stock in catalog
+    for (const it of validItems) {
+      const itDesc = String(it.description || it.name || '').trim().toLowerCase()
+      const itSku = String(it.sku || '').trim().toLowerCase()
+      const matched = products.find(
+        (p) =>
+          (itSku && String(p.sku || '').trim().toLowerCase() === itSku) ||
+          (p.name && String(p.name).trim().toLowerCase() === itDesc)
+      )
+      if (matched) {
+        const stock = Number(
+          matched.stockQuantity !== undefined
+            ? matched.stockQuantity
+            : matched.stock !== undefined
+            ? matched.stock
+            : matched.quantity !== undefined
+            ? matched.quantity
+            : 0
+        )
+        if (stock <= 0) {
+          alert(`⚠️ "${matched.name}" is currently Out of Stock (0 units remaining). Please remove it before saving the bill.`)
+          setPrintSuccessToast(`⚠️ "${matched.name}" is Out of Stock!`)
+          setTimeout(() => setPrintSuccessToast(''), 3000)
+          return
+        }
+      }
     }
 
     // 1. If "Save customer to directory" is checked, save customer to MongoDB & store
@@ -1824,11 +1873,33 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
                     + Pick from Products Catalog... ▾
                   </option>
                   <option value="__blank__">+ Add Custom / Blank Item</option>
-                  {products.map((p) => (
-                    <option key={p.id || p.sku} value={p.sku || p.name}>
-                      {p.name} — ₹{Number(p.sellingPrice || p.unitPrice || 0).toLocaleString('en-IN')}
-                    </option>
-                  ))}
+                  {products.map((p) => {
+                    const stock = Number(
+                      p.stockQuantity !== undefined
+                        ? p.stockQuantity
+                        : p.stock !== undefined
+                        ? p.stock
+                        : p.quantity !== undefined
+                        ? p.quantity
+                        : 0
+                    )
+                    const isOutOfStock = isNaN(stock) || stock <= 0
+                    return (
+                      <option
+                        key={p.id || p.sku}
+                        value={p.sku || p.name}
+                        disabled={isOutOfStock}
+                        style={
+                          isOutOfStock
+                            ? { color: '#9CA3AF', backgroundColor: '#F3F4F6', cursor: 'not-allowed' }
+                            : {}
+                        }
+                      >
+                        {p.name} — ₹{Number(p.sellingPrice || p.unitPrice || 0).toLocaleString('en-IN')}{' '}
+                        {isOutOfStock ? '⚠️ (Out of Stock)' : `(${stock} in stock)`}
+                      </option>
+                    )
+                  })}
                 </select>
               </div>
             </div>
@@ -1976,11 +2047,24 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
               </div>
             </div>
             <datalist id="pos-catalog-datalist">
-              {products.map((p) => (
-                <option key={p.id || p.sku} value={p.name}>
-                  {p.sku} • ₹{Number(p.sellingPrice || p.unitPrice || 0).toLocaleString('en-IN')}
-                </option>
-              ))}
+              {products
+                .filter((p) => {
+                  const stock = Number(
+                    p.stockQuantity !== undefined
+                      ? p.stockQuantity
+                      : p.stock !== undefined
+                      ? p.stock
+                      : p.quantity !== undefined
+                      ? p.quantity
+                      : 0
+                  )
+                  return !isNaN(stock) && stock > 0
+                })
+                .map((p) => (
+                  <option key={p.id || p.sku} value={p.name}>
+                    {p.sku} • ₹{Number(p.sellingPrice || p.unitPrice || 0).toLocaleString('en-IN')}
+                  </option>
+                ))}
             </datalist>
           </div>
 
