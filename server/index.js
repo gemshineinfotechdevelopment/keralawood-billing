@@ -20,7 +20,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Explicitly load server/.env regardless of where node was started from
-dotenv.config({ path: path.resolve(__dirname, '.env') });
+dotenv.config({ path: path.resolve(__dirname, '.env'), override: true });
 
 const app = express();
 const PORT = process.env.PORT || 5031;
@@ -100,7 +100,7 @@ app.get('/api/health', (req, res) => {
     status: 'ok',
     message: 'Backend server is running',
     environment: process.env.NODE_ENV || 'development',
-    mongoStatus: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+    mongoStatus: mongoose.connection.readyState === 1 ? 'connected' : mongoose.connection.readyState === 2 ? 'connecting' : 'disconnected',
     timestamp: new Date().toISOString(),
   });
 });
