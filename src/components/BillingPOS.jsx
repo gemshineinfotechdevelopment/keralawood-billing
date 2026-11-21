@@ -929,47 +929,6 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
     printInvoiceDocument(modalBillData, settings, treeLogo)
   }
 
-  // HSN Tax Breakdown Summary (Statutory GST Table matching uploaded reference image)
-  const hsnSummary = useMemo(() => {
-    const summaryMap = {}
-    modalBillData.items.forEach((it) => {
-      const hsn = it.hsn || it.hsnCode || settings.hsnCode || '4407'
-      const rate = Number(it.gstRate) || 0
-      const qty = Number(it.quantity) || 1
-      const price = Number(it.price) || 0
-      const taxable = qty * price
-      const cgstAmt = modalBillData.taxType === 'intra' ? (taxable * (rate / 2)) / 100 : 0
-      const sgstAmt = modalBillData.taxType === 'intra' ? (taxable * (rate / 2)) / 100 : 0
-      const igstAmt = modalBillData.taxType === 'inter' ? (taxable * rate) / 100 : 0
-      const totalTax = cgstAmt + sgstAmt + igstAmt
-
-      const key = `${hsn}-${rate}`
-      if (!summaryMap[key]) {
-        summaryMap[key] = {
-          hsn,
-          rate,
-          taxable: 0,
-          cgstAmt: 0,
-          sgstAmt: 0,
-          igstAmt: 0,
-          totalTax: 0,
-        }
-      }
-      summaryMap[key].taxable += taxable
-      summaryMap[key].cgstAmt += cgstAmt
-      summaryMap[key].sgstAmt += sgstAmt
-      summaryMap[key].igstAmt += igstAmt
-      summaryMap[key].totalTax += totalTax
-    })
-    return Object.values(summaryMap)
-  }, [modalBillData.items, modalBillData.taxType, settings.hsnCode])
-
-  const totalHsnTaxable = hsnSummary.reduce((sum, h) => sum + h.taxable, 0)
-  const totalHsnCgst = hsnSummary.reduce((sum, h) => sum + h.cgstAmt, 0)
-  const totalHsnSgst = hsnSummary.reduce((sum, h) => sum + h.sgstAmt, 0)
-  const totalHsnIgst = hsnSummary.reduce((sum, h) => sum + h.igstAmt, 0)
-  const totalHsnTax = hsnSummary.reduce((sum, h) => sum + h.totalTax, 0)
-
   const renderPrintableInvoiceSheet = () => (
     <div className="pos-invoice-printable-sheet" id="pos-printable-invoice">
       {/* Invoice Header */}
@@ -1046,130 +1005,6 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
         </tbody>
       </table>
 
-      {/* Statutory HSN / Tax Clarification Breakdown Table */}
-      <div style={{ marginTop: '36px', marginBottom: '20px' }}>
-        <table className="pos-print-table" style={{ borderCollapse: 'collapse', border: 'none', width: '100%', fontSize: '11px', textAlign: 'right', marginBottom: '8px' }}>
-          <thead>
-            <tr style={{ backgroundColor: '#FAF1EE' }}>
-              <th rowSpan="2" style={{ borderBottom: '1px solid #D3C4B8', padding: '6px 8px', textAlign: 'center', fontWeight: 700, width: '18%' }}>
-                HSN/SAC
-              </th>
-              <th rowSpan="2" style={{ borderBottom: '1px solid #D3C4B8', padding: '6px 8px', textAlign: 'right', fontWeight: 700, width: '20%' }}>
-                Taxable Value
-              </th>
-              {modalBillData.taxType === 'inter' ? (
-                <th colSpan="2" style={{ borderBottom: '1px solid #D3C4B8', padding: '4px 8px', textAlign: 'center', fontWeight: 700, width: '42%' }}>
-                  IGST
-                </th>
-              ) : (
-                <>
-                  <th colSpan="2" style={{ borderBottom: '1px solid #D3C4B8', padding: '4px 8px', textAlign: 'center', fontWeight: 700, width: '24%' }}>
-                    CGST
-                  </th>
-                  <th colSpan="2" style={{ borderBottom: '1px solid #D3C4B8', padding: '4px 8px', textAlign: 'center', fontWeight: 700, width: '24%' }}>
-                    SGST/UTGST
-                  </th>
-                </>
-              )}
-              <th rowSpan="2" style={{ borderBottom: '1px solid #D3C4B8', padding: '6px 8px', textAlign: 'right', fontWeight: 700, width: '18%' }}>
-                Total Tax Amount
-              </th>
-            </tr>
-            <tr style={{ backgroundColor: '#FAF1EE' }}>
-              {modalBillData.taxType === 'inter' ? (
-                <>
-                  <th style={{ borderBottom: '1.5px solid #D3C4B8', padding: '3px 6px', textAlign: 'center', fontSize: '10px' }}>Rate</th>
-                  <th style={{ borderBottom: '1.5px solid #D3C4B8', padding: '3px 6px', textAlign: 'right', fontSize: '10px' }}>Amount</th>
-                </>
-              ) : (
-                <>
-                  <th style={{ borderBottom: '1.5px solid #D3C4B8', padding: '3px 6px', textAlign: 'center', fontSize: '10px' }}>Rate</th>
-                  <th style={{ borderBottom: '1.5px solid #D3C4B8', padding: '3px 6px', textAlign: 'right', fontSize: '10px' }}>Amount</th>
-                  <th style={{ borderBottom: '1.5px solid #D3C4B8', padding: '3px 6px', textAlign: 'center', fontSize: '10px' }}>Rate</th>
-                  <th style={{ borderBottom: '1.5px solid #D3C4B8', padding: '3px 6px', textAlign: 'right', fontSize: '10px' }}>Amount</th>
-                </>
-              )}
-            </tr>
-          </thead>
-          <tbody>
-            {hsnSummary.map((h, i) => (
-              <tr key={i} style={{ borderBottom: '1px solid #EFE4DC' }}>
-                <td style={{ padding: '6px 8px', textAlign: 'center', fontWeight: 600 }}>
-                  {h.hsn}
-                </td>
-                <td style={{ padding: '6px 8px' }}>
-                  {h.taxable.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </td>
-                {modalBillData.taxType === 'inter' ? (
-                  <>
-                    <td style={{ padding: '6px 8px', textAlign: 'center' }}>
-                      {h.rate.toFixed(2)}%
-                    </td>
-                    <td style={{ padding: '6px 8px' }}>
-                      {h.igstAmt.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </td>
-                  </>
-                ) : (
-                  <>
-                    <td style={{ padding: '6px 8px', textAlign: 'center' }}>
-                      {(h.rate / 2).toFixed(2)}%
-                    </td>
-                    <td style={{ padding: '6px 8px' }}>
-                      {h.cgstAmt.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </td>
-                    <td style={{ padding: '6px 8px', textAlign: 'center' }}>
-                      {(h.rate / 2).toFixed(2)}%
-                    </td>
-                    <td style={{ padding: '6px 8px' }}>
-                      {h.sgstAmt.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </td>
-                  </>
-                )}
-                <td style={{ padding: '6px 8px', fontWeight: 600 }}>
-                  {h.totalTax.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </td>
-              </tr>
-            ))}
-            {/* Total Row */}
-            <tr style={{ backgroundColor: '#FAF5F1', fontWeight: 700, borderTop: '1.5px solid #D3C4B8', borderBottom: '1.5px solid #D3C4B8' }}>
-              <td style={{ padding: '6px 8px', textAlign: 'center' }}>
-                Total
-              </td>
-              <td style={{ padding: '6px 8px' }}>
-                {totalHsnTaxable.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </td>
-              {modalBillData.taxType === 'inter' ? (
-                <>
-                  <td style={{ padding: '6px 8px', textAlign: 'center' }}>-</td>
-                  <td style={{ padding: '6px 8px' }}>
-                    {totalHsnIgst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </td>
-                </>
-              ) : (
-                <>
-                  <td style={{ padding: '6px 8px', textAlign: 'center' }}>-</td>
-                  <td style={{ padding: '6px 8px' }}>
-                    {totalHsnCgst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </td>
-                  <td style={{ padding: '6px 8px', textAlign: 'center' }}>-</td>
-                  <td style={{ padding: '6px 8px' }}>
-                    {totalHsnSgst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </td>
-                </>
-              )}
-              <td style={{ padding: '6px 8px' }}>
-                {totalHsnTax.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        {totalHsnTax > 0 && (
-          <p style={{ margin: '6px 0 0 0', fontSize: '10.5px', color: '#5C3A21' }}>
-            <strong>Tax Amount (in words):</strong> {numberToWordsINR(totalHsnTax)}
-          </p>
-        )}
-      </div>
-
       {/* Totals & Signatures */}
       <div className="pos-print-footer">
         <div className="pos-print-words-and-notes">
@@ -1212,17 +1047,17 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
           {modalBillData.totalGst > 0 && (
             modalBillData.taxType === 'inter' ? (
               <div className="pos-print-line">
-                <span>IGST (Inter-State):</span>
+                <span>IGST:</span>
                 <span>+₹{modalBillData.totalGst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
             ) : (
               <>
                 <div className="pos-print-line">
-                  <span>CGST (Mandatory):</span>
+                  <span>CGST:</span>
                   <span>+₹{(modalBillData.cgstAmount ?? (modalBillData.totalGst / 2)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
                 <div className="pos-print-line">
-                  <span>SGST (Mandatory):</span>
+                  <span>SGST:</span>
                   <span>+₹{(modalBillData.sgstAmount ?? (modalBillData.totalGst / 2)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
               </>

@@ -100,37 +100,6 @@ export function printInvoiceDocument(modalBillData, settings = {}, defaultLogo =
   const taxType = modalBillData.taxType || 'intra'
   const isInter = taxType === 'inter'
 
-  // HSN Breakdown
-  const summaryMap = {}
-  rawItems.forEach((it) => {
-    const hsn = it.hsn || it.hsnCode || settings.hsnCode || '4407'
-    const rate = Number(it.gstRate) || 0
-    const qty = Number(it.quantity) || 1
-    const price = Number(it.price) || 0
-    const taxable = qty * price
-    const cgstAmt = taxType === 'intra' ? (taxable * (rate / 2)) / 100 : 0
-    const sgstAmt = taxType === 'intra' ? (taxable * (rate / 2)) / 100 : 0
-    const igstAmt = taxType === 'inter' ? (taxable * rate) / 100 : 0
-    const totalTax = cgstAmt + sgstAmt + igstAmt
-
-    const key = `${hsn}-${rate}`
-    if (!summaryMap[key]) {
-      summaryMap[key] = { hsn, rate, taxable: 0, cgstAmt: 0, sgstAmt: 0, igstAmt: 0, totalTax: 0 }
-    }
-    summaryMap[key].taxable += taxable
-    summaryMap[key].cgstAmt += cgstAmt
-    summaryMap[key].sgstAmt += sgstAmt
-    summaryMap[key].igstAmt += igstAmt
-    summaryMap[key].totalTax += totalTax
-  })
-
-  const hsnSummary = Object.values(summaryMap)
-  const totalHsnTaxable = hsnSummary.reduce((sum, h) => sum + h.taxable, 0)
-  const totalHsnCgst = hsnSummary.reduce((sum, h) => sum + h.cgstAmt, 0)
-  const totalHsnSgst = hsnSummary.reduce((sum, h) => sum + h.sgstAmt, 0)
-  const totalHsnIgst = hsnSummary.reduce((sum, h) => sum + h.igstAmt, 0)
-  const totalHsnTax = hsnSummary.reduce((sum, h) => sum + h.totalTax, 0)
-
   // Totals
   const grandTotal = modalBillData.rawAmount !== undefined
     ? Number(modalBillData.rawAmount)
@@ -167,23 +136,6 @@ export function printInvoiceDocument(modalBillData, settings = {}, defaultLogo =
       </tr>
     `
   }).join('')
-
-  const hsnRows = hsnSummary.map((h) => `
-    <tr style="border-bottom: 1px solid #EFE4DC;">
-      <td style="padding: 6px 8px; text-align: center; font-weight: 600;">${h.hsn}</td>
-      <td style="padding: 6px 8px; text-align: right;">${h.taxable.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-      ${isInter ? `
-        <td style="padding: 6px 8px; text-align: center;">${h.rate.toFixed(2)}%</td>
-        <td style="padding: 6px 8px; text-align: right;">${h.igstAmt.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-      ` : `
-        <td style="padding: 6px 8px; text-align: center;">${(h.rate / 2).toFixed(2)}%</td>
-        <td style="padding: 6px 8px; text-align: right;">${h.cgstAmt.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-        <td style="padding: 6px 8px; text-align: center;">${(h.rate / 2).toFixed(2)}%</td>
-        <td style="padding: 6px 8px; text-align: right;">${h.sgstAmt.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-      `}
-      <td style="padding: 6px 8px; text-align: right; font-weight: 600;">${h.totalTax.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-    </tr>
-  `).join('')
 
   const html = `<!DOCTYPE html>
 <html>
@@ -291,19 +243,6 @@ export function printInvoiceDocument(modalBillData, settings = {}, defaultLogo =
       border-bottom: 1.5px solid #D3C4B8;
       text-align: left;
     }
-    .hsn-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 11px;
-      margin-bottom: 8px;
-    }
-    .hsn-table th {
-      background-color: #FAF1EE;
-      color: #31190B;
-      font-weight: 700;
-      padding: 5px 8px;
-      border-bottom: 1px solid #D3C4B8;
-    }
     .footer-table {
       width: 100%;
       border-collapse: collapse;
@@ -407,57 +346,6 @@ export function printInvoiceDocument(modalBillData, settings = {}, defaultLogo =
       </tbody>
     </table>
 
-    <div style="margin-top: 24px; margin-bottom: 18px; page-break-inside: avoid; break-inside: avoid;">
-      <table class="hsn-table">
-        <thead>
-          <tr>
-            <th rowspan="2" style="width: 18%; text-align: center;">HSN/SAC</th>
-            <th rowspan="2" style="width: 20%; text-align: right;">Taxable Value</th>
-            ${isInter ? `
-              <th colspan="2" style="width: 42%; text-align: center;">IGST</th>
-            ` : `
-              <th colspan="2" style="width: 22%; text-align: center;">CGST</th>
-              <th colspan="2" style="width: 22%; text-align: center;">SGST/UTGST</th>
-            `}
-            <th rowspan="2" style="width: 18%; text-align: right;">Total Tax</th>
-          </tr>
-          <tr>
-            ${isInter ? `
-              <th style="font-size: 10px; text-align: center;">Rate</th>
-              <th style="font-size: 10px; text-align: right;">Amount</th>
-            ` : `
-              <th style="font-size: 10px; text-align: center;">Rate</th>
-              <th style="font-size: 10px; text-align: right;">Amount</th>
-              <th style="font-size: 10px; text-align: center;">Rate</th>
-              <th style="font-size: 10px; text-align: right;">Amount</th>
-            `}
-          </tr>
-        </thead>
-        <tbody>
-          ${hsnRows}
-          <tr style="background-color: #FAF5F1; font-weight: 700; border-top: 1.5px solid #D3C4B8; border-bottom: 1.5px solid #D3C4B8;">
-            <td style="padding: 6px 8px; text-align: center;">Total</td>
-            <td style="padding: 6px 8px; text-align: right;">${totalHsnTaxable.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-            ${isInter ? `
-              <td style="padding: 6px 8px; text-align: center;">-</td>
-              <td style="padding: 6px 8px; text-align: right;">${totalHsnIgst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-            ` : `
-              <td style="padding: 6px 8px; text-align: center;">-</td>
-              <td style="padding: 6px 8px; text-align: right;">${totalHsnCgst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-              <td style="padding: 6px 8px; text-align: center;">-</td>
-              <td style="padding: 6px 8px; text-align: right;">${totalHsnSgst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-            `}
-            <td style="padding: 6px 8px; text-align: right;">${totalHsnTax.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-          </tr>
-        </tbody>
-      </table>
-      ${totalHsnTax > 0 ? `
-        <p style="margin: 4px 0 0 0; font-size: 10.5px; color: #5C3A21;">
-          <strong>Tax Amount (in words):</strong> ${numberToWordsINR(totalHsnTax)}
-        </p>
-      ` : ''}
-    </div>
-
     <table class="footer-table">
       <tr>
         <td class="footer-left">
@@ -492,7 +380,7 @@ export function printInvoiceDocument(modalBillData, settings = {}, defaultLogo =
           ` : ''}
           ${totalGst > 0 ? (isInter ? `
             <div class="summary-line">
-              <span>IGST (Inter-State):</span>
+              <span>IGST:</span>
               <span>+₹${totalGst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
           ` : `
