@@ -544,6 +544,8 @@ export const DataStore = {
       shippingClass: item.shippingClass || '',
       tradeDiscount: item.tradeDiscount || '',
       costPrice: Number(item.costPrice) || 0,
+      imageUrl: item.imageUrl || '',
+      imagePublicId: item.imagePublicId || '',
     }
     list.unshift(newProduct)
     this.saveProducts(list)
@@ -612,6 +614,8 @@ export const DataStore = {
           shippingClass: item.shippingClass || p.shippingClass,
           tradeDiscount: item.tradeDiscount || p.tradeDiscount,
           costPrice: item.costPrice !== undefined ? Number(item.costPrice) : (p.costPrice || 0),
+          imageUrl: item.imageUrl !== undefined ? item.imageUrl : (p.imageUrl || ''),
+          imagePublicId: item.imagePublicId !== undefined ? item.imagePublicId : (p.imagePublicId || ''),
         }
         return updatedItem
       }

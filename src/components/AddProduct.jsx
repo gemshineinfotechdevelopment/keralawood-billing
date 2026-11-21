@@ -518,6 +518,85 @@ export default function AddProduct({ onProductSaved, onCancel, editProduct = nul
               onChange={(e) => setWoodSpecies(e.target.value)}
             />
           </div>
+
+          {/* Cloudinary Product Photo Upload */}
+          <div className="form-field-group" style={{ marginTop: '14px' }}>
+            <label className="field-label">Product Photo (Cloudinary CDN)</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+              <div style={{
+                width: '60px',
+                height: '60px',
+                borderRadius: '8px',
+                border: '1.5px dashed #D3C4B8',
+                backgroundColor: '#FAF5F1',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                overflow: 'hidden'
+              }}>
+                {imageUrl ? (
+                  <img src={imageUrl} alt="Product" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <span style={{ fontSize: '24px' }}>🪵</span>
+                )}
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <label style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '6px 12px',
+                    borderRadius: '6px',
+                    backgroundColor: isUploadingImage ? '#D3C4B8' : '#5C3A21',
+                    color: '#FFF',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    cursor: isUploadingImage ? 'wait' : 'pointer',
+                  }}>
+                    <span>{isUploadingImage ? '☁️ Uploading...' : 'Upload Photo'}</span>
+                    <input
+                      type="file"
+                      disabled={isUploadingImage}
+                      accept="image/png, image/jpeg, image/jpg, image/webp"
+                      style={{ display: 'none' }}
+                      onChange={handleProductImageUpload}
+                    />
+                  </label>
+
+                  {imageUrl && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveProductImage}
+                      style={{
+                        padding: '6px 10px',
+                        borderRadius: '6px',
+                        border: '1px solid #D3C4B8',
+                        backgroundColor: '#FFF',
+                        color: '#A34814',
+                        fontSize: '12px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+
+                {imageUploadMsg && (
+                  <span style={{ fontSize: '11px', fontWeight: 600, color: imageUploadMsg.startsWith('✓') ? '#2E7D32' : '#5C3A21' }}>
+                    {imageUploadMsg}
+                  </span>
+                )}
+                {imageUrl && imageUrl.includes('cloudinary') && (
+                  <span style={{ fontSize: '11px', color: '#2E7D32', fontWeight: 600 }}>
+                    ☁️ Cloudinary CDN Active
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="form-section-separator" />

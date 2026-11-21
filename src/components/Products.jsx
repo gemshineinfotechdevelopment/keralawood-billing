@@ -378,7 +378,14 @@ export default function Products({ initialViewMode = 'list' }) {
                   return (
                     <tr key={prod.id || prod.sku}>
                       <td>
-                        <div className="product-name-cell">
+                        <div className="product-name-cell" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          {prod.imageUrl ? (
+                            <img
+                              src={prod.imageUrl}
+                              alt={prod.name}
+                              style={{ width: '28px', height: '28px', borderRadius: '4px', objectFit: 'cover', border: '1px solid #E8D5C8', flexShrink: 0 }}
+                            />
+                          ) : null}
                           <span className="product-code-pill" title={`Product Code: ${getProductCode(prod)}`}>
                             {getProductCode(prod)}
                           </span>
@@ -550,8 +557,12 @@ export default function Products({ initialViewMode = 'list' }) {
 
               {/* Profile Header Identity */}
               <div className="dossier-profile-header">
-                <div className="dossier-avatar-large">
-                  {getProductInitials(previewProduct)}
+                <div className="dossier-avatar-large" style={{ overflow: 'hidden' }}>
+                  {previewProduct.imageUrl ? (
+                    <img src={previewProduct.imageUrl} alt={previewProduct.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    getProductInitials(previewProduct)
+                  )}
                 </div>
                 <div className="dossier-name-block">
                   <h3 className="dossier-person-name">{previewProduct.name || '-'}</h3>
