@@ -621,6 +621,8 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
     const inv = deleteModalBill.invoice || deleteModalBill.id
     DataStore.deleteTransaction(inv)
     setSavedBills((prev) => prev.filter((b) => b.invoice !== inv && b.id !== inv))
+    setCustomers(DataStore.getCustomers())
+    setSalesPersonsList(DataStore.getSalesPersons())
     setPrintSuccessToast(`✓ Deleted Bill ${inv} successfully!`)
     setDeleteModalBill(null)
     setTimeout(() => setPrintSuccessToast(''), 3000)

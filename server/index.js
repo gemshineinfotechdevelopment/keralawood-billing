@@ -542,9 +542,69 @@ app.get('/api/sales', async (req, res) => {
 app.delete('/api/sales/:invoice', async (req, res) => {
   try {
     const { invoice } = req.params;
-    await Sale.deleteMany({
+    const sale = await Sale.findOne({
       $or: [{ invoice: invoice }, { _id: invoice.match(/^[0-9a-fA-F]{24}$/) ? invoice : null }]
     });
+
+    if (sale) {
+      // 1. Decrement Salesperson ordersClosed if matched
+      const spName = sale.salesPerson || sale.billedBy;
+      if (spName && spName.trim()) {
+        const trimmedSp = spName.trim();
+        const sp = await SalesPerson.findOne({
+          $or: [
+            { name: { $regex: new RegExp(`^${trimmedSp}$`, 'i') } },
+            { code: { $regex: new RegExp(`^${trimmedSp}$`, 'i') } }
+          ]
+        });
+        if (sp) {
+          sp.ordersClosed = Math.max(0, (Number(sp.ordersClosed) || 1) - 1);
+          await sp.save();
+        }
+      }
+
+      // 2. Check Customer: delete customer if no other sales exist
+      const rawCust = sale.customer;
+      const custName = typeof rawCust === 'object' && rawCust !== null ? rawCust.name : rawCust;
+      if (custName && typeof custName === 'string' && !custName.toLowerCase().includes('walk-in')) {
+        const trimmedCust = custName.trim();
+        const otherSalesCount = await Sale.countDocuments({
+          invoice: { $ne: sale.invoice },
+          $or: [
+            { customer: trimmedCust },
+            { 'customer.name': trimmedCust },
+            { customerPhone: sale.customerPhone || '___none___' }
+          ]
+        });
+
+        if (otherSalesCount === 0) {
+          // No other sales: delete customer from Customers directory
+          await Customer.deleteMany({
+            $or: [
+              { name: { $regex: new RegExp(`^${trimmedCust}$`, 'i') } },
+              { phone: sale.customerPhone ? sale.customerPhone : '___none___' }
+            ]
+          });
+        } else {
+          // Decrement customer total orders
+          const cust = await Customer.findOne({
+            $or: [
+              { name: { $regex: new RegExp(`^${trimmedCust}$`, 'i') } },
+              { phone: sale.customerPhone ? sale.customerPhone : '___none___' }
+            ]
+          });
+          if (cust) {
+            cust.totalOrders = Math.max(0, (Number(cust.totalOrders) || 1) - 1);
+            await cust.save();
+          }
+        }
+      }
+
+      await Sale.deleteMany({
+        $or: [{ invoice: invoice }, { _id: invoice.match(/^[0-9a-fA-F]{24}$/) ? invoice : null }]
+      });
+    }
+
     res.json({ success: true, message: `Sale ${invoice} deleted successfully` });
   } catch (err) {
     console.error('[API] /api/sales/:invoice DELETE error:', err);

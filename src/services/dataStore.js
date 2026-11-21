@@ -910,14 +910,104 @@ export const DataStore = {
   },
   deleteTransaction(invoiceOrId) {
     const txs = this.getTransactions()
+    const targetTx = txs.find((t) => t.invoice === invoiceOrId || t.id === invoiceOrId)
     const filtered = txs.filter((t) => t.invoice !== invoiceOrId && t.id !== invoiceOrId)
     this.saveTransactions(filtered)
+
+    if (targetTx) {
+      // 1. Decrement Salesperson ordersClosed
+      const spName = (targetTx.billedBy || targetTx.salesPerson || '').trim().toLowerCase()
+      if (spName) {
+        const spList = this.getSalesPersons()
+        const sp = spList.find((s) => s.name?.toLowerCase() === spName || s.code?.toLowerCase() === spName)
+        if (sp) {
+          sp.ordersClosed = Math.max(0, (Number(sp.ordersClosed) || 1) - 1)
+          this.saveSalesPersons(spList)
+
+          const key = sp._id || sp.id || sp.code
+          fetch(`${API_BASE}/api/sales-persons/${encodeURIComponent(key)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(sp),
+          }).catch(() => {})
+        }
+      }
+
+      // 2. Check Customer: delete customer if no other remaining bills exist
+      const rawCust = targetTx.customer
+      const custName = typeof rawCust === 'object' && rawCust !== null ? (rawCust.name || '') : String(rawCust || '').trim()
+      const custPhone = targetTx.customerPhone || (typeof rawCust === 'object' && rawCust ? rawCust.phone : '')
+
+      if (custName && !custName.toLowerCase().includes('walk-in')) {
+        // Check if customer has any other bills left in filtered
+        const otherBills = filtered.filter((t) => {
+          const tCust = typeof t.customer === 'object' && t.customer !== null ? t.customer.name : t.customer
+          const nameMatch = tCust && String(tCust).trim().toLowerCase() === custName.toLowerCase()
+          const phoneMatch = custPhone && t.customerPhone && String(t.customerPhone).trim() === String(custPhone).trim()
+          return nameMatch || phoneMatch
+        })
+
+        const custList = this.getCustomers()
+        const cust = custList.find((c) => {
+          const nameMatch = c.name && c.name.trim().toLowerCase() === custName.toLowerCase()
+          const phoneMatch = custPhone && c.phone && c.phone.trim() === custPhone.trim()
+          return nameMatch || phoneMatch
+        })
+
+        if (cust) {
+          if (otherBills.length === 0) {
+            // No other bills left: remove customer from directory
+            this.deleteCustomer(cust.id || cust._id)
+          } else {
+            // Decrement customer total orders
+            cust.totalOrders = Math.max(0, (Number(cust.totalOrders) || 1) - 1)
+            this.updateCustomer(cust)
+          }
+        }
+      }
+
+      // 3. Restore product stock if items were sold
+      const items = Array.isArray(targetTx.itemDetails) && targetTx.itemDetails.length > 0
+        ? targetTx.itemDetails
+        : (Array.isArray(targetTx.items) && typeof targetTx.items[0] === 'object' ? targetTx.items : [])
+
+      if (items.length > 0) {
+        const products = this.getProducts()
+        items.forEach((item) => {
+          const itemDesc = String(item.description || item.name || '').trim().toLowerCase()
+          const itemSku = String(item.sku || '').trim().toLowerCase()
+          const itemProdId = String(item.productId || item.id || '').trim().toLowerCase()
+
+          const p = products.find((prod) => {
+            const prodSku = String(prod.sku || '').trim().toLowerCase()
+            const prodName = String(prod.name || '').trim().toLowerCase()
+            const prodId = String(prod.id || prod._id || '').trim().toLowerCase()
+            return (
+              (itemSku && prodSku === itemSku) ||
+              (itemProdId && prodId === itemProdId) ||
+              (itemDesc && prodName === itemDesc) ||
+              (itemDesc && prodName.includes(itemDesc)) ||
+              (prodName && itemDesc.includes(prodName)) ||
+              (prodSku && itemDesc.includes(prodSku))
+            )
+          })
+
+          if (p) {
+            const qtySold = Number(item.quantity) || 1
+            p.stockQuantity = (Number(p.stockQuantity) || 0) + qtySold
+            p.stockOut = Math.max(0, (Number(p.stockOut) || 0) - qtySold)
+          }
+        })
+        this.saveProducts(products)
+      }
+    }
 
     // Sync deletion to MongoDB backend
     fetch(`${API_BASE}/api/sales/${encodeURIComponent(invoiceOrId)}`, {
       method: 'DELETE',
     }).catch(() => {})
 
+    notifyStoreUpdate()
     return filtered
   },
   recordSaleFromBill(bill) {
@@ -1053,6 +1143,23 @@ export const DataStore = {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(sp),
         }).catch(() => {})
+      }
+    }
+
+    // Increment customer totalOrders if customer exists in directory
+    const rawCustForOrder = bill.customer
+    const custNameForOrder = typeof rawCustForOrder === 'object' && rawCustForOrder !== null ? (rawCustForOrder.name || '') : String(rawCustForOrder || '').trim()
+    const custPhoneForOrder = (typeof rawCustForOrder === 'object' && rawCustForOrder !== null ? rawCustForOrder.phone : null) || bill.customerPhone || ''
+    if (custNameForOrder && !custNameForOrder.toLowerCase().includes('walk-in')) {
+      const custList = this.getCustomers()
+      const cust = custList.find((c) => {
+        const nameMatch = c.name && c.name.trim().toLowerCase() === custNameForOrder.toLowerCase()
+        const phoneMatch = custPhoneForOrder && c.phone && c.phone.trim() === custPhoneForOrder.trim()
+        return nameMatch || phoneMatch
+      })
+      if (cust) {
+        cust.totalOrders = (Number(cust.totalOrders) || 0) + 1
+        this.updateCustomer(cust)
       }
     }
 
