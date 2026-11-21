@@ -691,7 +691,47 @@ export const DataStore = {
       'Jayaram Brothers', 'Dr. N. Soundararajan', 'Malarvizhi Interiors', 'Balaji Agency',
       'Manickam & Sons Traders', 'Sree Saravana Match Works', 'K. Vasanth Kumar', 'Gowri Shankar Mills', 'Shanmuga Priya'
     ])
-    return (Array.isArray(raw) ? raw : []).filter(c => !DUMMY_NAMES.has(c.name))
+    const list = (Array.isArray(raw) ? raw : []).filter(c => !DUMMY_NAMES.has(c.name))
+    const txs = this.getTransactions()
+
+    return list.map((c) => {
+      const cName = String(c.name || '').trim().toLowerCase()
+      const cPhone = String(c.phone || '').trim()
+
+      const custTxs = txs.filter((t) => {
+        const tCust = typeof t.customer === 'object' && t.customer !== null ? t.customer.name : t.customer
+        const nameMatch = cName && tCust && String(tCust).trim().toLowerCase() === cName
+        const phoneMatch = cPhone && t.customerPhone && String(t.customerPhone).trim() === cPhone
+        return nameMatch || (cPhone && phoneMatch)
+      })
+
+      const totalOrders = custTxs.length > 0 ? custTxs.length : (Number(c.totalOrders) || 0)
+      const rawTotalBilled = custTxs.reduce((sum, t) => {
+        const amt = t.rawAmount !== undefined
+          ? Number(t.rawAmount)
+          : Number(String(t.amount || 0).replace(/[^0-9.]/g, '')) || 0
+        return sum + amt
+      }, 0)
+
+      const lifetimeValue = rawTotalBilled > 0
+        ? rawTotalBilled.toLocaleString('en-IN')
+        : (c.lifetimeValue && c.lifetimeValue !== '0' ? c.lifetimeValue : '0')
+
+      const recentTx = custTxs.length > 0
+        ? custTxs.slice(0, 5).map((t) => ({
+            id: t.invoice || t.id,
+            dateItem: `${t.date || t.rawDate || ''} • ₹${(t.rawAmount || t.amount || 0).toLocaleString('en-IN')}`,
+            status: t.paymentStatus || t.status || 'Paid',
+          }))
+        : (c.recentTx || [])
+
+      return {
+        ...c,
+        totalOrders,
+        lifetimeValue,
+        recentTx,
+      }
+    })
   },
   saveCustomers(list) {
     saveToStorage(STORAGE_KEYS.CUSTOMERS, list)

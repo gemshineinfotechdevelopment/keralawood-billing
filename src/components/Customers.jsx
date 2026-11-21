@@ -14,6 +14,7 @@ const getInitials = (patron) => {
 
 export default function Customers({ onNavigateToBilling }) {
   const [patronsList, setPatronsList] = useState(() => DataStore.getCustomers())
+  const [transactions, setTransactions] = useState(() => DataStore.getTransactions())
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCustomerId, setSelectedCustomerId] = useState(() => {
     const list = DataStore.getCustomers()
@@ -34,33 +35,78 @@ export default function Customers({ onNavigateToBilling }) {
   useEffect(() => {
     const handleUpdate = () => {
       setPatronsList(DataStore.getCustomers())
+      setTransactions(DataStore.getTransactions())
     }
     window.addEventListener('timber_store_updated', handleUpdate)
+
+    // Pull live sales from MongoDB
+    fetch('/api/sales')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.success && Array.isArray(data.sales)) {
+          setTransactions(data.sales)
+          DataStore.saveTransactions(data.sales)
+        }
+      })
+      .catch(() => {})
 
     // Fetch live customers from MongoDB
     fetch('/api/customers')
       .then((res) => res.json())
       .then((data) => {
         if (data?.success && Array.isArray(data.customers)) {
-          const formatted = data.customers.map((c) => ({
-            id: c._id || c.id,
-            initials: c.initials || getInitials(c),
-            name: c.name,
-            personName: c.personName || c.name,
-            phone: c.phone || '',
-            email: c.email || '',
-            location: c.location || '',
-            address: c.address || '',
-            deliveryAddress: c.deliveryAddress || c.address || '',
-            gstin: c.gstin || 'Unregistered / Personal',
-            type: c.type || 'Residential',
-            totalOrders: c.totalOrders || 0,
-            lifetimeValue: c.lifetimeValue || '0',
-            outstandingBalance: c.outstandingBalance || '0',
-            creditUsed: c.creditUsed || '0',
-            creditTotal: c.creditTotal || '2,00,000',
-            recentTx: c.recentTx || [],
-          }))
+          const currentTxs = DataStore.getTransactions()
+          const formatted = data.customers.map((c) => {
+            const cName = String(c.name || '').trim().toLowerCase()
+            const cPhone = String(c.phone || '').trim()
+
+            const custTxs = currentTxs.filter((t) => {
+              const tCust = typeof t.customer === 'object' && t.customer !== null ? t.customer.name : t.customer
+              const nameMatch = cName && tCust && String(tCust).trim().toLowerCase() === cName
+              const phoneMatch = cPhone && t.customerPhone && String(t.customerPhone).trim() === cPhone
+              return nameMatch || (cPhone && phoneMatch)
+            })
+
+            const totalOrders = custTxs.length > 0 ? custTxs.length : (Number(c.totalOrders) || 0)
+            const rawTotalBilled = custTxs.reduce((sum, t) => {
+              const amt = t.rawAmount !== undefined
+                ? Number(t.rawAmount)
+                : Number(String(t.amount || 0).replace(/[^0-9.]/g, '')) || 0
+              return sum + amt
+            }, 0)
+
+            const lifetimeValue = rawTotalBilled > 0
+              ? rawTotalBilled.toLocaleString('en-IN')
+              : (c.lifetimeValue && c.lifetimeValue !== '0' ? c.lifetimeValue : '0')
+
+            const recentTx = custTxs.length > 0
+              ? custTxs.slice(0, 5).map((t) => ({
+                  id: t.invoice || t.id,
+                  dateItem: `${t.date || t.rawDate || ''} • ₹${(t.rawAmount || t.amount || 0).toLocaleString('en-IN')}`,
+                  status: t.paymentStatus || t.status || 'Paid',
+                }))
+              : (c.recentTx || [])
+
+            return {
+              id: c._id || c.id,
+              initials: c.initials || getInitials(c),
+              name: c.name,
+              personName: c.personName || c.name,
+              phone: c.phone || '',
+              email: c.email || '',
+              location: c.location || '',
+              address: c.address || '',
+              deliveryAddress: c.deliveryAddress || c.address || '',
+              gstin: c.gstin || 'Unregistered / Personal',
+              type: c.type || 'Residential',
+              totalOrders,
+              lifetimeValue,
+              outstandingBalance: c.outstandingBalance || '0',
+              creditUsed: c.creditUsed || '0',
+              creditTotal: c.creditTotal || '2,00,000',
+              recentTx,
+            }
+          })
           setPatronsList(formatted)
           DataStore.saveCustomers(formatted)
         }
@@ -130,7 +176,50 @@ export default function Customers({ onNavigateToBilling }) {
     setDeleteModalPatron(null)
   }
 
-  const filtered = patronsList.filter((p) => {
+  // Compute live orders and billed total from transactions for every customer
+  const enrichedPatrons = useMemo(() => {
+    return patronsList.map((p) => {
+      const pName = String(p.name || '').trim().toLowerCase()
+      const pPhone = String(p.phone || '').trim()
+
+      const custTxs = transactions.filter((tx) => {
+        const txCust = typeof tx.customer === 'object' && tx.customer !== null ? tx.customer.name : tx.customer
+        const nameMatch = pName && txCust && String(txCust).trim().toLowerCase() === pName
+        const phoneMatch = pPhone && tx.customerPhone && String(tx.customerPhone).trim() === pPhone
+        return nameMatch || (pPhone && phoneMatch)
+      })
+
+      const totalOrders = custTxs.length > 0 ? custTxs.length : (Number(p.totalOrders) || 0)
+      const rawTotalBilled = custTxs.reduce((sum, tx) => {
+        const amt = tx.rawAmount !== undefined
+          ? Number(tx.rawAmount)
+          : Number(String(tx.amount || 0).replace(/[^0-9.]/g, '')) || 0
+        return sum + amt
+      }, 0)
+
+      const lifetimeValue = rawTotalBilled > 0
+        ? rawTotalBilled.toLocaleString('en-IN')
+        : (p.lifetimeValue && p.lifetimeValue !== '0' ? p.lifetimeValue : '0')
+
+      const recentTx = custTxs.length > 0
+        ? custTxs.slice(0, 5).map((tx) => ({
+            id: tx.invoice || tx.id,
+            dateItem: `${tx.date || tx.rawDate || ''} • ₹${(tx.rawAmount || tx.amount || 0).toLocaleString('en-IN')}`,
+            status: tx.paymentStatus || tx.status || 'Paid',
+          }))
+        : (p.recentTx || [])
+
+      return {
+        ...p,
+        totalOrders,
+        lifetimeValue,
+        rawTotalBilled,
+        recentTx,
+      }
+    })
+  }, [patronsList, transactions])
+
+  const filtered = enrichedPatrons.filter((p) => {
     const q = searchQuery.toLowerCase().trim()
     return (
       !q ||
@@ -176,7 +265,7 @@ export default function Customers({ onNavigateToBilling }) {
   const paginatedPatrons = sortedPatrons.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage)
 
   // Selected patron details
-  const currentPatron = patronsList.find((p) => p.id === selectedCustomerId) || patronsList[0] || {}
+  const currentPatron = enrichedPatrons.find((p) => p.id === selectedCustomerId) || enrichedPatrons[0] || {}
 
   const showToast = (msg) => {
     setToastMessage(msg)
@@ -279,13 +368,13 @@ export default function Customers({ onNavigateToBilling }) {
   }
 
   // Calculate live statistics
-  const totalCustomersCount = patronsList.length
-  const activeAccountsCount = patronsList.filter((p) => Number(p.totalOrders) > 0).length
-  const totalPendingReceivables = patronsList.reduce((sum, p) => {
+  const totalCustomersCount = enrichedPatrons.length
+  const activeAccountsCount = enrichedPatrons.filter((p) => Number(p.totalOrders) > 0).length
+  const totalPendingReceivables = enrichedPatrons.reduce((sum, p) => {
     const val = Number(String(p.outstandingBalance || 0).replace(/[^0-9]/g, '')) || 0
     return sum + val
   }, 0)
-  const pendingAccountsCount = patronsList.filter((p) => {
+  const pendingAccountsCount = enrichedPatrons.filter((p) => {
     const val = Number(String(p.outstandingBalance || 0).replace(/[^0-9]/g, '')) || 0
     return val > 0
   }).length

@@ -3,8 +3,8 @@ import { DataStore } from '../services/dataStore'
 import AddProduct from './AddProduct'
 import './Products.css'
 
-export default function Products() {
-  const [viewMode, setViewMode] = useState('list') // 'list' | 'add' | 'edit'
+export default function Products({ initialViewMode = 'list' }) {
+  const [viewMode, setViewMode] = useState(initialViewMode) // 'list' | 'add' | 'edit'
   const [editingProduct, setEditingProduct] = useState(null)
   const [previewProduct, setPreviewProduct] = useState(null)
   const [dossierOpen, setDossierOpen] = useState(false)
@@ -14,6 +14,16 @@ export default function Products() {
   const [products, setProducts] = useState(() => DataStore.getProducts())
   const [searchQuery, setSearchQuery] = useState('')
   const [activeCategory, setActiveCategory] = useState('All')
+
+  // Sync initial view mode when navigated from external button (e.g. Add Product from Stock Management)
+  useEffect(() => {
+    if (initialViewMode) {
+      setViewMode(initialViewMode)
+      if (initialViewMode === 'add') {
+        setEditingProduct(null)
+      }
+    }
+  }, [initialViewMode])
 
   // Pagination states: minimum 20 products per page
   const [currentPage, setCurrentPage] = useState(1)

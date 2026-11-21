@@ -17,6 +17,7 @@ function App() {
   const [view, setView] = useState(() => (sessionStorage.getItem('kwf_auth') === 'true' ? 'billing' : 'login'))
   const [activeNav, setActiveNav] = useState('Billing & POS')
   const [billingInitialMode, setBillingInitialMode] = useState('list')
+  const [productsInitialMode, setProductsInitialMode] = useState('list')
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const [email, setEmail] = useState('rajesh.s@keralawood.in')
@@ -57,6 +58,9 @@ function App() {
             if (name === 'Billing & POS') {
               setBillingInitialMode('list')
             }
+            if (name === 'Products') {
+              setProductsInitialMode('list')
+            }
             setActiveNav(name)
             setMobileSidebarOpen(false)
           }}
@@ -96,9 +100,14 @@ function App() {
           </div>
 
           {activeNav === 'Products' ? (
-            <Products />
+            <Products initialViewMode={productsInitialMode} />
           ) : activeNav === 'Stock Management' ? (
-            <StockManagement onAddNewProduct={() => setActiveNav('Products')} />
+            <StockManagement
+              onAddNewProduct={() => {
+                setProductsInitialMode('add')
+                setActiveNav('Products')
+              }}
+            />
           ) : activeNav === 'Dashboard' ? (
             <Dashboard
               onNavigateToNewBill={() => {
