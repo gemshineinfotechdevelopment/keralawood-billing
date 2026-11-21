@@ -389,29 +389,6 @@
   white-space: nowrap;
 }
 
-.btn-reorder {
-  background-color: #FBF4F0;
-  border: 1px solid #E5D8D0;
-  border-radius: 4px;
-  padding: 4px 10px;
-  font-size: 10.5px;
-  font-weight: 600;
-  color: #41210F;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-
-.btn-reorder:hover {
-  background-color: #F0E2D9;
-}
-
-.btn-reorder.reordered {
-  background-color: #E8F5E9;
-  color: #1B5E20;
-  border-color: #81C784;
-  font-weight: 700;
-}
-
 /* Toast Alert */
 .dashboard-toast {
   position: fixed;

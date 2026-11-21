@@ -59,8 +59,6 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
     return Array.isArray(txs) ? txs : []
   })
   const [products, setProducts] = useState(() => DataStore.getProducts())
-  const [reorderedMap, setReorderedMap] = useState({})
-  const [toastMessage, setToastMessage] = useState('')
   const [salesSearch, setSalesSearch] = useState('')
   const [salesPage, setSalesPage] = useState(1)
   const salesPerPage = 20
@@ -135,36 +133,6 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
 
   const displayLowStock = dynamicLowStock
 
-  // Dynamic Reorder action (Requirement 3)
-  const handleReorder = (prod) => {
-    const qtyToAdd = 5
-    const newQty = (prod.stockQuantity || 0) + qtyToAdd
-    const updated = products.map((p) => {
-      if (p.id === prod.id || p.sku === prod.sku) {
-        return { ...p, stockQuantity: newQty }
-      }
-      return p
-    })
-    DataStore.saveProducts(updated)
-    setProducts(updated)
-    setReorderedMap((prev) => ({ ...prev, [prod.sku]: true }))
-    setToastMessage(`✓ Reordered: +${qtyToAdd} units added to ${prod.name}!`)
-
-    // Sync to MongoDB
-    fetch(`/api/products/${encodeURIComponent(prod.sku || prod.name || prod.id)}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ stockQuantity: newQty }),
-    }).catch(() => {})
-
-    setTimeout(() => {
-      setReorderedMap((prev) => ({ ...prev, [prod.sku]: false }))
-    }, 2500)
-    setTimeout(() => {
-      setToastMessage('')
-    }, 3200)
-  }
-
   useEffect(() => {
     // 1. Fetch dashboard aggregated stats and recent sales from MongoDB
     fetch('/api/sales')
@@ -228,13 +196,6 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
 
   return (
     <div className="dashboard-container">
-      {/* Dynamic Toast Feedback */}
-      {toastMessage && (
-        <div className="dashboard-toast">
-          <span>{toastMessage}</span>
-        </div>
-      )}
-
       {/* Page Title & New Invoice Button */}
       <div className="dashboard-page-header">
         <div>
@@ -303,14 +264,14 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
             {displayLowStock.length} {displayLowStock.length === 1 ? 'item' : 'items'}
           </div>
           <span className="kpi-subtext">
-            {displayLowStock.length > 0 ? 'Urgent reorders required' : 'Stock levels optimal'}
+            {displayLowStock.length > 0 ? 'Urgent attention required' : 'Stock levels optimal'}
           </span>
         </div>
       </div>
 
       {/* Middle Section: Low Stock Items */}
       <div className="dashboard-middle-row">
-        {/* Dynamic Low Stock Items with Working Reorder */}
+        {/* Dynamic Low Stock Items */}
         <div className="low-stock-card">
           <div className="card-top-row">
             <span className="card-heading">Low Stock Items</span>
@@ -327,7 +288,6 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
               </div>
             ) : (
               displayLowStock.map((item) => {
-                const isReordered = reorderedMap[item.sku]
                 return (
                   <div key={item.sku} className="low-stock-row">
                     <div className="item-info">
@@ -340,14 +300,6 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
                       <span className="stock-left-text">
                         {item.stockQuantity} left
                       </span>
-                      <button
-                        type="button"
-                        className={`btn-reorder ${isReordered ? 'reordered' : ''}`}
-                        onClick={() => handleReorder(item)}
-                        disabled={isReordered}
-                      >
-                        {isReordered ? '✓ Reordered' : '+ Reorder'}
-                      </button>
                     </div>
                   </div>
                 )
