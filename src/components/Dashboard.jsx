@@ -167,13 +167,6 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
 
   useEffect(() => {
     // 1. Fetch dashboard aggregated stats and recent sales from MongoDB
-    const DUMMY_INVOICES = new Set([
-      'INV-1001', 'INV-1002', 'INV-1003', 'INV-1004', 'INV-1005', 'INV-1006',
-      'INV-1007', 'INV-1008', 'INV-1009', 'INV-1010', 'INV-1011', 'INV-1012',
-      'INV-1013', 'INV-1014', 'INV-1015', 'INV-1016', 'INV-1017', 'INV-1018',
-      'INV-1019', 'INV-1020', 'INV-1021', 'INV-1022', 'INV-1023', 'INV-1024',
-      'INV-2001', 'INV-2002'
-    ])
     fetch('/api/sales')
       .then((res) => {
         if (!res.ok) throw new Error('Sales network response not ok')
@@ -181,18 +174,16 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
       })
       .then((data) => {
         if (data?.success && Array.isArray(data.sales)) {
-          const realSales = data.sales.filter(s => !DUMMY_INVOICES.has(s.invoice || s.id))
-          setRecentSales(realSales)
-          DataStore.saveTransactions(realSales)
+          setRecentSales(data.sales)
+          DataStore.saveTransactions(data.sales)
         } else {
           // If /api/sales is empty, try /api/dashboard
           return fetch('/api/dashboard')
             .then((r) => r.json())
             .then((d) => {
               if (d?.success && Array.isArray(d.recentSales)) {
-                const realSales = d.recentSales.filter(s => !DUMMY_INVOICES.has(s.invoice || s.id))
-                setRecentSales(realSales)
-                DataStore.saveTransactions(realSales)
+                setRecentSales(d.recentSales)
+                DataStore.saveTransactions(d.recentSales)
               }
             })
         }
@@ -200,8 +191,7 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
       .catch((err) => {
         console.warn('[Dashboard] Backend API offline or unreachable, using local dataStore:', err.message)
         const local = DataStore.getTransactions()
-        const realSales = (Array.isArray(local) ? local : []).filter(s => !DUMMY_INVOICES.has(s.invoice || s.id))
-        setRecentSales(realSales)
+        setRecentSales(Array.isArray(local) ? local : [])
       })
 
     // 2. Fetch live products from MongoDB

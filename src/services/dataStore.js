@@ -892,20 +892,11 @@ export const DataStore = {
   // TRANSACTIONS / SALES
   getTransactions() {
     const raw = loadFromStorage(STORAGE_KEYS.TRANSACTIONS, [])
-    const DUMMY_INVOICES = new Set([
-      'INV-1001', 'INV-1002', 'INV-1003', 'INV-1004', 'INV-1005', 'INV-1006',
-      'INV-1007', 'INV-1008', 'INV-1009', 'INV-1010', 'INV-1011', 'INV-1012',
-      'INV-1013', 'INV-1014', 'INV-1015', 'INV-1016', 'INV-1017', 'INV-1018',
-      'INV-1019', 'INV-1020', 'INV-1021', 'INV-1022', 'INV-1023', 'INV-1024',
-      'INV-2001', 'INV-2002'
-    ])
-    const filtered = (Array.isArray(raw) ? raw : []).filter(
-      (t) => !DUMMY_INVOICES.has(t.invoice || t.id)
-    )
     // Deduplicate by invoice number / id
     const seen = new Set()
     const unique = []
-    for (const t of filtered) {
+    for (const t of (Array.isArray(raw) ? raw : [])) {
+      if (!t) continue
       const key = t.invoice || t.id
       if (key && !seen.has(key)) {
         seen.add(key)

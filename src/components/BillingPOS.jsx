@@ -458,16 +458,21 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
   // Filtered Saved Bills & List Actions
   // -------------------------------------------------------------
   const filteredSavedBills = useMemo(() => {
-    return savedBills.filter((bill) => {
+    return (Array.isArray(savedBills) ? savedBills : []).filter((bill) => {
+      if (!bill) return false
       const q = billsSearch.toLowerCase().trim()
       if (!q) return true
-      const invMatch = bill.invoice && bill.invoice.toLowerCase().includes(q)
-      const custMatch = bill.customer && bill.customer.toLowerCase().includes(q)
+      const invMatch = bill.invoice && String(bill.invoice).toLowerCase().includes(q)
+      const custStr = typeof bill.customer === 'object' && bill.customer !== null
+        ? String(bill.customer.name || '')
+        : String(bill.customer || '')
+      const custMatch = custStr.toLowerCase().includes(q)
       const phoneMatch = (bill.customerPhone || bill.phone) && String(bill.customerPhone || bill.phone).toLowerCase().includes(q)
-      const itemMatch =
-        (bill.items && bill.items.toLowerCase().includes(q)) ||
-        (bill.item && bill.item.toLowerCase().includes(q))
-      const modeMatch = bill.paymentMode && bill.paymentMode.toLowerCase().includes(q)
+      const itemsStr = Array.isArray(bill.items)
+        ? bill.items.map((i) => i.description || i.name || '').join(' ')
+        : String(bill.items || bill.item || '')
+      const itemMatch = itemsStr.toLowerCase().includes(q)
+      const modeMatch = bill.paymentMode && String(bill.paymentMode).toLowerCase().includes(q)
       return invMatch || custMatch || phoneMatch || itemMatch || modeMatch
     })
   }, [savedBills, billsSearch])
@@ -800,17 +805,18 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
       if (directPrintAfter) {
         setPreviewBill(billToRecord)
         setInvoiceModalOpen(false)
-        setPrintSuccessToast(`✓ Bill ${invoiceNumber} saved & cleared! Opening print preview...`)
+        setPrintSuccessToast(`✓ Bill ${invoiceNumber} saved! Opening print preview...`)
         setTimeout(() => {
           printInvoiceDocument(billToRecord, settings, treeLogo)
           setTimeout(() => setPrintSuccessToast(''), 3000)
         }, 150)
+        setViewMode('list')
       } else if (showModalAfter) {
         setPreviewBill(billToRecord)
         setInvoiceModalOpen(true)
       } else {
-        setPrintSuccessToast(`✓ Bill ${invoiceNumber} saved! Form cleared for next customer.`)
-        setViewMode('editor')
+        setPrintSuccessToast(`✓ Bill ${invoiceNumber} saved successfully!`)
+        setViewMode('list')
         setTimeout(() => setPrintSuccessToast(''), 3000)
       }
     } catch (err) {
@@ -1267,7 +1273,7 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
                             )}
                           </td>
                           <td className="pos-col-customer">
-                            <span className="pos-bill-cust-name">{bill.customer || 'Walk-in Patron'}</span>
+                            <span className="pos-bill-cust-name">{typeof bill.customer === 'object' && bill.customer !== null ? (bill.customer.name || 'Walk-in Customer') : (bill.customer || 'Walk-in Customer')}</span>
                             {(bill.location || bill.customerPhone) && (
                               <span className="pos-bill-cust-sub">
                                 {[bill.customerPhone, bill.location].filter(Boolean).join(' • ')}
@@ -1275,8 +1281,8 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
                             )}
                           </td>
                           <td className="pos-col-items">
-                            <span className="pos-bill-items-text" title={bill.items || bill.item}>
-                              {bill.items || bill.item || 'Timber Furniture Order'}
+                            <span className="pos-bill-items-text" title={Array.isArray(bill.items) ? bill.items.map(i => i.description || i.name).join(', ') : (bill.items || bill.item || 'Timber Furniture Order')}>
+                              {Array.isArray(bill.items) ? bill.items.map(i => i.description || i.name).join(', ') : (bill.items || bill.item || 'Timber Furniture Order')}
                             </span>
                           </td>
                           <td className="pos-col-amount">

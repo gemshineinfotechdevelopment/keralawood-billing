@@ -531,13 +531,6 @@ app.get('/api/sales', async (req, res) => {
       const reg = new RegExp(search.trim(), 'i');
       query.$or = [{ invoice: reg }, { customer: reg }, { items: reg }, { location: reg }];
     }
-    const DUMMY_INVOICES = [
-      'INV-1001', 'INV-1002', 'INV-1003', 'INV-1004', 'INV-1005', 'INV-1006',
-      'INV-1007', 'INV-1008', 'INV-1009', 'INV-1010', 'INV-1011', 'INV-1012',
-      'INV-1013', 'INV-1014', 'INV-1015', 'INV-1016', 'INV-1017', 'INV-1018',
-      'INV-1019', 'INV-1020', 'INV-1021', 'INV-1022', 'INV-1023', 'INV-1024'
-    ];
-    query.invoice = { $nin: DUMMY_INVOICES };
     const sales = await Sale.find(query).sort({ createdAt: -1 });
     res.json({ success: true, count: sales.length, sales });
   } catch (err) {
@@ -1010,14 +1003,8 @@ app.delete('/api/sales-persons/:id', async (req, res) => {
 // -------------------------------------------------------------
 app.get('/api/dashboard', async (req, res) => {
   try {
-    const DUMMY_INVOICES = [
-      'INV-1001', 'INV-1002', 'INV-1003', 'INV-1004', 'INV-1005', 'INV-1006',
-      'INV-1007', 'INV-1008', 'INV-1009', 'INV-1010', 'INV-1011', 'INV-1012',
-      'INV-1013', 'INV-1014', 'INV-1015', 'INV-1016', 'INV-1017', 'INV-1018',
-      'INV-1019', 'INV-1020', 'INV-1021', 'INV-1022', 'INV-1023', 'INV-1024'
-    ];
     const [sales, products] = await Promise.all([
-      Sale.find({ invoice: { $nin: DUMMY_INVOICES } }).sort({ createdAt: -1 }),
+      Sale.find().sort({ createdAt: -1 }),
       Product.find(),
     ]);
 
