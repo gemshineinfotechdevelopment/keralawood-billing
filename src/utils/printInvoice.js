@@ -482,8 +482,10 @@ export function printPurchaseBillDocument(purchase, settings = {}, defaultLogo =
   const supplierAddress = purchase.supplierAddress || 'Mill Yard Depot'
   const supplierGstin = purchase.supplierGstin || 'Unregistered'
 
-  const companyName = purchase.companyName || settings.depotName || 'Kerala Wood Furniture - Sivakasi Depot'
-  const companyAddress = purchase.companyAddress || settings.address || 'Sivakasi Central Depot & Mill Yard, Sivakasi'
+  const depotName = (settings.depotName || 'Kerala Wood Furniture').replace(/[-–—]\s*sivakasi\s*depot/gi, '').trim() || 'Kerala Wood Furniture'
+  const companyName = purchase.companyName || depotName
+  const address = (settings.address || 'Sivakasi Central Mill Yard, Sivakasi').replace(/Depot & /gi, '').replace(/Central Depot/gi, 'Central Yard')
+  const companyAddress = purchase.companyAddress || address
   const companyGstin = purchase.companyGstin || settings.gstin || '32AABCP9821K1ZK'
   const companyPhone = purchase.companyPhone || settings.contactPhone || '+91 484 289 1204'
 
@@ -494,7 +496,6 @@ export function printPurchaseBillDocument(purchase, settings = {}, defaultLogo =
     : [
         {
           name: purchase.item || 'Timber Material',
-          category: purchase.category || 'Timber Logs',
           quantity: purchase.quantity || 1,
           rate: Number(purchase.amount || 0),
           gstRate: purchase.amount > 0 ? Math.round(((Number(purchase.gstAmount || 0)) / Number(purchase.amount)) * 100) : 18,
@@ -517,16 +518,12 @@ export function printPurchaseBillDocument(purchase, settings = {}, defaultLogo =
     const lineTotal = Number(it.total || ((qty * rate) + lineGst))
     return `
       <tr>
-        <td style="padding: 9px 12px; border-bottom: 1px solid #EFE4DC; text-align: center;">${idx + 1}</td>
-        <td style="padding: 9px 12px; border-bottom: 1px solid #EFE4DC;">
-          <strong>${it.name || it.item || 'Timber Item'}</strong>
-          ${it.category ? `<div style="font-size: 10.5px; color: #7D6C63;">${it.category}</div>` : ''}
-        </td>
-        <td style="padding: 9px 12px; border-bottom: 1px solid #EFE4DC; text-align: center; font-weight: 600;">${qty}</td>
-        <td style="padding: 9px 12px; border-bottom: 1px solid #EFE4DC; text-align: right;">₹${rate.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-        <td style="padding: 9px 12px; border-bottom: 1px solid #EFE4DC; text-align: center;">${gstPct}%</td>
-        <td style="padding: 9px 12px; border-bottom: 1px solid #EFE4DC; text-align: right;">₹${lineGst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-        <td style="padding: 9px 12px; border-bottom: 1px solid #EFE4DC; text-align: right; font-weight: 700;">₹${lineTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+        <td style="padding: 10px 12px; border-bottom: 1px solid #EFE4DC; text-align: center;">${idx + 1}</td>
+        <td style="padding: 10px 12px; border-bottom: 1px solid #EFE4DC;"><strong>${it.name || it.item || 'Timber Material'}</strong></td>
+        <td style="padding: 10px 12px; border-bottom: 1px solid #EFE4DC; text-align: center; font-weight: 600;">${qty}</td>
+        <td style="padding: 10px 12px; border-bottom: 1px solid #EFE4DC; text-align: right;">₹${rate.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+        <td style="padding: 10px 12px; border-bottom: 1px solid #EFE4DC; text-align: center;">${gstPct}%</td>
+        <td style="padding: 10px 12px; border-bottom: 1px solid #EFE4DC; text-align: right; font-weight: 700;">₹${lineTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
       </tr>
     `
   }).join('')
@@ -566,7 +563,7 @@ export function printPurchaseBillDocument(purchase, settings = {}, defaultLogo =
       border-collapse: collapse;
       border-bottom: 2px solid #D3C4B8;
       padding-bottom: 14px;
-      margin-bottom: 16px;
+      margin-bottom: 18px;
     }
     .brand-title {
       font-size: 22px;
@@ -576,96 +573,82 @@ export function printPurchaseBillDocument(purchase, settings = {}, defaultLogo =
       line-height: 1.1;
     }
     .brand-sub {
-      font-size: 11.5px;
-      color: #5C4537;
       margin: 3px 0 0 0;
-      line-height: 1.4;
-    }
-    .bill-meta-box {
-      border: 1.5px solid #C88D58;
-      background: #FAF4EF;
-      border-radius: 8px;
-      padding: 10px 14px;
-      text-align: right;
-    }
-    .bill-title-label {
-      font-size: 14px;
-      font-weight: 900;
-      color: #31190B;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-    .bill-number {
-      font-size: 18px;
-      font-weight: 900;
-      color: #8C5325;
-      margin: 2px 0;
-    }
-    .bill-date {
       font-size: 11.5px;
       color: #5C4537;
-      font-weight: 600;
     }
-    .parties-table {
-      width: 100%;
-      border-collapse: separate;
-      border-spacing: 12px 0;
-      margin-bottom: 16px;
-    }
-    .party-card {
-      border: 1.5px solid #EAE0D8;
-      border-radius: 8px;
-      padding: 12px 14px;
-      vertical-align: top;
-      background: #FFFFFF;
-    }
-    .party-tag {
-      font-size: 10.5px;
+    .badge {
+      display: inline-block;
+      background-color: #31190B;
+      color: #FFFFFF;
+      font-size: 11px;
       font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.08em;
+      padding: 3px 10px;
+      border-radius: 4px;
       margin-bottom: 6px;
     }
-    .party-from-tag { color: #8C5325; }
-    .party-to-tag { color: #2563EB; }
-    .party-name {
-      font-size: 13.5px;
-      font-weight: 800;
-      color: #31190B;
-      margin: 0 0 4px 0;
+    .cust-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+      background-color: #FEF9F6;
+      border: 1px solid #EFE4DC;
+      border-radius: 6px;
     }
-    .party-text {
+    .cust-col {
+      width: 50%;
+      padding: 12px 16px;
+      vertical-align: top;
+    }
+    .cust-label {
+      font-size: 10.5px;
+      font-weight: 700;
+      color: #7D6C63;
+      text-transform: uppercase;
+      margin: 0 0 4px 0;
+      letter-spacing: 0.04em;
+    }
+    .cust-name {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #31190B;
+      margin: 0 0 3px 0;
+    }
+    .cust-sub {
       font-size: 11.5px;
       color: #5C4537;
-      line-height: 1.4;
       margin: 2px 0;
     }
     .items-table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 16px;
-      border: 1px solid #D3C4B8;
+      margin-bottom: 24px;
+      font-size: 12px;
     }
     .items-table th {
-      background-color: #FAF4EF;
+      background-color: #F8EFE9;
       color: #31190B;
-      font-size: 10.5px;
-      font-weight: 800;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      padding: 8px 10px;
-      border-bottom: 2px solid #D3C4B8;
-      border-right: 1px solid #EFE4DC;
+      font-weight: 700;
+      padding: 9px 10px;
+      border-bottom: 1.5px solid #D3C4B8;
+      text-align: left;
     }
-    .items-table th:last-child { border-right: none; }
-    .items-table td {
-      border-right: 1px solid #EFE4DC;
-    }
-    .items-table td:last-child { border-right: none; }
-    .totals-table {
+    .footer-table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 10px;
+      margin-top: 20px;
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+    .footer-left {
+      width: 55%;
+      vertical-align: top;
+      padding-right: 20px;
+    }
+    .footer-right {
+      width: 45%;
+      vertical-align: top;
     }
     .summary-line {
       display: flex;
@@ -673,17 +656,30 @@ export function printPurchaseBillDocument(purchase, settings = {}, defaultLogo =
       padding: 4px 0;
       font-size: 12px;
       color: #5C4537;
+      border-bottom: 1px dashed #EFE4DC;
     }
     .grand-line {
       display: flex;
       justify-content: space-between;
       padding: 8px 0;
       font-size: 15px;
-      font-weight: 900;
+      font-weight: 800;
       color: #31190B;
-      border-top: 2px solid #31190B;
-      border-bottom: 2px solid #31190B;
+      border-top: 1.5px solid #31190B;
+      border-bottom: 1.5px solid #31190B;
       margin-top: 6px;
+      margin-bottom: 14px;
+    }
+    .sign-box {
+      border: 1px solid #EFE4DC;
+      border-radius: 6px;
+      background-color: #FEF9F6;
+      padding: 12px;
+      text-align: right;
+      margin-top: 10px;
+    }
+    .sign-space {
+      height: 38px;
     }
   </style>
 </head>
@@ -691,41 +687,37 @@ export function printPurchaseBillDocument(purchase, settings = {}, defaultLogo =
   <div class="sheet">
     <table class="header-table">
       <tr>
-        <td style="width: 70px; vertical-align: middle;">
-          <img src="${logoSrc}" alt="KWF Logo" style="width: 60px; height: 60px; object-fit: contain; border-radius: 6px;" />
-        </td>
-        <td style="vertical-align: middle; padding-left: 14px;">
-          <h1 class="brand-title">${companyName}</h1>
-          <p class="brand-sub">
-            ${companyAddress}<br>
-            GSTIN: <strong>${companyGstin}</strong> | Phone: ${companyPhone}
-          </p>
-        </td>
-        <td style="vertical-align: middle; width: 230px;">
-          <div class="bill-meta-box">
-            <div class="bill-title-label">PURCHASE BILL</div>
-            <div class="bill-number">#${invNumber}</div>
-            <div class="bill-date">Date: <strong>${invDate}</strong></div>
+        <td style="vertical-align: top;">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px;">
+            ${logoSrc ? `<img src="${logoSrc}" alt="Logo" style="max-height: 42px; max-width: 42px; object-fit: contain;" />` : ''}
+            <h1 class="brand-title">${depotName}</h1>
           </div>
+          <p class="brand-sub">${companyAddress}</p>
+          <p class="brand-sub">Phone: ${companyPhone} • GSTIN: ${companyGstin} • HSN: ${settings.hsnCode || '9403'}</p>
+        </td>
+        <td style="vertical-align: top; text-align: right; width: 220px;">
+          <div class="badge">PURCHASE BILL</div>
+          <p style="margin: 3px 0; font-size: 12px;"><strong>Purchase #:</strong> ${invNumber}</p>
+          <p style="margin: 3px 0; font-size: 12px;"><strong>Purchase Date:</strong> ${invDate}</p>
         </td>
       </tr>
     </table>
 
-    <table class="parties-table">
+    <table class="cust-table">
       <tr>
-        <td class="party-card" style="width: 50%; border-left: 4px solid #C88D58;">
-          <div class="party-tag party-from-tag">FROM (SUPPLIER / VENDOR)</div>
-          <div class="party-name">${supplierName}</div>
-          ${supplierAddress ? `<div class="party-text">${supplierAddress}</div>` : ''}
-          ${supplierGstin ? `<div class="party-text"><strong>GSTIN:</strong> ${supplierGstin}</div>` : ''}
-          ${supplierPhone ? `<div class="party-text"><strong>Phone:</strong> ${supplierPhone}</div>` : ''}
+        <td class="cust-col" style="border-right: 1px solid #EFE4DC;">
+          <div class="cust-label">FROM (SUPPLIER DETAILS):</div>
+          <div class="cust-name">${supplierName}</div>
+          ${supplierAddress ? `<div class="cust-sub">${supplierAddress}</div>` : ''}
+          ${supplierPhone ? `<div class="cust-sub">Phone: ${supplierPhone}</div>` : ''}
+          <div class="cust-sub">GSTIN: ${supplierGstin}</div>
         </td>
-        <td class="party-card" style="width: 50%; border-left: 4px solid #2563EB;">
-          <div class="party-tag party-to-tag">TO (BUYER / INWARD DEPOT)</div>
-          <div class="party-name">${companyName}</div>
-          <div class="party-text">${companyAddress}</div>
-          <div class="party-text"><strong>GSTIN:</strong> ${companyGstin}</div>
-          <div class="party-text"><strong>Contact:</strong> ${companyPhone}</div>
+        <td class="cust-col">
+          <div class="cust-label">TO (BUYER / RECIPIENT):</div>
+          <div class="cust-name">${companyName}</div>
+          <div class="cust-sub">${companyAddress}</div>
+          <div class="cust-sub">Phone: ${companyPhone}</div>
+          <div class="cust-sub">GSTIN: ${companyGstin}</div>
         </td>
       </tr>
     </table>
@@ -733,13 +725,12 @@ export function printPurchaseBillDocument(purchase, settings = {}, defaultLogo =
     <table class="items-table">
       <thead>
         <tr>
-          <th style="width: 35px; text-align: center;">#</th>
-          <th>ITEM DESCRIPTION</th>
-          <th style="width: 60px; text-align: center;">QTY</th>
-          <th style="width: 90px; text-align: right;">RATE (₹)</th>
-          <th style="width: 60px; text-align: center;">GST</th>
-          <th style="width: 80px; text-align: right;">GST (₹)</th>
-          <th style="width: 100px; text-align: right;">TOTAL (₹)</th>
+          <th style="width: 5%; text-align: center;">#</th>
+          <th style="width: 45%;">Item Description</th>
+          <th style="width: 10%; text-align: center;">Qty</th>
+          <th style="width: 15%; text-align: right;">Rate (₹)</th>
+          <th style="width: 10%; text-align: center;">GST</th>
+          <th style="width: 15%; text-align: right;">Total Amount (₹)</th>
         </tr>
       </thead>
       <tbody>
@@ -747,30 +738,25 @@ export function printPurchaseBillDocument(purchase, settings = {}, defaultLogo =
       </tbody>
     </table>
 
-    <table class="totals-table">
+    <table class="footer-table">
       <tr>
-        <td style="vertical-align: top; width: 55%; padding-right: 20px;">
-          <div style="background: #FAF4EF; border: 1px solid #EFE4DC; border-radius: 6px; padding: 10px 12px; margin-bottom: 12px;">
-            <div style="font-size: 10.5px; font-weight: 800; color: #8C5325; text-transform: uppercase; margin-bottom: 2px;">
-              AMOUNT IN WORDS
-            </div>
-            <div style="font-size: 11.5px; font-weight: 700; color: #31190B;">
-              ${numberToWordsINR(grandTotal)}
-            </div>
-          </div>
+        <td class="footer-left">
+          <p style="margin: 0 0 3px 0; font-size: 11.5px; font-weight: 700;">Amount in Words:</p>
+          <p style="margin: 0 0 10px 0; font-size: 11.5px; font-style: italic; color: #5C4537;">${numberToWordsINR(grandTotal)}</p>
           ${purchase.notes ? `
-            <div style="font-size: 11.5px; color: #5C4537; margin-top: 6px;">
-              <strong>Remarks:</strong> ${purchase.notes}
-            </div>
+            <p style="margin: 0 0 10px 0; font-size: 11px;"><strong>Remarks:</strong> ${purchase.notes}</p>
           ` : ''}
-          <div style="font-size: 10.5px; color: #7D6C63; margin-top: 10px; line-height: 1.4;">
-            Declaration: We declare that this purchase bill shows the actual procurement cost of the timber described and that all particulars are true and correct.
+          <div style="background-color: #FAF5F1; border-left: 3px solid #8C5325; padding: 7px 10px; margin-top: 8px;">
+            <p style="margin: 0 0 2px 0; font-size: 10px; font-weight: 700; color: #7D6C63; text-transform: uppercase;">Declaration:</p>
+            <p style="margin: 0; font-size: 10.5px; color: #5C4537;">
+              We declare that this purchase bill shows the actual procurement cost of the timber described and that all particulars are true and correct.
+            </p>
           </div>
         </td>
-        <td style="vertical-align: top; width: 45%; padding-left: 10px;">
+        <td class="footer-right">
           <div class="summary-line">
             <span>Subtotal (Taxable Value):</span>
-            <strong>₹${subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+            <span>₹${subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
           ${cgstAmount > 0 ? `
             <div class="summary-line">
@@ -786,10 +772,10 @@ export function printPurchaseBillDocument(purchase, settings = {}, defaultLogo =
             <span>Grand Total:</span>
             <span>₹${grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
-          <div style="margin-top: 24px; text-align: right;">
-            <p style="margin: 0; font-size: 11px; font-weight: 700; color: #31190B;">For ${companyName}</p>
-            <div style="height: 38px;"></div>
-            <p style="margin: 0; font-size: 10.5px; color: #7D6C63;">Authorized Receiver / Signatory</p>
+          <div class="sign-box">
+            <p style="margin: 0; font-size: 11px; font-weight: 600;">For ${companyName}</p>
+            <div class="sign-space"></div>
+            <p style="margin: 0; font-size: 11px; color: #7D6C63;">Authorized Receiver / Signatory</p>
           </div>
         </td>
       </tr>

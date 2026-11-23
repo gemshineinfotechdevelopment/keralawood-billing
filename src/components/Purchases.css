@@ -1140,6 +1140,62 @@
   margin-top: 6px;
 }
 
+.btn-purchases-save-print {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background-color: #FAF4EF;
+  color: #31190B;
+  border: 1.5px solid #C88D58;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  height: 42px;
+}
+
+.btn-purchases-save-print:hover {
+  background-color: #F5EAE0;
+  border-color: #8C5325;
+  color: #8C5325;
+}
+
+.pos-btn-print-now {
+  padding: 8px 16px;
+  background-color: #31190B;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background-color 0.15s;
+}
+
+.pos-btn-print-now:hover {
+  background-color: #4A2E18;
+}
+
+.pos-btn-modal-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #7D6C63;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.pos-btn-modal-close:hover {
+  background-color: #F8EFE9;
+  color: #31190B;
+}
+
 .purchases-bill-view-card {
   max-width: 760px;
 }

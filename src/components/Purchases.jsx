@@ -1,14 +1,13 @@
 import { useState, useEffect, useMemo } from 'react'
 import { DataStore } from '../services/dataStore'
 import { validateRequired, validatePhone } from '../utils/validators'
-import { printPurchaseBillDocument } from '../utils/printInvoice'
+import { printPurchaseBillDocument, numberToWordsINR } from '../utils/printInvoice'
 import kwfLogo from '../assets/kwf.jpg'
 import './Purchases.css'
 
 const createEmptyItem = () => ({
   id: Date.now() + Math.random(),
   name: '',
-  category: 'Timber Logs',
   quantity: 1,
   rate: '',
   gstRate: 18,
@@ -23,7 +22,7 @@ export default function Purchases() {
   // View state: 'list' | 'form'
   const [viewMode, setViewMode] = useState('list')
   const [editingPurchase, setEditingPurchase] = useState(null)
-  const [viewDossierPurchase, setViewDossierPurchase] = useState(null)
+  const [previewPurchase, setPreviewPurchase] = useState(null)
   const [deleteModalPurchase, setDeleteModalPurchase] = useState(null)
   const [toastMessage, setToastMessage] = useState('')
   const [formErrors, setFormErrors] = useState({})
@@ -64,7 +63,7 @@ export default function Purchases() {
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(20)
 
-  // Filtered Purchases (Search by purchase #, supplier, item, or category)
+  // Filtered Purchases (Search by purchase #, supplier, or item description)
   const filteredPurchases = useMemo(() => {
     return purchases.filter((p) => {
       const q = searchQuery.toLowerCase().trim()
@@ -72,8 +71,7 @@ export default function Purchases() {
       return (
         (p.invoiceNumber && p.invoiceNumber.toLowerCase().includes(q)) ||
         (p.supplier && p.supplier.toLowerCase().includes(q)) ||
-        (p.item && p.item.toLowerCase().includes(q)) ||
-        (p.category && p.category.toLowerCase().includes(q))
+        (p.item && p.item.toLowerCase().includes(q))
       )
     })
   }, [purchases, searchQuery])
@@ -153,7 +151,6 @@ export default function Purchases() {
       loadedItems = p.itemsList.map((it, idx) => ({
         id: it.id || idx + 1,
         name: it.name || it.item || '',
-        category: it.category || 'Timber Logs',
         quantity: it.quantity !== undefined ? it.quantity : 1,
         rate: it.rate !== undefined ? it.rate : (it.amount || 0),
         gstRate: it.gstRate !== undefined ? it.gstRate : (it.gstPercent || 18),
@@ -170,7 +167,6 @@ export default function Purchases() {
         {
           id: 1,
           name: p.item || 'Timber Materials',
-          category: p.category || 'Timber Logs',
           quantity: qty,
           rate: rate,
           gstRate: gstPct,
@@ -205,6 +201,35 @@ export default function Purchases() {
     const settings = DataStore.getSettings()
     printPurchaseBillDocument(p, settings, kwfLogo)
     showToast(`✓ Printing purchase bill #${p.invoiceNumber}`)
+  }
+
+  const handleViewAndPrintPurchase = (p) => {
+    setPreviewPurchase(p)
+    handlePrintPurchase(p)
+  }
+
+  const handlePreviewCurrentForm = () => {
+    const cleanInvoiceNumber =
+      String(formData.invoiceNumber).trim().replace(/\D/g, '') || DataStore.getNextPurchaseNumber()
+    const itemSummary = formData.itemsList
+      .map((it) => it.name.trim())
+      .filter(Boolean)
+      .join(', ') || 'Timber Purchase'
+    const totalQty = formData.itemsList.reduce((acc, it) => acc + (Number(it.quantity) || 0), 0)
+
+    const currentBill = {
+      ...formData,
+      invoiceNumber: cleanInvoiceNumber,
+      item: itemSummary,
+      quantity: String(totalQty),
+      subtotal: formSubtotal,
+      amount: formSubtotal,
+      gstAmount: formGstTotal,
+      total: formGrandTotal,
+      itemsList: formData.itemsList,
+    }
+    setPreviewPurchase(currentBill)
+    handlePrintPurchase(currentBill)
   }
 
   // Row item actions
@@ -246,8 +271,8 @@ export default function Purchases() {
     }))
   }
 
-  const handleSavePurchase = (e) => {
-    e.preventDefault()
+  const handleSavePurchase = (e, directPrint = false) => {
+    if (e && e.preventDefault) e.preventDefault()
 
     // 1. Validate Supplier
     const supplierVal = validateRequired(formData.supplier, 'Supplier Name', 2)
@@ -294,7 +319,6 @@ export default function Purchases() {
       .filter(Boolean)
       .join(', ') || 'Timber Purchase'
     const totalQty = formData.itemsList.reduce((acc, it) => acc + (Number(it.quantity) || 0), 0)
-    const primaryCategory = formData.itemsList[0]?.category || 'Timber Logs'
 
     const payload = {
       ...formData,
@@ -308,7 +332,6 @@ export default function Purchases() {
       companyGstin: formData.companyGstin.trim().toUpperCase(),
       companyPhone: formData.companyPhone.trim(),
       item: itemSummary,
-      category: primaryCategory,
       quantity: String(totalQty),
       subtotal: formSubtotal,
       amount: formSubtotal,
@@ -325,6 +348,11 @@ export default function Purchases() {
       showToast(`✓ Recorded new purchase bill #${payload.invoiceNumber}`)
     }
 
+    if (directPrint) {
+      setPreviewPurchase(payload)
+      handlePrintPurchase(payload)
+    }
+
     setViewMode('list')
   }
 
@@ -333,6 +361,176 @@ export default function Purchases() {
     DataStore.deletePurchase(deleteModalPurchase.id)
     showToast(`✓ Removed purchase bill #${deleteModalPurchase.invoiceNumber}`)
     setDeleteModalPurchase(null)
+  }
+
+  const renderPrintablePurchaseSheet = (bill) => {
+    if (!bill) return null
+    const settings = DataStore.getSettings()
+    const invNumber = bill.invoiceNumber || bill.id || '100'
+    const invDate = bill.date || new Date().toISOString().split('T')[0]
+    const supplierName = bill.supplier || 'Forest Timber Mill'
+    const supplierPhone = bill.supplierPhone || ''
+    const supplierAddress = bill.supplierAddress || 'Mill Yard Depot'
+    const supplierGstin = bill.supplierGstin || 'Unregistered'
+    const companyName = bill.companyName || settings.depotName || 'Kerala Wood Furniture'
+    const companyAddress = bill.companyAddress || settings.address || 'Sivakasi Central Mill Yard, Sivakasi'
+    const companyGstin = bill.companyGstin || settings.gstin || '32AABCP9821K1ZK'
+    const companyPhone = bill.companyPhone || settings.contactPhone || '+91 484 289 1204'
+
+    const rawItems = Array.isArray(bill.itemsList) && bill.itemsList.length > 0
+      ? bill.itemsList
+      : [
+          {
+            name: bill.item || 'Timber Material',
+            quantity: bill.quantity || 1,
+            rate: Number(bill.amount || 0),
+            gstRate: bill.amount > 0 ? Math.round(((Number(bill.gstAmount || 0)) / Number(bill.amount)) * 100) : 18,
+            gstAmount: Number(bill.gstAmount || 0),
+            total: Number(bill.total || ((Number(bill.amount) || 0) + (Number(bill.gstAmount) || 0))),
+          },
+        ]
+
+    const subtotal = Number(bill.subtotal || bill.amount || 0)
+    const gstAmount = Number(bill.gstAmount || 0)
+    const grandTotal = Number(bill.total || (subtotal + gstAmount))
+    const cgstAmount = gstAmount / 2
+    const sgstAmount = gstAmount / 2
+
+    return (
+      <div className="pos-invoice-printable-sheet">
+        {/* Top Header */}
+        <div className="pos-print-top">
+          <div className="pos-print-brand">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px' }}>
+              <img
+                src={kwfLogo}
+                alt="Kerala Wood Furniture Logo"
+                className="pos-print-custom-logo"
+                style={{ maxHeight: '42px', maxWidth: '42px', objectFit: 'contain', margin: 0 }}
+              />
+              <h2 style={{ margin: 0, fontSize: '22px', fontWeight: 800, color: '#31190B', lineHeight: 1.1 }}>
+                {(settings.depotName || 'Kerala Wood Furniture').replace(/[-–—]\s*sivakasi\s*depot/gi, '').trim() || 'Kerala Wood Furniture'}
+              </h2>
+            </div>
+            <p>{(settings.address || 'Sivakasi Central Mill Yard, Sivakasi').replace(/Depot & /gi, '').replace(/Central Depot/gi, 'Central Yard')}</p>
+            <p>
+              Phone: {settings.contactPhone || companyPhone} • GSTIN: {settings.gstin || companyGstin} • HSN: {settings.hsnCode || '9403'}
+            </p>
+          </div>
+          <div className="pos-print-meta">
+            <div className="pos-print-badge">PURCHASE BILL</div>
+            <p>
+              <strong>Purchase #:</strong> {invNumber}
+            </p>
+            <p>
+              <strong>Purchase Date:</strong> {invDate}
+            </p>
+          </div>
+        </div>
+
+        {/* Addresses Box (FROM & TO) */}
+        <div className="pos-print-customer-box">
+          <div className="pos-print-col">
+            <h4>FROM (SUPPLIER DETAILS):</h4>
+            <p className="pos-print-cust-name">{supplierName}</p>
+            {supplierAddress && <p>{supplierAddress}</p>}
+            {supplierPhone && <p>Phone: {supplierPhone}</p>}
+            <p>GSTIN: {supplierGstin}</p>
+          </div>
+          <div className="pos-print-col">
+            <h4>TO (BUYER / INWARD DEPOT):</h4>
+            <p className="pos-print-cust-name">{companyName}</p>
+            <p>{companyAddress}</p>
+            <p>Phone: {companyPhone}</p>
+            <p>GSTIN: {companyGstin}</p>
+          </div>
+        </div>
+
+        {/* Items Table */}
+        <table className="pos-print-table">
+          <thead>
+            <tr>
+              <th style={{ width: '5%' }}>#</th>
+              <th style={{ width: '45%' }}>Item Description</th>
+              <th style={{ width: '10%', textAlign: 'center' }}>Qty</th>
+              <th style={{ width: '15%', textAlign: 'right' }}>Rate (₹)</th>
+              <th style={{ width: '10%', textAlign: 'center' }}>GST</th>
+              <th style={{ width: '15%', textAlign: 'right' }}>Total (₹)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rawItems.map((it, idx) => {
+              const qty = Number(it.quantity) || 1
+              const rate = Number(it.rate || it.amount || 0)
+              const gstPct = Number(it.gstRate || it.gstPercent || 18)
+              const lineGst = Number(it.gstAmount || 0)
+              const lineTotal = Number(it.total || ((qty * rate) + lineGst))
+              return (
+                <tr key={it.id || idx}>
+                  <td>{idx + 1}</td>
+                  <td>
+                    <strong>{it.name || it.item || 'Timber Material'}</strong>
+                  </td>
+                  <td style={{ textAlign: 'center', fontWeight: 600 }}>{qty}</td>
+                  <td style={{ textAlign: 'right' }}>₹{rate.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                  <td style={{ textAlign: 'center' }}>{gstPct}%</td>
+                  <td style={{ textAlign: 'right', fontWeight: 700 }}>₹{lineTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+
+        {/* Footer */}
+        <div className="pos-print-footer">
+          <div className="pos-print-words-and-notes">
+            <p>
+              <strong>Amount in Words:</strong>
+            </p>
+            <p className="pos-print-italic-words">{numberToWordsINR(grandTotal)}</p>
+            {bill.notes && (
+              <p className="pos-print-note">
+                <strong>Remarks:</strong> {bill.notes}
+              </p>
+            )}
+            <div className="pos-print-declaration-wrap">
+              <p className="pos-print-declaration-label">Declaration:</p>
+              <p className="pos-print-disclaimer">
+                We declare that this purchase bill shows the actual procurement cost of the timber described and that all particulars are true and correct.
+              </p>
+            </div>
+          </div>
+
+          <div className="pos-print-summary-totals">
+            <div className="pos-print-line">
+              <span>Subtotal (Taxable Value):</span>
+              <span>₹{subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            </div>
+            {cgstAmount > 0 && (
+              <>
+                <div className="pos-print-line">
+                  <span>CGST (50%):</span>
+                  <span>+₹{cgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+                <div className="pos-print-line">
+                  <span>SGST (50%):</span>
+                  <span>+₹{sgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+              </>
+            )}
+            <div className="pos-print-line pos-print-grand">
+              <strong>Grand Total:</strong>
+              <strong>₹{grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+            </div>
+            <div className="pos-print-sign-box">
+              <p style={{ fontWeight: 600 }}>For {companyName}</p>
+              <div className="pos-print-sign-space" />
+              <p>Authorized Receiver / Signatory</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   // =========================================================================
@@ -369,6 +567,19 @@ export default function Purchases() {
               onClick={() => setViewMode('list')}
             >
               Cancel
+            </button>
+            <button
+              type="button"
+              className="btn-purchases-save-print"
+              onClick={handlePreviewCurrentForm}
+              title="Preview & Print Purchase Bill"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="6 9 6 2 18 2 18 9" />
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                <rect x="6" y="14" width="12" height="8" />
+              </svg>
+              <span>Print Bill</span>
             </button>
             <button
               type="submit"
@@ -595,13 +806,12 @@ export default function Purchases() {
                 <thead>
                   <tr>
                     <th style={{ width: '45px', textAlign: 'center' }}>#</th>
-                    <th style={{ minWidth: '280px' }}>ITEM NAME / DESCRIPTION *</th>
-                    <th style={{ width: '180px' }}>WOOD CATEGORY</th>
-                    <th style={{ width: '110px', textAlign: 'right' }}>QUANTITY *</th>
-                    <th style={{ width: '150px', textAlign: 'right' }}>AMOUNT / RATE (₹) *</th>
-                    <th style={{ width: '100px', textAlign: 'center' }}>GST (%)</th>
+                    <th style={{ minWidth: '320px' }}>ITEM NAME / DESCRIPTION *</th>
+                    <th style={{ width: '120px', textAlign: 'right' }}>QUANTITY *</th>
+                    <th style={{ width: '160px', textAlign: 'right' }}>AMOUNT / RATE (₹) *</th>
+                    <th style={{ width: '110px', textAlign: 'center' }}>GST (%)</th>
                     <th style={{ width: '130px', textAlign: 'right' }}>GST (₹)</th>
-                    <th style={{ width: '150px', textAlign: 'right' }}>TOTAL (₹)</th>
+                    <th style={{ width: '160px', textAlign: 'right' }}>TOTAL (₹)</th>
                     <th style={{ width: '50px', textAlign: 'center' }}></th>
                   </tr>
                 </thead>
@@ -620,19 +830,6 @@ export default function Purchases() {
                           placeholder="e.g. Grade-A Nilambur Teak Planks (6x4)"
                           required
                         />
-                      </td>
-                      <td>
-                        <select
-                          className="purchase-table-select"
-                          value={row.category}
-                          onChange={(e) => handleItemChange(idx, 'category', e.target.value)}
-                        >
-                          <option value="Timber Logs">Timber Logs</option>
-                          <option value="Hardwood Timber">Hardwood Timber</option>
-                          <option value="Structural Lumber">Structural Lumber</option>
-                          <option value="Sawn Wood">Sawn Wood</option>
-                          <option value="Hardware & Finishes">Hardware & Finishes</option>
-                        </select>
                       </td>
                       <td>
                         <input
@@ -765,6 +962,18 @@ export default function Purchases() {
               onClick={() => setViewMode('list')}
             >
               Cancel
+            </button>
+            <button
+              type="button"
+              className="btn-purchases-save-print"
+              onClick={(e) => handleSavePurchase(e, true)}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="6 9 6 2 18 2 18 9" />
+                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                <rect x="6" y="14" width="12" height="8" />
+              </svg>
+              <span>Save & Direct Print</span>
             </button>
             <button
               type="submit"
@@ -938,7 +1147,6 @@ export default function Purchases() {
                     </td>
                     <td>
                       <div style={{ fontWeight: 600 }}>{p.item}</div>
-                      <div style={{ fontSize: '11px', color: '#8A7B72' }}>{p.category}</div>
                     </td>
                     <td>
                       <div className="purchases-amt-val">
@@ -970,7 +1178,7 @@ export default function Purchases() {
                         <button
                           type="button"
                           className="btn-purchase-action btn-purchase-print-btn"
-                          onClick={() => handlePrintPurchase(p)}
+                          onClick={() => handleViewAndPrintPurchase(p)}
                           title="Print Purchase Bill"
                           aria-label="Print"
                         >
@@ -1072,169 +1280,37 @@ export default function Purchases() {
         </div>
       </div>
 
-      {/* View Purchase Bill Modal */}
-      {viewDossierPurchase && (
-        <div className="purchases-modal-overlay" onClick={() => setViewDossierPurchase(null)}>
-          <div className="purchases-modal-card purchases-bill-view-card" onClick={(e) => e.stopPropagation()}>
-            <div className="purchases-modal-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span className="purchase-party-tag to-tag" style={{ fontSize: '10px' }}>PURCHASE BILL</span>
-                <h3 className="purchases-modal-title">
-                  Purchase Bill • #{viewDossierPurchase.invoiceNumber}
+      {/* Printable Purchase Bill Preview Modal (Matching Billing POS Layout) */}
+      {previewPurchase && (
+        <div className="pos-modal-overlay" onClick={() => setPreviewPurchase(null)}>
+          <div className="pos-invoice-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="pos-modal-header">
+              <div className="pos-modal-header-info">
+                <span className="purchase-bill-badge" style={{ fontSize: '10px' }}>PURCHASE BILL PREVIEW</span>
+                <h3 style={{ margin: '4px 0 0 0', fontSize: '16px', fontWeight: 800, color: '#31190B' }}>
+                  Purchase Bill • #{previewPurchase.invoiceNumber}
                 </h3>
               </div>
-              <button type="button" className="purchases-modal-close-btn" onClick={() => setViewDossierPurchase(null)}>
-                ✕
-              </button>
+              <div className="pos-modal-header-actions">
+                <button
+                  type="button"
+                  className="pos-btn-print-now"
+                  onClick={() => handlePrintPurchase(previewPurchase)}
+                >
+                  🖨️ Print Purchase Bill
+                </button>
+                <button
+                  type="button"
+                  className="pos-btn-modal-close"
+                  onClick={() => setPreviewPurchase(null)}
+                >
+                  ✕
+                </button>
+              </div>
             </div>
 
-            <div className="purchases-modal-body" style={{ maxHeight: '75vh', overflowY: 'auto' }}>
-              {/* Meta strip */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '12px', borderBottom: '1.5px solid #EFE4DC', flexWrap: 'wrap', gap: '10px' }}>
-                <div>
-                  <span style={{ fontSize: '11px', color: '#8A7B72', textTransform: 'uppercase', fontWeight: 700 }}>Purchase Date</span>
-                  <div style={{ fontWeight: 800, color: '#31190B' }}>{viewDossierPurchase.date}</div>
-                </div>
-                <div>
-                  <span style={{ fontSize: '11px', color: '#8A7B72', textTransform: 'uppercase', fontWeight: 700 }}>Payment Mode</span>
-                  <div>
-                    <span className="purchases-payment-mode-pill">{viewDossierPurchase.paymentMode || 'Bank Wire'}</span>
-                  </div>
-                </div>
-                <div>
-                  <span style={{ fontSize: '11px', color: '#8A7B72', textTransform: 'uppercase', fontWeight: 700 }}>Total Inward Outflow</span>
-                  <div style={{ fontSize: '16px', fontWeight: 900, color: '#31190B' }}>
-                    ₹{Number(viewDossierPurchase.total || ((Number(viewDossierPurchase.amount) || 0) + (Number(viewDossierPurchase.gstAmount) || 0))).toLocaleString('en-IN')}
-                  </div>
-                </div>
-              </div>
-
-              {/* FROM & TO Boxes */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '6px' }}>
-                <div style={{ padding: '12px', background: '#FDFBF9', border: '1px solid #EFE4DC', borderRadius: '8px' }}>
-                  <div style={{ fontSize: '10.5px', fontWeight: 800, color: '#8C5325', textTransform: 'uppercase', marginBottom: '4px' }}>
-                    FROM (SUPPLIER)
-                  </div>
-                  <div style={{ fontSize: '14px', fontWeight: 800, color: '#31190B' }}>{viewDossierPurchase.supplier}</div>
-                  {viewDossierPurchase.supplierAddress && (
-                    <div style={{ fontSize: '12px', color: '#6A564A', marginTop: '3px', lineHeight: 1.4 }}>
-                      {viewDossierPurchase.supplierAddress}
-                    </div>
-                  )}
-                  {viewDossierPurchase.supplierGstin && (
-                    <div style={{ fontSize: '11.5px', fontWeight: 700, color: '#4A3528', marginTop: '4px' }}>
-                      GSTIN: {viewDossierPurchase.supplierGstin}
-                    </div>
-                  )}
-                  {viewDossierPurchase.supplierPhone && (
-                    <div style={{ fontSize: '11.5px', color: '#7D6C63', marginTop: '2px' }}>
-                      Phone: {viewDossierPurchase.supplierPhone}
-                    </div>
-                  )}
-                </div>
-
-                <div style={{ padding: '12px', background: '#F8F9FA', border: '1px solid #E5E7EB', borderRadius: '8px' }}>
-                  <div style={{ fontSize: '10.5px', fontWeight: 800, color: '#2563EB', textTransform: 'uppercase', marginBottom: '4px' }}>
-                    TO (BUYER / COMPANY)
-                  </div>
-                  <div style={{ fontSize: '14px', fontWeight: 800, color: '#1E293B' }}>
-                    {viewDossierPurchase.companyName || 'Kerala Wood Furniture - Sivakasi Depot'}
-                  </div>
-                  <div style={{ fontSize: '12px', color: '#4B5563', marginTop: '3px', lineHeight: 1.4 }}>
-                    {viewDossierPurchase.companyAddress || 'Sivakasi Central Depot & Mill Yard, Sivakasi'}
-                  </div>
-                  <div style={{ fontSize: '11.5px', fontWeight: 700, color: '#1E293B', marginTop: '4px' }}>
-                    GSTIN: {viewDossierPurchase.companyGstin || '32AABCP9821K1ZK'}
-                  </div>
-                </div>
-              </div>
-
-              {/* Items List Table */}
-              <div style={{ marginTop: '10px' }}>
-                <span style={{ fontSize: '11.5px', fontWeight: 700, color: '#4A3528', textTransform: 'uppercase', display: 'block', marginBottom: '6px' }}>
-                  Purchase Items
-                </span>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
-                  <thead>
-                    <tr style={{ background: '#FAF4EF', borderBottom: '1.5px solid #EFE4DC', color: '#7D6C63', textAlign: 'left' }}>
-                      <th style={{ padding: '6px 8px' }}>#</th>
-                      <th style={{ padding: '6px 8px' }}>Item Description</th>
-                      <th style={{ padding: '6px 8px', textAlign: 'right' }}>Qty</th>
-                      <th style={{ padding: '6px 8px', textAlign: 'right' }}>Rate (₹)</th>
-                      <th style={{ padding: '6px 8px', textAlign: 'right' }}>GST</th>
-                      <th style={{ padding: '6px 8px', textAlign: 'right' }}>Total (₹)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {Array.isArray(viewDossierPurchase.itemsList) && viewDossierPurchase.itemsList.length > 0 ? (
-                      viewDossierPurchase.itemsList.map((it, idx) => (
-                        <tr key={idx} style={{ borderBottom: '1px solid #F4E8DF' }}>
-                          <td style={{ padding: '7px 8px', color: '#8A7B72' }}>{idx + 1}</td>
-                          <td style={{ padding: '7px 8px', fontWeight: 600 }}>{it.name || it.item}</td>
-                          <td style={{ padding: '7px 8px', textAlign: 'right', fontWeight: 600 }}>{it.quantity}</td>
-                          <td style={{ padding: '7px 8px', textAlign: 'right' }}>₹{Number(it.rate || it.amount || 0).toLocaleString('en-IN')}</td>
-                          <td style={{ padding: '7px 8px', textAlign: 'right', color: '#8C5325' }}>
-                            {it.gstRate || it.gstPercent || 18}% (₹{Number(it.gstAmount || 0).toLocaleString('en-IN')})
-                          </td>
-                          <td style={{ padding: '7px 8px', textAlign: 'right', fontWeight: 700 }}>₹{Number(it.total || 0).toLocaleString('en-IN')}</td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr style={{ borderBottom: '1px solid #F4E8DF' }}>
-                        <td style={{ padding: '7px 8px' }}>1</td>
-                        <td style={{ padding: '7px 8px', fontWeight: 600 }}>{viewDossierPurchase.item}</td>
-                        <td style={{ padding: '7px 8px', textAlign: 'right', fontWeight: 600 }}>{viewDossierPurchase.quantity || '-'}</td>
-                        <td style={{ padding: '7px 8px', textAlign: 'right' }}>₹{Number(viewDossierPurchase.amount || 0).toLocaleString('en-IN')}</td>
-                        <td style={{ padding: '7px 8px', textAlign: 'right', color: '#8C5325' }}>₹{Number(viewDossierPurchase.gstAmount || 0).toLocaleString('en-IN')}</td>
-                        <td style={{ padding: '7px 8px', textAlign: 'right', fontWeight: 700 }}>
-                          ₹{(Number(viewDossierPurchase.amount || 0) + Number(viewDossierPurchase.gstAmount || 0)).toLocaleString('en-IN')}
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Financials & Notes */}
-              <div style={{ marginTop: '12px', padding: '12px', backgroundColor: '#FAF4EF', borderRadius: '8px', border: '1px solid #EFE4DC' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '13px' }}>
-                  <span>Subtotal (Taxable Value):</span>
-                  <strong>₹{Number(viewDossierPurchase.subtotal || viewDossierPurchase.amount || 0).toLocaleString('en-IN')}</strong>
-                </div>
-                {viewDossierPurchase.gstAmount > 0 && (
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', color: '#7D6C63', fontSize: '13px' }}>
-                    <span>GST Tax Amount:</span>
-                    <span>+₹{Number(viewDossierPurchase.gstAmount).toLocaleString('en-IN')}</span>
-                  </div>
-                )}
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '16px', fontWeight: 900, borderTop: '1.5px solid #E2CEBE', paddingTop: '8px', color: '#31190B' }}>
-                  <span>Grand Total:</span>
-                  <span>₹{Number(viewDossierPurchase.total || ((Number(viewDossierPurchase.amount) || 0) + (Number(viewDossierPurchase.gstAmount) || 0))).toLocaleString('en-IN')}</span>
-                </div>
-              </div>
-
-              {viewDossierPurchase.notes && (
-                <div style={{ marginTop: '8px', fontSize: '12px', color: '#6A564A', fontStyle: 'italic' }}>
-                  <strong>Notes:</strong> {viewDossierPurchase.notes}
-                </div>
-              )}
-            </div>
-
-            <div className="purchases-modal-footer">
-              <button
-                type="button"
-                className="btn-purchases-cancel"
-                onClick={() => window.print()}
-              >
-                Print Bill
-              </button>
-              <button
-                type="button"
-                className="btn-purchases-submit-primary"
-                onClick={() => setViewDossierPurchase(null)}
-              >
-                Close Purchase Bill
-              </button>
+            <div className="pos-invoice-modal-body" style={{ overflowY: 'auto', maxHeight: '78vh' }}>
+              {renderPrintablePurchaseSheet(previewPurchase)}
             </div>
           </div>
         </div>
