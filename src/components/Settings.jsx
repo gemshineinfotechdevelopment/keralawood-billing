@@ -290,29 +290,12 @@ export default function Settings() {
                 </div>
 
                 {logoUploadMsg && (
-                  <p style={{
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    margin: '6px 0 0 0',
-                    color: '#2E7D32'
-                  }}>
+                  <p className="settings-logo-upload-msg">
                     {logoUploadMsg}
                   </p>
                 )}
 
-                <div style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                  margin: '6px 0 0 0',
-                  padding: '3px 8px',
-                  backgroundColor: '#FAF5F1',
-                  border: '1px solid #E8DACF',
-                  borderRadius: '4px',
-                  fontSize: '11px',
-                  fontWeight: 600,
-                  color: '#5C3A21'
-                }}>
+                <div className="settings-logo-source-badge">
                   <span>🪵 Active Source: src/assets/kwf.jpg</span>
                 </div>
               </div>

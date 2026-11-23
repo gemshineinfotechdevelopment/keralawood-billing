@@ -448,6 +448,10 @@
   border-radius: 9px;
   padding: 16px 18px;
   margin-bottom: 8px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .settings-logo-row {
@@ -455,6 +459,8 @@
   align-items: center;
   gap: 20px;
   margin-top: 8px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .settings-logo-preview-frame {
@@ -490,16 +496,48 @@
 
 .settings-logo-details {
   flex: 1;
+  min-width: 0;
+  width: 100%;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  box-sizing: border-box;
 }
 
 .settings-logo-hint-text {
   margin: 0;
   font-size: 12.5px;
   color: #6C5547;
-  line-height: 1.4;
+  line-height: 1.45;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.settings-logo-upload-msg {
+  font-size: 11px;
+  font-weight: 600;
+  margin: 6px 0 0 0;
+  color: #2E7D32;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.settings-logo-source-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 4px;
+  padding: 4px 8px;
+  background-color: #FAF5F1;
+  border: 1px solid #E8DACF;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #5C3A21;
+  max-width: 100%;
+  box-sizing: border-box;
+  word-break: break-all;
+  overflow-wrap: anywhere;
 }
 
 .settings-logo-actions-bar {
@@ -507,6 +545,8 @@
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .btn-settings-choose-logo {
@@ -568,13 +608,29 @@
 }
 
 @media (max-width: 768px) {
+  .settings-logo-uploader-card {
+    padding: 12px 12px;
+  }
   .settings-logo-row {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
+    gap: 12px;
+    width: 100%;
+  }
+  .settings-logo-preview-frame {
+    margin: 0 auto;
+  }
+  .settings-logo-details {
+    width: 100%;
+    min-width: 0;
+  }
+  .settings-logo-hint-text {
+    font-size: 11.5px;
+    line-height: 1.4;
   }
   .settings-logo-actions-bar {
     display: grid !important;
-    grid-template-columns: 1fr 1fr !important;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)) !important;
     width: 100% !important;
     gap: 8px !important;
   }
@@ -586,6 +642,12 @@
     font-size: 11.5px !important;
     padding: 8px 6px !important;
     box-sizing: border-box;
-    white-space: nowrap;
+    white-space: normal !important;
+    word-break: break-word !important;
+  }
+  .settings-logo-source-badge {
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 10.5px;
   }
 }
