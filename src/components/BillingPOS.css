@@ -1023,6 +1023,26 @@
   gap: 10px;
 }
 
+.pos-btn-download-pdf {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background-color: #FAF5F1;
+  border: 1.5px solid #C88D58;
+  color: #5C3A21;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pos-btn-download-pdf:hover {
+  background-color: #C88D58;
+  color: #FFFFFF;
+}
+
 .pos-btn-print-now {
   padding: 8px 16px;
   background-color: #31190B;
@@ -1269,7 +1289,6 @@
   }
 
   /* Completely hide the regular web application interface, modals, and wrappers */
-  #root,
   .pos-modal-overlay,
   .pos-invoice-modal-content,
   .pos-invoice-modal-body,
@@ -1377,6 +1396,55 @@
   .pos-print-footer .pos-print-summary-totals {
     width: 280px !important;
     flex-shrink: 0 !important;
+  }
+}
+
+/* Screen Preview Modal Responsive Rules */
+@media screen and (max-width: 768px) {
+  .pos-invoice-modal-content {
+    width: 96% !important;
+    max-height: 94vh !important;
+  }
+  .pos-invoice-printable-sheet {
+    padding: 16px 14px !important;
+  }
+  .pos-print-top {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+  }
+  .pos-print-meta {
+    text-align: left !important;
+  }
+  .pos-print-customer-box {
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+    padding: 12px 14px !important;
+  }
+  .pos-print-footer {
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
+  }
+  .pos-print-sign-box {
+    margin-top: 14px !important;
+    text-align: right !important;
+  }
+  .pos-modal-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+  .pos-modal-header-actions {
+    width: 100% !important;
+    display: flex !important;
+    justify-content: flex-end !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+  .pos-btn-download-pdf,
+  .pos-btn-print-now {
+    font-size: 11.5px !important;
+    padding: 7px 10px !important;
   }
 }
 

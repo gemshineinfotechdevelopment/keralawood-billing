@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { DataStore } from '../services/dataStore'
+import { printProductsDocument, downloadProductsPDF } from '../utils/printInvoice'
 import AddProduct from './AddProduct'
 import './Products.css'
 
@@ -210,6 +211,20 @@ export default function Products({ initialViewMode = 'list' }) {
       )
     : 0
 
+  const handlePrintProducts = () => {
+    const settings = DataStore.getSettings()
+    printProductsDocument(filteredProducts, settings)
+    setToastMessage('✓ Opening printable products catalog...')
+    setTimeout(() => setToastMessage(''), 3000)
+  }
+
+  const handleDownloadProductsPDF = () => {
+    const settings = DataStore.getSettings()
+    downloadProductsPDF(filteredProducts, settings)
+    setToastMessage('✓ Downloading products catalog PDF...')
+    setTimeout(() => setToastMessage(''), 3000)
+  }
+
   return (
     <div className="products-page-container">
       {/* Toast Banner */}
@@ -232,8 +247,8 @@ export default function Products({ initialViewMode = 'list' }) {
           <button
             type="button"
             className="btn-print-products"
-            onClick={() => window.print()}
-            title="Print products table"
+            onClick={handlePrintProducts}
+            title="Print products catalog"
           >
             <svg
               width="14"
@@ -704,52 +719,6 @@ export default function Products({ initialViewMode = 'list' }) {
           </div>
         </div>
       )}
-
-      {/* Print-Only Products Table: hidden on screen, shows ONLY the full products table when printing */}
-      <div className="products-print-only-wrapper" aria-hidden="true">
-        <div className="printable-products-header">
-          <h2>Products Catalog & Inventory</h2>
-          <p>Total: {filteredProducts.length} Items • Date: {new Date().toLocaleDateString('en-GB')}</p>
-        </div>
-
-        <table className="printable-products-only-table">
-          <thead>
-            <tr>
-              <th style={{ width: '36px', textAlign: 'center' }}>#</th>
-              <th>Product Code</th>
-              <th>Product Name</th>
-              <th>Category</th>
-              <th>Wood Species</th>
-              <th style={{ textAlign: 'right' }}>Selling Price (₹)</th>
-              <th style={{ textAlign: 'right' }}>Stock</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredProducts.length === 0 ? (
-              <tr>
-                <td colSpan="7" style={{ textAlign: 'center', padding: '16px' }}>
-                  No products in catalog.
-                </td>
-              </tr>
-            ) : (
-              filteredProducts.map((p, idx) => {
-                const numSelling = Number(String(p.sellingPrice || p.unitPrice || p.price || 0).replace(/[^0-9.]/g, '')) || 0
-                return (
-                  <tr key={p.id || p.sku || idx}>
-                    <td style={{ textAlign: 'center' }}>{idx + 1}</td>
-                    <td><code>{getProductCode(p)}</code></td>
-                    <td><strong>{p.name}</strong></td>
-                    <td>{p.category || '-'}</td>
-                    <td>{p.woodSpecies || '-'}</td>
-                    <td style={{ textAlign: 'right' }}>₹{numSelling.toLocaleString('en-IN')}</td>
-                    <td style={{ textAlign: 'right' }}>{p.stockQuantity !== undefined ? p.stockQuantity : '-'}</td>
-                  </tr>
-                )
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
     </div>
   )
 }

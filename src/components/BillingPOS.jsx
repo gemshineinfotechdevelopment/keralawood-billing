@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { DataStore } from '../services/dataStore'
 import kwfLogo from '../assets/kwf.jpg'
-import { printInvoiceDocument, numberToWordsINR } from '../utils/printInvoice'
+import { printInvoiceDocument, downloadInvoicePDF, numberToWordsINR } from '../utils/printInvoice'
 import { validatePhone, validateGSTIN } from '../utils/validators'
 import './BillingPOS.css'
 
@@ -937,10 +937,13 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
       setExpandedItemDetails({})
       setBillDossierOpen(false)
 
+      // Auto-download PDF on bill save per user requirement
+      downloadInvoicePDF(billToRecord, settings, kwfLogo)
+
       if (directPrintAfter) {
         setPreviewBill(billToRecord)
         setInvoiceModalOpen(false)
-        setPrintSuccessToast(`✓ Bill ${invoiceNumber} saved! Opening print preview...`)
+        setPrintSuccessToast(`✓ Bill ${invoiceNumber} saved & PDF downloading! Opening print preview...`)
         setTimeout(() => {
           printInvoiceDocument(billToRecord, settings, kwfLogo)
           setTimeout(() => setPrintSuccessToast(''), 3000)
@@ -950,7 +953,7 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
         setPreviewBill(billToRecord)
         setInvoiceModalOpen(true)
       } else {
-        setPrintSuccessToast(`✓ Bill ${invoiceNumber} saved successfully!`)
+        setPrintSuccessToast(`✓ Bill ${invoiceNumber} saved & PDF downloaded!`)
         setViewMode('list')
         setTimeout(() => setPrintSuccessToast(''), 3000)
       }
@@ -1012,11 +1015,11 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
       <table className="pos-print-table">
         <thead>
           <tr>
-            <th style={{ width: '5%' }}>#</th>
-            <th style={{ width: '42%' }}>Item Description</th>
-            <th style={{ width: '15%' }}>HSN/SAC</th>
+            <th style={{ width: '5%', textAlign: 'center' }}>#</th>
+            <th style={{ width: '42%', textAlign: 'left' }}>Item Description</th>
+            <th style={{ width: '13%', textAlign: 'center' }}>HSN/SAC</th>
             <th style={{ width: '10%', textAlign: 'center' }}>Qty</th>
-            <th style={{ width: '13%', textAlign: 'right' }}>Rate (₹)</th>
+            <th style={{ width: '15%', textAlign: 'right' }}>Rate (₹)</th>
             <th style={{ width: '15%', textAlign: 'right' }}>Amount (₹)</th>
           </tr>
         </thead>
@@ -1026,14 +1029,14 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
             const hsn = it.hsn || it.hsnCode || settings.hsnCode || '4407'
             return (
               <tr key={it.id || idx}>
-                <td>{idx + 1}</td>
+                <td style={{ textAlign: 'center', fontWeight: 600 }}>{idx + 1}</td>
                 <td>
                   <strong>{it.description || it.name || 'Timber Item'}</strong>
                 </td>
-                <td>{hsn}</td>
-                <td style={{ textAlign: 'center' }}>{it.quantity || 1}</td>
+                <td style={{ textAlign: 'center' }}>{hsn}</td>
+                <td style={{ textAlign: 'center', fontWeight: 600 }}>{it.quantity || 1}</td>
                 <td style={{ textAlign: 'right' }}>₹{Number(it.price || 0).toLocaleString('en-IN')}</td>
-                <td style={{ textAlign: 'right' }}>₹{rowLine.toLocaleString('en-IN')}</td>
+                <td style={{ textAlign: 'right', fontWeight: 700 }}>₹{rowLine.toLocaleString('en-IN')}</td>
               </tr>
             )
           })}
@@ -2341,6 +2344,14 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
                 </div>
               </div>
               <div className="pos-modal-header-actions">
+                <button
+                  type="button"
+                  className="pos-btn-download-pdf"
+                  onClick={() => downloadInvoicePDF(modalBillData, settings, kwfLogo)}
+                  title="Download Tax Invoice as PDF"
+                >
+                  📥 Download PDF
+                </button>
                 <button type="button" className="pos-btn-print-now" onClick={handlePrint}>
                   🖨️ Print Invoice
                 </button>

@@ -60,11 +60,170 @@ export function numberToWordsINR(num) {
 }
 
 /**
- * Robust, full-page isolated invoice printing using a dedicated hidden iframe.
- * Completely immune to @media print conflicts, overflow clipping, or #root UI leakage.
+ * Shared print stylesheet for isolated A4 printing
  */
-export function printInvoiceDocument(modalBillData, settings = {}, defaultLogo = '') {
-  if (!modalBillData) return
+const sharedPrintCss = `
+  @page {
+    size: A4 portrait;
+    margin: 8mm 10mm 10mm 10mm;
+  }
+  *, *::before, *::after {
+    box-sizing: border-box;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    color: #31190B;
+    background: #FFFFFF;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+  .sheet {
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 6px 10px;
+  }
+  .header-table {
+    width: 100%;
+    border-collapse: collapse;
+    border-bottom: 2px solid #D3C4B8;
+    padding-bottom: 12px;
+    margin-bottom: 16px;
+  }
+  .brand-title {
+    font-size: 22px;
+    font-weight: 800;
+    color: #31190B;
+    margin: 0;
+    line-height: 1.1;
+  }
+  .brand-sub {
+    margin: 2px 0 0 0;
+    font-size: 11px;
+    color: #5C4537;
+  }
+  .badge {
+    display: inline-block;
+    background-color: #31190B;
+    color: #FFFFFF;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    padding: 3px 10px;
+    border-radius: 4px;
+    margin-bottom: 6px;
+  }
+  .cust-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 18px;
+    background-color: #FEF9F6;
+    border: 1px solid #EFE4DC;
+    border-radius: 6px;
+  }
+  .cust-col {
+    width: 50%;
+    padding: 10px 14px;
+    vertical-align: top;
+  }
+  .cust-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #7D6C63;
+    text-transform: uppercase;
+    margin: 0 0 3px 0;
+    letter-spacing: 0.04em;
+  }
+  .cust-name {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #31190B;
+    margin: 0 0 3px 0;
+  }
+  .cust-sub {
+    font-size: 11px;
+    color: #5C4537;
+    margin: 1px 0;
+  }
+  .items-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+    font-size: 12px;
+  }
+  .items-table th {
+    background-color: #F8EFE9;
+    color: #31190B;
+    font-weight: 700;
+    padding: 9px 10px;
+    border-bottom: 1.5px solid #D3C4B8;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .items-table td {
+    padding: 9px 10px;
+    border-bottom: 1px solid #EFE4DC;
+    vertical-align: middle;
+  }
+  .footer-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 14px;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .footer-left {
+    width: 55%;
+    vertical-align: top;
+    padding-right: 20px;
+  }
+  .footer-right {
+    width: 45%;
+    vertical-align: top;
+  }
+  .summary-line {
+    display: flex;
+    justify-content: space-between;
+    padding: 3.5px 0;
+    font-size: 12px;
+    color: #5C4537;
+    border-bottom: 1px dashed #EFE4DC;
+  }
+  .grand-line {
+    display: flex;
+    justify-content: space-between;
+    padding: 7px 0;
+    font-size: 14.5px;
+    font-weight: 800;
+    color: #31190B;
+    border-top: 1.5px solid #31190B;
+    border-bottom: 1.5px solid #31190B;
+    margin-top: 5px;
+    margin-bottom: 10px;
+  }
+  .sign-box {
+    border: 1px solid #EFE4DC;
+    border-radius: 6px;
+    background-color: #FEF9F6;
+    padding: 10px 12px;
+    text-align: right;
+    margin-top: 10px;
+  }
+  .sign-space {
+    height: 38px;
+  }
+`
+
+/**
+ * Generate Clean Printable HTML for Customer Tax Invoice
+ */
+export function getInvoicePrintHtml(modalBillData, settings = {}, defaultLogo = '') {
+  if (!modalBillData) return ''
 
   const invNumber = modalBillData.invoiceNumber || modalBillData.invoice || modalBillData.id || '100'
   const invDate = modalBillData.invoiceDate || modalBillData.date || new Date().toISOString().split('T')[0]
@@ -103,7 +262,6 @@ export function printInvoiceDocument(modalBillData, settings = {}, defaultLogo =
   const sgstRate = Number(settings.sgstRate) || 9
   const igstRate = cgstRate + sgstRate
 
-  // Totals
   const grandTotal = modalBillData.rawAmount !== undefined
     ? Number(modalBillData.rawAmount)
     : (Number(String(modalBillData.amount || modalBillData.grandTotal || 0).replace(/[^0-9.]/g, '')) || 0)
@@ -111,8 +269,7 @@ export function printInvoiceDocument(modalBillData, settings = {}, defaultLogo =
     ? Number(modalBillData.itemsSubtotal)
     : (modalBillData.subtotal !== undefined ? Number(modalBillData.subtotal) : grandTotal)
   const discount = Number(modalBillData.discount) || 0
-  const deliveryCharge = Number(modalBillData.deliveryCharge) || 0
-  
+
   let totalGst = modalBillData.totalGst !== undefined 
     ? Number(modalBillData.totalGst) 
     : (modalBillData.taxAmount !== undefined ? Number(modalBillData.taxAmount) : NaN)
@@ -143,170 +300,22 @@ export function printInvoiceDocument(modalBillData, settings = {}, defaultLogo =
     const hsn = it.hsn || it.hsnCode || settings.hsnCode || '4407'
     return `
       <tr>
-        <td style="padding: 10px 12px; border-bottom: 1px solid #EFE4DC; text-align: center;">${idx + 1}</td>
-        <td style="padding: 10px 12px; border-bottom: 1px solid #EFE4DC;"><strong>${it.description || it.name || 'Timber Item'}</strong></td>
-        <td style="padding: 10px 12px; border-bottom: 1px solid #EFE4DC; text-align: center;">${hsn}</td>
-        <td style="padding: 10px 12px; border-bottom: 1px solid #EFE4DC; text-align: center;">${qty}</td>
-        <td style="padding: 10px 12px; border-bottom: 1px solid #EFE4DC; text-align: right;">₹${price.toLocaleString('en-IN')}</td>
-        <td style="padding: 10px 12px; border-bottom: 1px solid #EFE4DC; text-align: right;">₹${rowLine.toLocaleString('en-IN')}</td>
+        <td style="text-align: center; font-weight: 600;">${idx + 1}</td>
+        <td><strong>${it.description || it.name || 'Timber Item'}</strong></td>
+        <td style="text-align: center;">${hsn}</td>
+        <td style="text-align: center; font-weight: 600;">${qty}</td>
+        <td style="text-align: right;">₹${price.toLocaleString('en-IN')}</td>
+        <td style="text-align: right; font-weight: 700;">₹${rowLine.toLocaleString('en-IN')}</td>
       </tr>
     `
   }).join('')
 
-  const html = `<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Tax Invoice - ${invNumber}</title>
-  <style>
-    @page {
-      size: A4 portrait;
-      margin: 10mm 12mm 12mm 12mm;
-    }
-    *, *::before, *::after {
-      box-sizing: border-box;
-      -webkit-print-color-adjust: exact !important;
-      print-color-adjust: exact !important;
-    }
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      color: #31190B;
-      background: #FFFFFF;
-      font-size: 12px;
-      line-height: 1.4;
-    }
-    .sheet {
-      width: 100%;
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 8px 12px;
-    }
-    .header-table {
-      width: 100%;
-      border-collapse: collapse;
-      border-bottom: 2px solid #D3C4B8;
-      padding-bottom: 14px;
-      margin-bottom: 18px;
-    }
-    .brand-title {
-      font-size: 22px;
-      font-weight: 800;
-      color: #31190B;
-      margin: 0;
-      line-height: 1.1;
-    }
-    .brand-sub {
-      margin: 3px 0 0 0;
-      font-size: 11.5px;
-      color: #5C4537;
-    }
-    .badge {
-      display: inline-block;
-      background-color: #31190B;
-      color: #FFFFFF;
-      font-size: 11px;
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      padding: 3px 10px;
-      border-radius: 4px;
-      margin-bottom: 6px;
-    }
-    .cust-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 20px;
-      background-color: #FEF9F6;
-      border: 1px solid #EFE4DC;
-      border-radius: 6px;
-    }
-    .cust-col {
-      width: 50%;
-      padding: 12px 16px;
-      vertical-align: top;
-    }
-    .cust-label {
-      font-size: 10.5px;
-      font-weight: 700;
-      color: #7D6C63;
-      text-transform: uppercase;
-      margin: 0 0 4px 0;
-      letter-spacing: 0.04em;
-    }
-    .cust-name {
-      font-size: 13.5px;
-      font-weight: 700;
-      color: #31190B;
-      margin: 0 0 3px 0;
-    }
-    .cust-sub {
-      font-size: 11.5px;
-      color: #5C4537;
-      margin: 2px 0;
-    }
-    .items-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 24px;
-      font-size: 12px;
-    }
-    .items-table th {
-      background-color: #F8EFE9;
-      color: #31190B;
-      font-weight: 700;
-      padding: 9px 10px;
-      border-bottom: 1.5px solid #D3C4B8;
-      text-align: left;
-    }
-    .footer-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-      page-break-inside: avoid;
-      break-inside: avoid;
-    }
-    .footer-left {
-      width: 55%;
-      vertical-align: top;
-      padding-right: 20px;
-    }
-    .footer-right {
-      width: 45%;
-      vertical-align: top;
-    }
-    .summary-line {
-      display: flex;
-      justify-content: space-between;
-      padding: 4px 0;
-      font-size: 12px;
-      color: #5C4537;
-      border-bottom: 1px dashed #EFE4DC;
-    }
-    .grand-line {
-      display: flex;
-      justify-content: space-between;
-      padding: 8px 0;
-      font-size: 15px;
-      font-weight: 800;
-      color: #31190B;
-      border-top: 1.5px solid #31190B;
-      border-bottom: 1.5px solid #31190B;
-      margin-top: 6px;
-      margin-bottom: 14px;
-    }
-    .sign-box {
-      border: 1px solid #EFE4DC;
-      border-radius: 6px;
-      background-color: #FEF9F6;
-      padding: 12px;
-      text-align: center;
-      margin-top: 10px;
-    }
-    .sign-space {
-      height: 42px;
-    }
-  </style>
+  <title>Invoice #${invNumber} - ${custName}</title>
+  <style>${sharedPrintCss}</style>
 </head>
 <body>
   <div class="sheet">
@@ -350,7 +359,7 @@ export function printInvoiceDocument(modalBillData, settings = {}, defaultLogo =
       <thead>
         <tr>
           <th style="width: 5%; text-align: center;">#</th>
-          <th style="width: 45%;">Item Description</th>
+          <th style="width: 45%; text-align: left;">Item Description</th>
           <th style="width: 15%; text-align: center;">HSN/SAC</th>
           <th style="width: 10%; text-align: center;">Qty</th>
           <th style="width: 12%; text-align: right;">Rate (₹)</th>
@@ -366,7 +375,7 @@ export function printInvoiceDocument(modalBillData, settings = {}, defaultLogo =
       <tr>
         <td class="footer-left">
           <p style="margin: 0 0 3px 0; font-size: 11.5px; font-weight: 700;">Amount in Words:</p>
-          <p style="margin: 0 0 10px 0; font-size: 11.5px; font-style: italic; color: #5C4537;">${numberToWordsINR(grandTotal)}</p>
+          <p style="margin: 0 0 10px 0; font-size: 11.5px; font-style: italic; color: #8C5325;">${numberToWordsINR(grandTotal)}</p>
           ${notes ? `
             <p style="margin: 0 0 10px 0; font-size: 11px;"><strong>Note:</strong> ${notes}</p>
           ` : ''}
@@ -424,8 +433,15 @@ export function printInvoiceDocument(modalBillData, settings = {}, defaultLogo =
   </div>
 </body>
 </html>`
+}
 
-  // Create isolated off-screen iframe with true A4 rendering viewport (prevents Chrome 0x0 truncation)
+/**
+ * Print Customer Invoice via Isolated Iframe
+ */
+export function printInvoiceDocument(modalBillData, settings = {}, defaultLogo = '') {
+  if (!modalBillData) return
+  const html = getInvoicePrintHtml(modalBillData, settings, defaultLogo)
+
   const iframe = document.createElement('iframe')
   iframe.style.position = 'fixed'
   iframe.style.left = '-10000px'
@@ -448,7 +464,7 @@ export function printInvoiceDocument(modalBillData, settings = {}, defaultLogo =
       iframe.contentWindow.print()
     } catch (e) {
       console.error('[printInvoiceDocument] Printing error:', e)
-      window.print() // Fallback to page print if iframe print blocked
+      window.print()
     } finally {
       setTimeout(() => {
         if (iframe.parentNode) {
@@ -458,15 +474,49 @@ export function printInvoiceDocument(modalBillData, settings = {}, defaultLogo =
     }
   }
 
-  // Allow iframe document, styles, and images to settle before opening print preview
   setTimeout(executePrint, 300)
 }
 
 /**
- * Isolated print utility for Purchase Bills
+ * Download Customer Tax Invoice as PDF
  */
-export function printPurchaseBillDocument(purchase, settings = {}, defaultLogo = '') {
-  if (!purchase) return
+export async function downloadInvoicePDF(modalBillData, settings = {}, defaultLogo = '') {
+  if (!modalBillData) return
+  try {
+    const html2pdfModule = await import('html2pdf.js')
+    const html2pdf = html2pdfModule.default || html2pdfModule
+
+    const invNumber = modalBillData.invoiceNumber || modalBillData.invoice || modalBillData.id || '100'
+    const html = getInvoicePrintHtml(modalBillData, settings, defaultLogo)
+
+    const container = document.createElement('div')
+    container.style.position = 'fixed'
+    container.style.left = '-10000px'
+    container.style.top = '0'
+    container.style.width = '794px'
+    container.innerHTML = html
+    document.body.appendChild(container)
+
+    const opt = {
+      margin: [8, 8, 8, 8],
+      filename: `Tax_Invoice_${invNumber}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, logging: false },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    }
+
+    await html2pdf().set(opt).from(container).save()
+    if (container.parentNode) container.parentNode.removeChild(container)
+  } catch (err) {
+    console.error('[downloadInvoicePDF] Error downloading PDF:', err)
+  }
+}
+
+/**
+ * Generate Clean Printable HTML for Purchase Bills (No Logo)
+ */
+export function getPurchaseBillPrintHtml(purchase, settings = {}) {
+  if (!purchase) return ''
 
   const invNumber = purchase.invoiceNumber || purchase.id || '100'
   const invDate = purchase.date || new Date().toISOString().split('T')[0]
@@ -510,170 +560,22 @@ export function printPurchaseBillDocument(purchase, settings = {}, defaultLogo =
     const lineTotal = Number(it.total || ((qty * rate) + lineGst))
     return `
       <tr>
-        <td style="padding: 10px 12px; border-bottom: 1px solid #EFE4DC; text-align: center;">${idx + 1}</td>
-        <td style="padding: 10px 12px; border-bottom: 1px solid #EFE4DC;"><strong>${it.name || it.item || 'Timber Material'}</strong></td>
-        <td style="padding: 10px 12px; border-bottom: 1px solid #EFE4DC; text-align: center; font-weight: 600;">${qty}</td>
-        <td style="padding: 10px 12px; border-bottom: 1px solid #EFE4DC; text-align: right;">₹${rate.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-        <td style="padding: 10px 12px; border-bottom: 1px solid #EFE4DC; text-align: center;">${gstPct}%</td>
-        <td style="padding: 10px 12px; border-bottom: 1px solid #EFE4DC; text-align: right; font-weight: 700;">₹${lineTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+        <td style="text-align: center; font-weight: 600;">${idx + 1}</td>
+        <td><strong>${it.name || it.item || 'Timber Material'}</strong></td>
+        <td style="text-align: center; font-weight: 600;">${qty}</td>
+        <td style="text-align: right;">₹${rate.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+        <td style="text-align: center;">${gstPct}%</td>
+        <td style="text-align: right; font-weight: 700;">₹${lineTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
       </tr>
     `
   }).join('')
 
-  const html = `<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
   <title>Purchase Bill #${invNumber}</title>
-  <style>
-    @page {
-      size: A4 portrait;
-      margin: 10mm 12mm 12mm 12mm;
-    }
-    *, *::before, *::after {
-      box-sizing: border-box;
-      -webkit-print-color-adjust: exact !important;
-      print-color-adjust: exact !important;
-    }
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      color: #31190B;
-      background: #FFFFFF;
-      font-size: 12px;
-      line-height: 1.4;
-    }
-    .sheet {
-      width: 100%;
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 8px 12px;
-    }
-    .header-table {
-      width: 100%;
-      border-collapse: collapse;
-      border-bottom: 2px solid #D3C4B8;
-      padding-bottom: 14px;
-      margin-bottom: 18px;
-    }
-    .brand-title {
-      font-size: 22px;
-      font-weight: 800;
-      color: #31190B;
-      margin: 0;
-      line-height: 1.1;
-    }
-    .brand-sub {
-      margin: 3px 0 0 0;
-      font-size: 11.5px;
-      color: #5C4537;
-    }
-    .badge {
-      display: inline-block;
-      background-color: #31190B;
-      color: #FFFFFF;
-      font-size: 11px;
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      padding: 3px 10px;
-      border-radius: 4px;
-      margin-bottom: 6px;
-    }
-    .cust-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 20px;
-      background-color: #FEF9F6;
-      border: 1px solid #EFE4DC;
-      border-radius: 6px;
-    }
-    .cust-col {
-      width: 50%;
-      padding: 12px 16px;
-      vertical-align: top;
-    }
-    .cust-label {
-      font-size: 10.5px;
-      font-weight: 700;
-      color: #7D6C63;
-      text-transform: uppercase;
-      margin: 0 0 4px 0;
-      letter-spacing: 0.04em;
-    }
-    .cust-name {
-      font-size: 13.5px;
-      font-weight: 700;
-      color: #31190B;
-      margin: 0 0 3px 0;
-    }
-    .cust-sub {
-      font-size: 11.5px;
-      color: #5C4537;
-      margin: 2px 0;
-    }
-    .items-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 24px;
-      font-size: 12px;
-    }
-    .items-table th {
-      background-color: #F8EFE9;
-      color: #31190B;
-      font-weight: 700;
-      padding: 9px 10px;
-      border-bottom: 1.5px solid #D3C4B8;
-      text-align: left;
-    }
-    .footer-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-      page-break-inside: avoid;
-      break-inside: avoid;
-    }
-    .footer-left {
-      width: 55%;
-      vertical-align: top;
-      padding-right: 20px;
-    }
-    .footer-right {
-      width: 45%;
-      vertical-align: top;
-    }
-    .summary-line {
-      display: flex;
-      justify-content: space-between;
-      padding: 4px 0;
-      font-size: 12px;
-      color: #5C4537;
-      border-bottom: 1px dashed #EFE4DC;
-    }
-    .grand-line {
-      display: flex;
-      justify-content: space-between;
-      padding: 8px 0;
-      font-size: 15px;
-      font-weight: 800;
-      color: #31190B;
-      border-top: 1.5px solid #31190B;
-      border-bottom: 1.5px solid #31190B;
-      margin-top: 6px;
-      margin-bottom: 14px;
-    }
-    .sign-box {
-      border: 1px solid #EFE4DC;
-      border-radius: 6px;
-      background-color: #FEF9F6;
-      padding: 12px;
-      text-align: right;
-      margin-top: 10px;
-    }
-    .sign-space {
-      height: 38px;
-    }
-  </style>
+  <style>${sharedPrintCss}</style>
 </head>
 <body>
   <div class="sheet">
@@ -715,11 +617,11 @@ export function printPurchaseBillDocument(purchase, settings = {}, defaultLogo =
       <thead>
         <tr>
           <th style="width: 5%; text-align: center;">#</th>
-          <th style="width: 45%;">Item Description</th>
+          <th style="width: 42%; text-align: left;">Item Description</th>
           <th style="width: 10%; text-align: center;">Qty</th>
           <th style="width: 15%; text-align: right;">Rate (₹)</th>
-          <th style="width: 10%; text-align: center;">GST</th>
-          <th style="width: 15%; text-align: right;">Total Amount (₹)</th>
+          <th style="width: 12%; text-align: center;">GST</th>
+          <th style="width: 16%; text-align: right;">Total (₹)</th>
         </tr>
       </thead>
       <tbody>
@@ -731,7 +633,7 @@ export function printPurchaseBillDocument(purchase, settings = {}, defaultLogo =
       <tr>
         <td class="footer-left">
           <p style="margin: 0 0 3px 0; font-size: 11.5px; font-weight: 700;">Amount in Words:</p>
-          <p style="margin: 0 0 10px 0; font-size: 11.5px; font-style: italic; color: #5C4537;">${numberToWordsINR(grandTotal)}</p>
+          <p style="margin: 0 0 10px 0; font-size: 11.5px; font-style: italic; color: #8C5325;">${numberToWordsINR(grandTotal)}</p>
           ${purchase.notes ? `
             <p style="margin: 0 0 10px 0; font-size: 11px;"><strong>Remarks:</strong> ${purchase.notes}</p>
           ` : ''}
@@ -772,6 +674,14 @@ export function printPurchaseBillDocument(purchase, settings = {}, defaultLogo =
   </div>
 </body>
 </html>`
+}
+
+/**
+ * Print Purchase Bill via Isolated Iframe
+ */
+export function printPurchaseBillDocument(purchase, settings = {}) {
+  if (!purchase) return
+  const html = getPurchaseBillPrintHtml(purchase, settings)
 
   const iframe = document.createElement('iframe')
   iframe.style.position = 'fixed'
@@ -806,4 +716,208 @@ export function printPurchaseBillDocument(purchase, settings = {}, defaultLogo =
   }
 
   setTimeout(executePrint, 300)
+}
+
+/**
+ * Download Purchase Bill as PDF
+ */
+export async function downloadPurchaseBillPDF(purchase, settings = {}) {
+  if (!purchase) return
+  try {
+    const html2pdfModule = await import('html2pdf.js')
+    const html2pdf = html2pdfModule.default || html2pdfModule
+
+    const invNumber = purchase.invoiceNumber || purchase.id || '100'
+    const html = getPurchaseBillPrintHtml(purchase, settings)
+
+    const container = document.createElement('div')
+    container.style.position = 'fixed'
+    container.style.left = '-10000px'
+    container.style.top = '0'
+    container.style.width = '794px'
+    container.innerHTML = html
+    document.body.appendChild(container)
+
+    const opt = {
+      margin: [8, 8, 8, 8],
+      filename: `Purchase_Bill_${invNumber}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, logging: false },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    }
+
+    await html2pdf().set(opt).from(container).save()
+    if (container.parentNode) container.parentNode.removeChild(container)
+  } catch (err) {
+    console.error('[downloadPurchaseBillPDF] Error downloading PDF:', err)
+  }
+}
+
+/**
+ * Generate Clean Printable HTML for Products Catalog & Inventory
+ */
+export function getProductsPrintHtml(products = [], settings = {}) {
+  const depotName = (settings.depotName || 'Kerala Wood Furniture').replace(/[-–—]\s*sivakasi\s*depot/gi, '').trim() || 'Kerala Wood Furniture'
+  const address = (settings.address || 'Sivakasi Central Mill Yard, Sivakasi').replace(/Depot & /gi, '').replace(/Central Depot/gi, 'Central Yard')
+  const printDate = new Date().toLocaleDateString('en-GB')
+  const printTime = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
+
+  const productRows = products.map((p, idx) => {
+    const code = p.code || p.productCode || (100 + idx)
+    const price = Number(String(p.sellingPrice || p.unitPrice || p.price || 0).replace(/[^0-9.]/g, '')) || 0
+    const stock = p.stockQuantity !== undefined ? p.stockQuantity : (p.stock !== undefined ? p.stock : '-')
+    return `
+      <tr>
+        <td style="text-align: center; font-weight: 600;">${idx + 1}</td>
+        <td style="text-align: center; font-family: monospace; font-weight: 700; color: #5C3A21;">${code}</td>
+        <td><strong>${p.name || 'Unnamed Product'}</strong></td>
+        <td>${p.category || '-'}</td>
+        <td>${p.woodSpecies || '-'}</td>
+        <td style="text-align: right; font-weight: 600;">₹${price.toLocaleString('en-IN')}</td>
+        <td style="text-align: center; font-weight: 700;">${stock}</td>
+      </tr>
+    `
+  }).join('')
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Products Catalog - ${depotName}</title>
+  <style>
+    ${sharedPrintCss}
+    .products-table th {
+      background-color: #31190B !important;
+      color: #FFFFFF !important;
+      border: 1px solid #31190B !important;
+    }
+    .products-table td {
+      border: 1px solid #EDE3DB !important;
+    }
+    .products-table tbody tr:nth-child(even) td {
+      background-color: #FAF6F2 !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="sheet">
+    <table class="header-table">
+      <tr>
+        <td style="vertical-align: top;">
+          <h1 class="brand-title">${depotName}</h1>
+          <p class="brand-sub">${address}</p>
+          <p class="brand-sub">Phone: ${settings.contactPhone || 'N/A'} • GSTIN: ${settings.gstin || 'N/A'}</p>
+        </td>
+        <td style="vertical-align: top; text-align: right; width: 260px;">
+          <div class="badge">PRODUCT CATALOG & INVENTORY</div>
+          <p style="margin: 3px 0; font-size: 12px;"><strong>Total Products:</strong> ${products.length} Items</p>
+          <p style="margin: 3px 0; font-size: 12px;"><strong>Printed On:</strong> ${printDate} ${printTime}</p>
+        </td>
+      </tr>
+    </table>
+
+    <table class="items-table products-table">
+      <thead>
+        <tr>
+          <th style="width: 38px; text-align: center;">#</th>
+          <th style="width: 75px; text-align: center;">Code</th>
+          <th style="text-align: left;">Product Name / Description</th>
+          <th style="width: 125px; text-align: left;">Category</th>
+          <th style="width: 115px; text-align: left;">Wood Species</th>
+          <th style="width: 110px; text-align: right;">Price (₹)</th>
+          <th style="width: 65px; text-align: center;">Stock</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${productRows.length > 0 ? productRows : `<tr><td colspan="7" style="text-align: center; padding: 20px;">No products in catalog.</td></tr>`}
+      </tbody>
+    </table>
+
+    <table class="footer-table" style="margin-top: 20px; border-top: 1px solid #D3C4B8; padding-top: 10px;">
+      <tr>
+        <td style="font-size: 11px; color: #7D6C63;">
+          Official Kerala Wood Furniture Inventory Record • Confidential internal depot catalog
+        </td>
+        <td style="text-align: right; font-size: 11px; color: #31190B; font-weight: 600;">
+          Authorized Store Manager
+        </td>
+      </tr>
+    </table>
+  </div>
+</body>
+</html>`
+}
+
+/**
+ * Print Products Catalog via Isolated Iframe
+ */
+export function printProductsDocument(products = [], settings = {}) {
+  const html = getProductsPrintHtml(products, settings)
+
+  const iframe = document.createElement('iframe')
+  iframe.style.position = 'fixed'
+  iframe.style.left = '-10000px'
+  iframe.style.top = '0'
+  iframe.style.width = '210mm'
+  iframe.style.height = '297mm'
+  iframe.style.border = '0'
+  iframe.style.visibility = 'visible'
+  iframe.style.zIndex = '-9999'
+  document.body.appendChild(iframe)
+
+  const doc = iframe.contentWindow.document
+  doc.open()
+  doc.write(html)
+  doc.close()
+
+  const executePrint = () => {
+    try {
+      iframe.contentWindow.focus()
+      iframe.contentWindow.print()
+    } catch (e) {
+      console.error('[printProductsDocument] Printing error:', e)
+      window.print()
+    } finally {
+      setTimeout(() => {
+        if (iframe.parentNode) {
+          iframe.parentNode.removeChild(iframe)
+        }
+      }, 5000)
+    }
+  }
+
+  setTimeout(executePrint, 300)
+}
+
+/**
+ * Download Products Catalog as PDF
+ */
+export async function downloadProductsPDF(products = [], settings = {}) {
+  try {
+    const html2pdfModule = await import('html2pdf.js')
+    const html2pdf = html2pdfModule.default || html2pdfModule
+
+    const html = getProductsPrintHtml(products, settings)
+
+    const container = document.createElement('div')
+    container.style.position = 'fixed'
+    container.style.left = '-10000px'
+    container.style.top = '0'
+    container.style.width = '794px'
+    container.innerHTML = html
+    document.body.appendChild(container)
+
+    const opt = {
+      margin: [8, 8, 8, 8],
+      filename: `Products_Catalog_${new Date().toISOString().split('T')[0]}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, logging: false },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    }
+
+    await html2pdf().set(opt).from(container).save()
+    if (container.parentNode) container.parentNode.removeChild(container)
+  } catch (err) {
+    console.error('[downloadProductsPDF] Error downloading PDF:', err)
+  }
 }

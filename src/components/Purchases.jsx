@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { DataStore } from '../services/dataStore'
 import { validateRequired, validatePhone } from '../utils/validators'
-import { printPurchaseBillDocument, numberToWordsINR } from '../utils/printInvoice'
+import { printPurchaseBillDocument, downloadPurchaseBillPDF, numberToWordsINR } from '../utils/printInvoice'
 import './Purchases.css'
 
 const createEmptyItem = () => ({
@@ -196,10 +196,12 @@ export default function Purchases() {
     setViewMode('form')
   }
 
-  const handlePrintPurchase = (p) => {
+  const handlePrintPurchase = async (p) => {
     const settings = DataStore.getSettings()
+    // User requested: purchase page kum print ku munadi pdf download aganum
+    await downloadPurchaseBillPDF(p, settings)
     printPurchaseBillDocument(p, settings)
-    showToast(`✓ Printing purchase bill #${p.invoiceNumber}`)
+    showToast(`✓ PDF downloaded & opening print for bill #${p.invoiceNumber}`)
   }
 
   const handleViewAndPrintPurchase = (p) => {
@@ -441,12 +443,12 @@ export default function Purchases() {
         <table className="pos-print-table">
           <thead>
             <tr>
-              <th style={{ width: '5%' }}>#</th>
-              <th style={{ width: '45%' }}>Item Description</th>
+              <th style={{ width: '5%', textAlign: 'center' }}>#</th>
+              <th style={{ width: '42%', textAlign: 'left' }}>Item Description</th>
               <th style={{ width: '10%', textAlign: 'center' }}>Qty</th>
               <th style={{ width: '15%', textAlign: 'right' }}>Rate (₹)</th>
-              <th style={{ width: '10%', textAlign: 'center' }}>GST</th>
-              <th style={{ width: '15%', textAlign: 'right' }}>Total (₹)</th>
+              <th style={{ width: '12%', textAlign: 'center' }}>GST</th>
+              <th style={{ width: '16%', textAlign: 'right' }}>Total (₹)</th>
             </tr>
           </thead>
           <tbody>
@@ -458,7 +460,7 @@ export default function Purchases() {
               const lineTotal = Number(it.total || ((qty * rate) + lineGst))
               return (
                 <tr key={it.id || idx}>
-                  <td>{idx + 1}</td>
+                  <td style={{ textAlign: 'center', fontWeight: 600 }}>{idx + 1}</td>
                   <td>
                     <strong>{it.name || it.item || 'Timber Material'}</strong>
                   </td>
@@ -1283,6 +1285,14 @@ export default function Purchases() {
                 </h3>
               </div>
               <div className="pos-modal-header-actions">
+                <button
+                  type="button"
+                  className="pos-btn-download-pdf"
+                  onClick={() => downloadPurchaseBillPDF(previewPurchase, DataStore.getSettings())}
+                  title="Download Purchase Bill as PDF"
+                >
+                  📥 Download PDF
+                </button>
                 <button
                   type="button"
                   className="pos-btn-print-now"
