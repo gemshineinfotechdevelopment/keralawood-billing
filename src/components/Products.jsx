@@ -595,16 +595,18 @@ export default function Products({ initialViewMode = 'list' }) {
                 </div>
                 <div className="dossier-name-block">
                   <h3 className="dossier-person-name">{previewProduct.name || '-'}</h3>
-                  <div className="dossier-sku-pill">{previewProduct.sku || '-'}</div>
+                  <div className="dossier-sku-pill" title="Product Code">
+                    Code: {getProductCode(previewProduct)}
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Scrollable Drawer Body with All Real Product Details */}
+            {/* Scrollable Drawer Body with Only Fields from Add Product Page */}
             <div className="dossier-drawer-body">
-              {/* Section 1: Wood & Finish Details */}
+              {/* Section 1: General Information */}
               <div className="dossier-section-box">
-                <h4 className="dossier-section-heading">Wood & Material Details</h4>
+                <h4 className="dossier-section-heading">General Information</h4>
                 <div className="dossier-details-grid">
                   <div className="dossier-detail-row">
                     <span className="dossier-label">CATEGORY</span>
@@ -614,54 +616,15 @@ export default function Products({ initialViewMode = 'list' }) {
                     <span className="dossier-label">WOOD SPECIES</span>
                     <span className="dossier-value bold-wood">{previewProduct.woodSpecies || '-'}</span>
                   </div>
-                  <div className="dossier-detail-row">
-                    <span className="dossier-label">SURFACE POLISH</span>
-                    <span className="dossier-value">{previewProduct.surfacePolish || previewProduct.finish || '-'}</span>
-                  </div>
-                  <div className="dossier-detail-row full-width">
-                    <span className="dossier-label">DESCRIPTION</span>
-                    <span className="dossier-value desc-text">
-                      {previewProduct.description || '-'}
-                    </span>
-                  </div>
                 </div>
               </div>
 
-              {/* Section 2: Craft Specifications */}
+              {/* Section 2: Inventory & Stock */}
               <div className="dossier-section-box">
-                <h4 className="dossier-section-heading">Craft Specifications</h4>
+                <h4 className="dossier-section-heading">Inventory & Stock</h4>
                 <div className="dossier-details-grid">
                   <div className="dossier-detail-row">
-                    <span className="dossier-label">DIMENSIONS (L × W × H)</span>
-                    <span className="dossier-value">
-                      {previewProduct.dimensions && (previewProduct.dimensions.length || previewProduct.dimensions.width || previewProduct.dimensions.height)
-                        ? `${previewProduct.dimensions.length || 0} × ${previewProduct.dimensions.width || 0} × ${previewProduct.dimensions.height || 0} cm`
-                        : '-'}
-                    </span>
-                  </div>
-                  <div className="dossier-detail-row">
-                    <span className="dossier-label">WEIGHT</span>
-                    <span className="dossier-value">
-                      {previewProduct.dimensions?.weight ? `${previewProduct.dimensions.weight} kg` : '-'}
-                    </span>
-                  </div>
-                  <div className="dossier-detail-row">
-                    <span className="dossier-label">WOOD GRADE</span>
-                    <span className="dossier-value">{previewProduct.woodGrade || '-'}</span>
-                  </div>
-                  <div className="dossier-detail-row">
-                    <span className="dossier-label">WARRANTY</span>
-                    <span className="dossier-value">{previewProduct.warranty || '-'}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Section 3: Inventory & Logistics */}
-              <div className="dossier-section-box">
-                <h4 className="dossier-section-heading">Inventory & Yard Logistics</h4>
-                <div className="dossier-details-grid">
-                  <div className="dossier-detail-row">
-                    <span className="dossier-label">CURRENT STOCK</span>
+                    <span className="dossier-label">STOCK QUANTITY</span>
                     <span className="dossier-value stock-highlight">
                       {previewProduct.stockQuantity !== undefined ? previewProduct.stockQuantity : parseInt(previewProduct.stock) || 0} Units
                     </span>
@@ -674,18 +637,10 @@ export default function Products({ initialViewMode = 'list' }) {
                         : '-'}
                     </span>
                   </div>
-                  <div className="dossier-detail-row">
-                    <span className="dossier-label">YARD / DEPOT LOCATION</span>
-                    <span className="dossier-value">{previewProduct.depotLocation || '-'}</span>
-                  </div>
-                  <div className="dossier-detail-row full-width">
-                    <span className="dossier-label">PACKAGING TYPE</span>
-                    <span className="dossier-value">{previewProduct.packagingType || '-'}</span>
-                  </div>
                 </div>
               </div>
 
-              {/* Section 4: Pricing */}
+              {/* Section 3: Pricing */}
               <div className="dossier-pricing-card">
                 <div className="dossier-price-row-top" style={{ marginBottom: '8px' }}>
                   <span className="dossier-price-label">SELLING PRICE</span>
