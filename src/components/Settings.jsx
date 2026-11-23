@@ -35,6 +35,8 @@ export default function Settings() {
   const [systemDate, setSystemDate] = useState(initial.systemDate || '')
 
   const [savedSuccess, setSavedSuccess] = useState(false)
+  const [logoUploadMsg, setLogoUploadMsg] = useState('')
+  const [toastMessage, setToastMessage] = useState('')
 
   // Real-time ticking clock timer
   useEffect(() => {
@@ -54,7 +56,11 @@ export default function Settings() {
         if (data?.success && data.settings) {
           const s = data.settings
           if (s.depotName) setDepotName(s.depotName)
-          if (s.logoUrl !== undefined) setLogoUrl(s.logoUrl)
+          if (s.logoUrl && !s.logoUrl.includes('cloudinary')) {
+            setLogoUrl(s.logoUrl)
+          } else {
+            setLogoUrl(kwfLogo)
+          }
           if (s.contactPhone) setContactPhone(s.contactPhone)
           if (s.contactEmail) setContactEmail(s.contactEmail)
           if (s.address) setAddress(s.address)
@@ -115,6 +121,8 @@ export default function Settings() {
 
     if (Object.keys(errs).length > 0) {
       setFormErrors(errs)
+      setToastMessage('⚠️ Please check the highlighted fields')
+      setTimeout(() => setToastMessage(''), 3000)
       return
     }
     setFormErrors({})
@@ -148,13 +156,34 @@ export default function Settings() {
     }).catch(() => {})
 
     setSavedSuccess(true)
+    setToastMessage('✓ Store settings saved successfully!')
     setTimeout(() => {
       setSavedSuccess(false)
-    }, 1500)
+      setToastMessage('')
+    }, 2500)
   }
 
   return (
     <div className="settings-page-container">
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div style={{
+          position: 'fixed',
+          top: '28px',
+          right: '32px',
+          zIndex: 9999,
+          backgroundColor: '#31190B',
+          color: '#FAF4EF',
+          padding: '12px 22px',
+          borderRadius: '8px',
+          fontSize: '13.5px',
+          fontWeight: 600,
+          boxShadow: '0 4px 16px rgba(49, 25, 11, 0.25)',
+        }}>
+          {toastMessage}
+        </div>
+      )}
+
       {/* Page Header */}
       <div className="settings-header">
         <div className="settings-title-wrap">

@@ -467,3 +467,368 @@ export function printInvoiceDocument(modalBillData, settings = {}, defaultLogo =
   // Allow iframe document, styles, and images to settle before opening print preview
   setTimeout(executePrint, 300)
 }
+
+/**
+ * Isolated print utility for Purchase Bills
+ */
+export function printPurchaseBillDocument(purchase, settings = {}, defaultLogo = '') {
+  if (!purchase) return
+
+  const invNumber = purchase.invoiceNumber || purchase.id || '100'
+  const invDate = purchase.date || new Date().toISOString().split('T')[0]
+
+  const supplierName = purchase.supplier || 'Forest Timber Mill'
+  const supplierPhone = purchase.supplierPhone || ''
+  const supplierAddress = purchase.supplierAddress || 'Mill Yard Depot'
+  const supplierGstin = purchase.supplierGstin || 'Unregistered'
+
+  const companyName = purchase.companyName || settings.depotName || 'Kerala Wood Furniture - Sivakasi Depot'
+  const companyAddress = purchase.companyAddress || settings.address || 'Sivakasi Central Depot & Mill Yard, Sivakasi'
+  const companyGstin = purchase.companyGstin || settings.gstin || '32AABCP9821K1ZK'
+  const companyPhone = purchase.companyPhone || settings.contactPhone || '+91 484 289 1204'
+
+  const logoSrc = settings.logoUrl || defaultLogo || '/kwf.jpg'
+
+  const rawItems = Array.isArray(purchase.itemsList) && purchase.itemsList.length > 0
+    ? purchase.itemsList
+    : [
+        {
+          name: purchase.item || 'Timber Material',
+          category: purchase.category || 'Timber Logs',
+          quantity: purchase.quantity || 1,
+          rate: Number(purchase.amount || 0),
+          gstRate: purchase.amount > 0 ? Math.round(((Number(purchase.gstAmount || 0)) / Number(purchase.amount)) * 100) : 18,
+          gstAmount: Number(purchase.gstAmount || 0),
+          total: Number(purchase.total || ((Number(purchase.amount) || 0) + (Number(purchase.gstAmount) || 0))),
+        },
+      ]
+
+  const subtotal = Number(purchase.subtotal || purchase.amount || 0)
+  const gstAmount = Number(purchase.gstAmount || 0)
+  const grandTotal = Number(purchase.total || (subtotal + gstAmount))
+  const cgstAmount = gstAmount / 2
+  const sgstAmount = gstAmount / 2
+
+  const itemsRows = rawItems.map((it, idx) => {
+    const qty = Number(it.quantity) || 1
+    const rate = Number(it.rate || it.amount || 0)
+    const gstPct = Number(it.gstRate || it.gstPercent || 18)
+    const lineGst = Number(it.gstAmount || 0)
+    const lineTotal = Number(it.total || ((qty * rate) + lineGst))
+    return `
+      <tr>
+        <td style="padding: 9px 12px; border-bottom: 1px solid #EFE4DC; text-align: center;">${idx + 1}</td>
+        <td style="padding: 9px 12px; border-bottom: 1px solid #EFE4DC;">
+          <strong>${it.name || it.item || 'Timber Item'}</strong>
+          ${it.category ? `<div style="font-size: 10.5px; color: #7D6C63;">${it.category}</div>` : ''}
+        </td>
+        <td style="padding: 9px 12px; border-bottom: 1px solid #EFE4DC; text-align: center; font-weight: 600;">${qty}</td>
+        <td style="padding: 9px 12px; border-bottom: 1px solid #EFE4DC; text-align: right;">₹${rate.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+        <td style="padding: 9px 12px; border-bottom: 1px solid #EFE4DC; text-align: center;">${gstPct}%</td>
+        <td style="padding: 9px 12px; border-bottom: 1px solid #EFE4DC; text-align: right;">₹${lineGst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+        <td style="padding: 9px 12px; border-bottom: 1px solid #EFE4DC; text-align: right; font-weight: 700;">₹${lineTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+      </tr>
+    `
+  }).join('')
+
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Purchase Bill #${invNumber}</title>
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 10mm 12mm 12mm 12mm;
+    }
+    *, *::before, *::after {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: #31190B;
+      background: #FFFFFF;
+      font-size: 12px;
+      line-height: 1.4;
+    }
+    .sheet {
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 8px 12px;
+    }
+    .header-table {
+      width: 100%;
+      border-collapse: collapse;
+      border-bottom: 2px solid #D3C4B8;
+      padding-bottom: 14px;
+      margin-bottom: 16px;
+    }
+    .brand-title {
+      font-size: 22px;
+      font-weight: 800;
+      color: #31190B;
+      margin: 0;
+      line-height: 1.1;
+    }
+    .brand-sub {
+      font-size: 11.5px;
+      color: #5C4537;
+      margin: 3px 0 0 0;
+      line-height: 1.4;
+    }
+    .bill-meta-box {
+      border: 1.5px solid #C88D58;
+      background: #FAF4EF;
+      border-radius: 8px;
+      padding: 10px 14px;
+      text-align: right;
+    }
+    .bill-title-label {
+      font-size: 14px;
+      font-weight: 900;
+      color: #31190B;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .bill-number {
+      font-size: 18px;
+      font-weight: 900;
+      color: #8C5325;
+      margin: 2px 0;
+    }
+    .bill-date {
+      font-size: 11.5px;
+      color: #5C4537;
+      font-weight: 600;
+    }
+    .parties-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 12px 0;
+      margin-bottom: 16px;
+    }
+    .party-card {
+      border: 1.5px solid #EAE0D8;
+      border-radius: 8px;
+      padding: 12px 14px;
+      vertical-align: top;
+      background: #FFFFFF;
+    }
+    .party-tag {
+      font-size: 10.5px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+    .party-from-tag { color: #8C5325; }
+    .party-to-tag { color: #2563EB; }
+    .party-name {
+      font-size: 13.5px;
+      font-weight: 800;
+      color: #31190B;
+      margin: 0 0 4px 0;
+    }
+    .party-text {
+      font-size: 11.5px;
+      color: #5C4537;
+      line-height: 1.4;
+      margin: 2px 0;
+    }
+    .items-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 16px;
+      border: 1px solid #D3C4B8;
+    }
+    .items-table th {
+      background-color: #FAF4EF;
+      color: #31190B;
+      font-size: 10.5px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 8px 10px;
+      border-bottom: 2px solid #D3C4B8;
+      border-right: 1px solid #EFE4DC;
+    }
+    .items-table th:last-child { border-right: none; }
+    .items-table td {
+      border-right: 1px solid #EFE4DC;
+    }
+    .items-table td:last-child { border-right: none; }
+    .totals-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    .summary-line {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+      font-size: 12px;
+      color: #5C4537;
+    }
+    .grand-line {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      font-size: 15px;
+      font-weight: 900;
+      color: #31190B;
+      border-top: 2px solid #31190B;
+      border-bottom: 2px solid #31190B;
+      margin-top: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="sheet">
+    <table class="header-table">
+      <tr>
+        <td style="width: 70px; vertical-align: middle;">
+          <img src="${logoSrc}" alt="KWF Logo" style="width: 60px; height: 60px; object-fit: contain; border-radius: 6px;" />
+        </td>
+        <td style="vertical-align: middle; padding-left: 14px;">
+          <h1 class="brand-title">${companyName}</h1>
+          <p class="brand-sub">
+            ${companyAddress}<br>
+            GSTIN: <strong>${companyGstin}</strong> | Phone: ${companyPhone}
+          </p>
+        </td>
+        <td style="vertical-align: middle; width: 230px;">
+          <div class="bill-meta-box">
+            <div class="bill-title-label">PURCHASE BILL</div>
+            <div class="bill-number">#${invNumber}</div>
+            <div class="bill-date">Date: <strong>${invDate}</strong></div>
+          </div>
+        </td>
+      </tr>
+    </table>
+
+    <table class="parties-table">
+      <tr>
+        <td class="party-card" style="width: 50%; border-left: 4px solid #C88D58;">
+          <div class="party-tag party-from-tag">FROM (SUPPLIER / VENDOR)</div>
+          <div class="party-name">${supplierName}</div>
+          ${supplierAddress ? `<div class="party-text">${supplierAddress}</div>` : ''}
+          ${supplierGstin ? `<div class="party-text"><strong>GSTIN:</strong> ${supplierGstin}</div>` : ''}
+          ${supplierPhone ? `<div class="party-text"><strong>Phone:</strong> ${supplierPhone}</div>` : ''}
+        </td>
+        <td class="party-card" style="width: 50%; border-left: 4px solid #2563EB;">
+          <div class="party-tag party-to-tag">TO (BUYER / INWARD DEPOT)</div>
+          <div class="party-name">${companyName}</div>
+          <div class="party-text">${companyAddress}</div>
+          <div class="party-text"><strong>GSTIN:</strong> ${companyGstin}</div>
+          <div class="party-text"><strong>Contact:</strong> ${companyPhone}</div>
+        </td>
+      </tr>
+    </table>
+
+    <table class="items-table">
+      <thead>
+        <tr>
+          <th style="width: 35px; text-align: center;">#</th>
+          <th>ITEM DESCRIPTION</th>
+          <th style="width: 60px; text-align: center;">QTY</th>
+          <th style="width: 90px; text-align: right;">RATE (₹)</th>
+          <th style="width: 60px; text-align: center;">GST</th>
+          <th style="width: 80px; text-align: right;">GST (₹)</th>
+          <th style="width: 100px; text-align: right;">TOTAL (₹)</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${itemsRows}
+      </tbody>
+    </table>
+
+    <table class="totals-table">
+      <tr>
+        <td style="vertical-align: top; width: 55%; padding-right: 20px;">
+          <div style="background: #FAF4EF; border: 1px solid #EFE4DC; border-radius: 6px; padding: 10px 12px; margin-bottom: 12px;">
+            <div style="font-size: 10.5px; font-weight: 800; color: #8C5325; text-transform: uppercase; margin-bottom: 2px;">
+              AMOUNT IN WORDS
+            </div>
+            <div style="font-size: 11.5px; font-weight: 700; color: #31190B;">
+              ${numberToWordsINR(grandTotal)}
+            </div>
+          </div>
+          ${purchase.notes ? `
+            <div style="font-size: 11.5px; color: #5C4537; margin-top: 6px;">
+              <strong>Remarks:</strong> ${purchase.notes}
+            </div>
+          ` : ''}
+          <div style="font-size: 10.5px; color: #7D6C63; margin-top: 10px; line-height: 1.4;">
+            Declaration: We declare that this purchase bill shows the actual procurement cost of the timber described and that all particulars are true and correct.
+          </div>
+        </td>
+        <td style="vertical-align: top; width: 45%; padding-left: 10px;">
+          <div class="summary-line">
+            <span>Subtotal (Taxable Value):</span>
+            <strong>₹${subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+          </div>
+          ${cgstAmount > 0 ? `
+            <div class="summary-line">
+              <span>CGST (50%):</span>
+              <span>+₹${cgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            </div>
+            <div class="summary-line">
+              <span>SGST (50%):</span>
+              <span>+₹${sgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            </div>
+          ` : ''}
+          <div class="grand-line">
+            <span>Grand Total:</span>
+            <span>₹${grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          </div>
+          <div style="margin-top: 24px; text-align: right;">
+            <p style="margin: 0; font-size: 11px; font-weight: 700; color: #31190B;">For ${companyName}</p>
+            <div style="height: 38px;"></div>
+            <p style="margin: 0; font-size: 10.5px; color: #7D6C63;">Authorized Receiver / Signatory</p>
+          </div>
+        </td>
+      </tr>
+    </table>
+  </div>
+</body>
+</html>`
+
+  const iframe = document.createElement('iframe')
+  iframe.style.position = 'fixed'
+  iframe.style.left = '-10000px'
+  iframe.style.top = '0'
+  iframe.style.width = '210mm'
+  iframe.style.height = '297mm'
+  iframe.style.border = '0'
+  iframe.style.visibility = 'visible'
+  iframe.style.zIndex = '-9999'
+  document.body.appendChild(iframe)
+
+  const doc = iframe.contentWindow.document
+  doc.open()
+  doc.write(html)
+  doc.close()
+
+  const executePrint = () => {
+    try {
+      iframe.contentWindow.focus()
+      iframe.contentWindow.print()
+    } catch (e) {
+      console.error('[printPurchaseBillDocument] Printing error:', e)
+      window.print()
+    } finally {
+      setTimeout(() => {
+        if (iframe.parentNode) {
+          iframe.parentNode.removeChild(iframe)
+        }
+      }, 5000)
+    }
+  }
+
+  setTimeout(executePrint, 300)
+}

@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo } from 'react'
 import { DataStore } from '../services/dataStore'
-import { validateRequired, validatePhone, validatePositiveNumber } from '../utils/validators'
+import { validateRequired, validatePhone } from '../utils/validators'
+import { printPurchaseBillDocument } from '../utils/printInvoice'
+import kwfLogo from '../assets/kwf.jpg'
 import './Purchases.css'
 
 const createEmptyItem = () => ({
@@ -17,7 +19,6 @@ const createEmptyItem = () => ({
 export default function Purchases() {
   const [purchases, setPurchases] = useState(() => DataStore.getPurchases())
   const [searchQuery, setSearchQuery] = useState('')
-  const [paymentModeFilter, setPaymentModeFilter] = useState('all')
 
   // View state: 'list' | 'form'
   const [viewMode, setViewMode] = useState('list')
@@ -31,7 +32,6 @@ export default function Purchases() {
   const [formData, setFormData] = useState({
     invoiceNumber: '',
     date: new Date().toISOString().split('T')[0],
-    paymentMode: 'Bank Wire',
     // FROM Side (Supplier)
     supplier: '',
     supplierAddress: '',
@@ -64,24 +64,19 @@ export default function Purchases() {
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(20)
 
-  // Filtered Purchases
+  // Filtered Purchases (Search by purchase #, supplier, item, or category)
   const filteredPurchases = useMemo(() => {
     return purchases.filter((p) => {
       const q = searchQuery.toLowerCase().trim()
-      const matchSearch =
-        !q ||
+      if (!q) return true
+      return (
         (p.invoiceNumber && p.invoiceNumber.toLowerCase().includes(q)) ||
         (p.supplier && p.supplier.toLowerCase().includes(q)) ||
         (p.item && p.item.toLowerCase().includes(q)) ||
         (p.category && p.category.toLowerCase().includes(q))
-
-      const matchMode =
-        paymentModeFilter === 'all' ||
-        (p.paymentMode && p.paymentMode.toLowerCase() === paymentModeFilter.toLowerCase())
-
-      return matchSearch && matchMode
+      )
     })
-  }, [purchases, searchQuery, paymentModeFilter])
+  }, [purchases, searchQuery])
 
   const totalPages = Math.ceil(filteredPurchases.length / itemsPerPage)
   const safePage = totalPages > 0 ? Math.min(currentPage, totalPages) : 1
@@ -99,18 +94,8 @@ export default function Purchases() {
 
   const totalPurchases = purchases.length
 
-  const { primaryMode, primaryModeCount } = useMemo(() => {
-    if (purchases.length === 0) return { primaryMode: '-', primaryModeCount: 0 }
-    const counts = purchases.reduce((acc, p) => {
-      const mode = p.paymentMode || 'Bank Wire'
-      acc[mode] = (acc[mode] || 0) + 1
-      return acc
-    }, {})
-    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1])
-    return {
-      primaryMode: sorted[0] ? sorted[0][0] : '-',
-      primaryModeCount: sorted[0] ? sorted[0][1] : 0,
-    }
+  const totalGstSpend = useMemo(() => {
+    return purchases.reduce((acc, p) => acc + (Number(p.gstAmount) || 0), 0)
   }, [purchases])
 
   // Calculation helpers for Form
@@ -139,7 +124,6 @@ export default function Purchases() {
     setFormData({
       invoiceNumber: DataStore.getNextPurchaseNumber(),
       date: new Date().toISOString().split('T')[0],
-      paymentMode: 'Bank Wire',
       // Left FROM (Supplier)
       supplier: '',
       supplierAddress: '',
@@ -164,7 +148,7 @@ export default function Purchases() {
     const rawInv = String(p.invoiceNumber || p.id || '')
     const digitsOnly = rawInv.replace(/\D/g, '')
 
-    let loadedItems = []
+    let loadedItems
     if (Array.isArray(p.itemsList) && p.itemsList.length > 0) {
       loadedItems = p.itemsList.map((it, idx) => ({
         id: it.id || idx + 1,
@@ -199,7 +183,6 @@ export default function Purchases() {
     setFormData({
       invoiceNumber: digitsOnly || rawInv || DataStore.getNextPurchaseNumber(),
       date: p.date || new Date().toISOString().split('T')[0],
-      paymentMode: p.paymentMode || 'Bank Wire',
       // FROM (Supplier)
       supplier: p.supplier || '',
       supplierAddress: p.supplierAddress || '',
@@ -216,6 +199,12 @@ export default function Purchases() {
     })
     setFormErrors({})
     setViewMode('form')
+  }
+
+  const handlePrintPurchase = (p) => {
+    const settings = DataStore.getSettings()
+    printPurchaseBillDocument(p, settings, kwfLogo)
+    showToast(`✓ Printing purchase bill #${p.invoiceNumber}`)
   }
 
   // Row item actions
@@ -398,7 +387,7 @@ export default function Purchases() {
 
         {/* Main Billing Sheet */}
         <form id="purchase-billing-form" onSubmit={handleSavePurchase} className="purchase-bill-sheet">
-          {/* Top Sheet Header: Bill Title + Purchase Number Box + Date + Payment Mode */}
+          {/* Top Sheet Header: Bill Title + Purchase Number Box + Date */}
           <div className="purchase-bill-header-row">
             <div className="purchase-bill-title-block">
               <span className="purchase-bill-badge">INWARD PROCUREMENT</span>
@@ -438,20 +427,6 @@ export default function Purchases() {
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                   required
                 />
-              </div>
-
-              <div className="purchase-meta-field">
-                <label className="purchase-meta-label">Payment Mode *</label>
-                <select
-                  className="purchases-select purchase-meta-select"
-                  value={formData.paymentMode}
-                  onChange={(e) => setFormData({ ...formData, paymentMode: e.target.value })}
-                >
-                  <option value="Bank Wire">Bank Wire / NEFT / RTGS</option>
-                  <option value="UPI">UPI Transfer</option>
-                  <option value="Cash">Cash Settlement</option>
-                  <option value="Cheque">Commercial Cheque</option>
-                </select>
               </div>
             </div>
           </div>
@@ -898,16 +873,13 @@ export default function Purchases() {
 
         <div className="purchases-kpi-card">
           <div className="purchases-kpi-left">
-            <span className="purchases-kpi-label">PRIMARY MODE</span>
-            <div className="purchases-kpi-value" style={{ fontSize: '18px' }}>{primaryMode}</div>
-            <span className="purchases-kpi-sub">
-              {purchases.length > 0 ? `${primaryModeCount} purchase${primaryModeCount === 1 ? '' : 's'} recorded` : 'No purchase records'}
-            </span>
+            <span className="purchases-kpi-label">TOTAL GST OUTFLOW</span>
+            <div className="purchases-kpi-value">₹{totalGstSpend.toLocaleString('en-IN')}</div>
+            <span className="purchases-kpi-sub">Input tax credit (ITC) recorded</span>
           </div>
           <div className="purchases-kpi-icon">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="2" y="5" width="20" height="14" rx="2" />
-              <line x1="2" y1="10" x2="22" y2="10" />
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
             </svg>
           </div>
         </div>
@@ -915,30 +887,15 @@ export default function Purchases() {
 
       {/* Controls Bar */}
       <div className="purchases-controls-bar">
-        <div className="purchases-search-wrap">
+        <div className="purchases-search-wrap" style={{ maxWidth: '100%' }}>
           <span className="purchases-search-icon">🔍</span>
           <input
             type="text"
             className="purchases-search-input"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search by purchase #, supplier, or wood..."
+            placeholder="Search by purchase #, supplier, or material..."
           />
-        </div>
-
-        <div className="purchases-filter-group">
-          <label style={{ fontSize: '12px', fontWeight: 700, color: '#5C4537' }}>Payment Mode:</label>
-          <select
-            className="purchases-select-filter"
-            value={paymentModeFilter}
-            onChange={(e) => setPaymentModeFilter(e.target.value)}
-          >
-            <option value="all">All Payment Modes</option>
-            <option value="UPI">UPI</option>
-            <option value="Bank Wire">Bank Wire / NEFT</option>
-            <option value="Cash">Cash</option>
-            <option value="Cheque">Cheque</option>
-          </select>
         </div>
       </div>
 
@@ -948,19 +905,17 @@ export default function Purchases() {
           <table className="purchases-table">
             <thead>
               <tr>
-                <th>PURCHASE # / DATE</th>
-                <th>SUPPLIER / MILL</th>
-                <th>MATERIAL & WOOD SPECIES</th>
-                <th>QUANTITY</th>
-                <th>PURCHASE AMOUNT</th>
-                <th>PAYMENT MODE</th>
+                <th>PURCHASE #</th>
+                <th>SUPPLIER</th>
+                <th>MATERIAL</th>
+                <th>AMOUNT</th>
                 <th style={{ textAlign: 'center' }}>ACTIONS</th>
               </tr>
             </thead>
             <tbody>
               {filteredPurchases.length === 0 ? (
                 <tr>
-                  <td colSpan="7" style={{ textAlign: 'center', padding: '40px 16px', color: '#8A7B72' }}>
+                  <td colSpan="5" style={{ textAlign: 'center', padding: '40px 16px', color: '#8A7B72' }}>
                     <div style={{ fontSize: '1.8rem', marginBottom: '8px' }}>📦</div>
                     <div style={{ fontWeight: 600, fontSize: '0.95rem', color: '#2C1810', marginBottom: '4px' }}>
                       {searchQuery ? `No purchases found matching "${searchQuery}"` : 'No purchase bills recorded yet'}
@@ -986,9 +941,6 @@ export default function Purchases() {
                       <div style={{ fontSize: '11px', color: '#8A7B72' }}>{p.category}</div>
                     </td>
                     <td>
-                      <span style={{ fontWeight: 600 }}>{p.quantity || '-'}</span>
-                    </td>
-                    <td>
                       <div className="purchases-amt-val">
                         ₹{Number(p.total || ((Number(p.amount) || 0) + (Number(p.gstAmount) || 0))).toLocaleString('en-IN')}
                       </div>
@@ -997,11 +949,6 @@ export default function Purchases() {
                           incl. ₹{Number(p.gstAmount).toLocaleString('en-IN')} GST
                         </div>
                       )}
-                    </td>
-                    <td>
-                      <span className="purchases-payment-mode-pill">
-                        {p.paymentMode || 'Bank Wire'}
-                      </span>
                     </td>
                     <td>
                       <div className="purchases-actions-cell">
@@ -1019,17 +966,18 @@ export default function Purchases() {
                           </svg>
                         </button>
 
-                        {/* 2. View Button */}
+                        {/* 2. Print Button */}
                         <button
                           type="button"
-                          className="btn-purchase-action btn-purchase-view"
-                          onClick={() => setViewDossierPurchase(p)}
-                          title="View Purchase Bill Details"
-                          aria-label="View"
+                          className="btn-purchase-action btn-purchase-print-btn"
+                          onClick={() => handlePrintPurchase(p)}
+                          title="Print Purchase Bill"
+                          aria-label="Print"
                         >
                           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                            <circle cx="12" cy="12" r="3" />
+                            <polyline points="6 9 6 2 18 2 18 9" />
+                            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                            <rect x="6" y="14" width="12" height="8" />
                           </svg>
                         </button>
 

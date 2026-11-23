@@ -10,10 +10,10 @@ export function validatePhone(phone, required = false) {
     if (required) return { isValid: false, error: 'Phone number is required' }
     return { isValid: true, error: '' }
   }
-  const clean = String(phone).replace(/[\s\-\(\)]/g, '')
+  const clean = String(phone).replace(/[\s\-()]/g, '')
   const digitsOnly = clean.replace(/^\+91/, '').replace(/^0/, '')
-  if (!/^[6-9]\d{9}$/.test(digitsOnly)) {
-    return { isValid: false, error: 'Enter a valid 10-digit mobile number (e.g. 9847123456)' }
+  if (!/^[6-9]\d{9}$/.test(digitsOnly) && !/^\d{8,11}$/.test(digitsOnly)) {
+    return { isValid: false, error: 'Enter a valid 10-digit mobile or phone number' }
   }
   return { isValid: true, error: '', clean: digitsOnly }
 }
@@ -94,7 +94,7 @@ export function validateBankAccount(account, required = false) {
     if (required) return { isValid: false, error: 'Bank account number is required' }
     return { isValid: true, error: '' }
   }
-  const clean = String(account).trim().replace(/[\s\-]/g, '')
+  const clean = String(account).trim().replace(/[\s-]/g, '')
   if (!/^\d{9,18}$/.test(clean)) {
     return { isValid: false, error: 'Bank account must be 9 to 18 digits' }
   }

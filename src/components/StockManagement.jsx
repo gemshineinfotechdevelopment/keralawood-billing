@@ -2,8 +2,6 @@ import { useState, useEffect } from 'react'
 import { DataStore } from '../services/dataStore'
 import './StockManagement.css'
 
-const DEFAULT_PRODUCTS = []
-
 const getProductCode = (prod) => {
   if (prod?.code) return String(prod.code).trim()
   if (prod?.sku) {
@@ -126,9 +124,6 @@ export default function StockManagement({ onAddNewProduct }) {
           })
           setProducts(merged)
           DataStore.saveProducts(merged)
-          if (data.metrics) {
-            setMetrics(data.metrics)
-          }
         }
       })
       .catch((err) => {
@@ -330,7 +325,7 @@ export default function StockManagement({ onAddNewProduct }) {
             <span className="kpi-big-num">{inStockProductsCount} Products</span>
             <span className="kpi-suffix-gray">in stock</span>
           </div>
-          <span className="kpi-footer-sub">Out of {products.length} total catalog items</span>
+          <span className="kpi-footer-sub">{totalStockCount} units across {products.length} catalog items</span>
         </div>
 
         {/* Low Stock Items */}
