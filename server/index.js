@@ -896,19 +896,27 @@ app.post('/api/purchases', async (req, res) => {
     const newPurchase = new Purchase({
       invoiceNumber,
       supplier: data.supplier.trim(),
+      supplierAddress: data.supplierAddress || '',
+      supplierGstin: data.supplierGstin || '',
       supplierPhone: data.supplierPhone || '',
+      companyName: data.companyName || 'Kerala Wood Furniture',
+      companyAddress: data.companyAddress || '',
+      companyGstin: data.companyGstin || '',
       date: data.date || new Date().toISOString().split('T')[0],
-      item: data.item?.trim() || 'Artisan Timber Consignment',
+      item: data.item?.trim() || (Array.isArray(data.itemsList) && data.itemsList[0]?.name) || 'Timber Purchase',
       category: data.category || 'Timber Logs',
-      quantity: data.quantity || '',
+      quantity: data.quantity || (Array.isArray(data.itemsList) ? String(data.itemsList.reduce((acc, it) => acc + (Number(it.quantity) || 0), 0)) : ''),
+      itemsList: Array.isArray(data.itemsList) ? data.itemsList : [],
+      subtotal: Number(data.subtotal) || Number(data.amount) || 0,
       amount: Number(data.amount) || 0,
       gstAmount: Number(data.gstAmount) || 0,
+      total: Number(data.total) || (Number(data.amount) || 0) + (Number(data.gstAmount) || 0),
       paymentMode: data.paymentMode || 'Bank Wire',
       notes: data.notes || '',
     });
 
     const saved = await newPurchase.save();
-    console.log('[API] Created new purchase consignment in MongoDB:', saved.invoiceNumber, saved.supplier);
+    console.log('[API] Created new purchase bill in MongoDB:', saved.invoiceNumber, saved.supplier);
     res.status(201).json({ success: true, purchase: saved });
   } catch (err) {
     console.error('[API] /api/purchases POST error:', err);
@@ -931,7 +939,7 @@ app.put('/api/purchases/:id', async (req, res) => {
       return res.status(404).json({ success: false, message: 'Purchase record not found' });
     }
 
-    console.log('[API] Updated purchase consignment in MongoDB:', updated.invoiceNumber);
+    console.log('[API] Updated purchase bill in MongoDB:', updated.invoiceNumber);
     res.json({ success: true, purchase: updated });
   } catch (err) {
     console.error('[API] /api/purchases PUT error:', err);

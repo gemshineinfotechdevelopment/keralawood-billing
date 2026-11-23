@@ -522,18 +522,36 @@
 }
 
 /* ===================================================
-   Full Page Record Purchase Form Styles
+   Full Page Purchase Billing Page Styles
+   Theme: Kerala Wood Furniture (Rich Teak & Modern ERP)
    =================================================== */
-.purchases-form-page {
-  max-width: 960px;
+.purchases-billing-container {
+  max-width: 1240px;
   margin: 0 auto;
 }
 
-.purchases-form-topbar {
+.purchases-toast-banner {
+  position: fixed;
+  top: 24px;
+  right: 28px;
+  z-index: 9999;
+  background-color: #31190B;
+  color: #FAF4EF;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 4px 14px rgba(49, 25, 11, 0.25);
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+.purchases-billing-topbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .btn-purchases-back-link {
@@ -546,7 +564,7 @@
   font-weight: 600;
   color: #7A4E2D;
   cursor: pointer;
-  padding: 6px 10px;
+  padding: 6px 12px;
   border-radius: 6px;
   transition: all 0.15s ease;
 }
@@ -556,119 +574,550 @@
   color: #31190B;
 }
 
-.purchases-form-top-actions {
+.purchases-billing-top-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
-.purchases-form-header {
-  margin-bottom: 24px;
-}
-
-.purchases-form-main-title {
-  font-size: 22px;
-  font-weight: 800;
-  color: #31190B;
-  margin: 0 0 6px 0;
-  letter-spacing: -0.3px;
-}
-
-.purchases-form-subtitle {
-  font-size: 13px;
-  color: #7D6C63;
-  margin: 0;
-}
-
-.purchases-fullpage-form {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.purchases-form-card {
-  background-color: #FFFFFF;
-  border: 1px solid #EAE0D8;
-  border-radius: 10px;
-  padding: 22px 24px;
-  box-shadow: 0 1px 3px rgba(49, 25, 11, 0.04);
-}
-
-.purchases-card-heading {
-  display: flex;
+.btn-purchases-submit-primary {
+  display: inline-flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 20px;
-  padding-bottom: 14px;
-  border-bottom: 1px solid #F0E6DE;
-}
-
-.purchases-card-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  background-color: #FAF4EF;
-  border: 1px solid #EAE0D8;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #7A4E2D;
-}
-
-.purchases-card-title {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 700;
-  color: #31190B;
-}
-
-.purchases-card-desc {
-  margin: 2px 0 0 0;
-  font-size: 12px;
-  color: #8C7B72;
-}
-
-.purchases-helper-text {
-  font-size: 11px;
-  color: #8C7B72;
-  margin-top: 3px;
-}
-
-.purchases-textarea {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1.5px solid #D3C4B8;
+  gap: 7px;
+  padding: 8px 20px;
   border-radius: 6px;
+  background-color: #31190B;
+  color: #FFFFFF;
+  border: 1px solid #31190B;
   font-size: 13px;
-  color: #31190B;
-  background-color: #FFFFFF;
-  box-sizing: border-box;
-  font-family: inherit;
-  resize: vertical;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(49, 25, 11, 0.2);
   transition: all 0.15s ease;
 }
 
-.purchases-textarea:focus {
-  outline: none;
+.btn-purchases-submit-primary:hover {
+  background-color: #4A2711;
+  border-color: #4A2711;
+  transform: translateY(-1px);
+}
+
+/* ===================================================
+   Purchase Bill Sheet (Invoice Canvas)
+   =================================================== */
+.purchase-bill-sheet {
+  background-color: #FFFFFF;
+  border: 1.5px solid #EAE0D8;
+  border-radius: 12px;
+  padding: 24px 28px;
+  box-shadow: 0 3px 12px rgba(49, 25, 11, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+/* Header Row: Title & Top Meta Box */
+.purchase-bill-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding-bottom: 20px;
+  border-bottom: 1.5px solid #F0E6DE;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.purchase-bill-title-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.purchase-bill-badge {
+  display: inline-block;
+  align-self: flex-start;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #8C5325;
+  background-color: #FAF1EE;
+  border: 1px solid #EFE4DC;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.purchase-bill-main-title {
+  font-size: 24px;
+  font-weight: 800;
+  color: #31190B;
+  margin: 4px 0 0 0;
+  letter-spacing: -0.02em;
+}
+
+.purchase-bill-subtitle {
+  font-size: 12.5px;
+  color: #7D6C63;
+  margin: 2px 0 0 0;
+}
+
+/* Meta Box: Purchase #, Date, Payment Mode */
+.purchase-bill-meta-box {
+  display: grid;
+  grid-template-columns: 140px 150px 180px;
+  gap: 12px;
+  background-color: #FAF4EF;
+  border: 1px solid #EAE0D8;
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+
+@media (max-width: 768px) {
+  .purchase-bill-meta-box {
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+}
+
+.purchase-meta-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.purchase-meta-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #6A564A;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.purchase-num-input-wrap {
+  display: flex;
+  align-items: center;
+  background-color: #FFFFFF;
+  border: 1.5px solid #D3C4B8;
+  border-radius: 6px;
+  overflow: hidden;
+  transition: all 0.15s ease;
+}
+
+.purchase-num-input-wrap:focus-within {
   border-color: #C88D58;
   box-shadow: 0 0 0 3px rgba(200, 141, 88, 0.18);
 }
 
-.purchases-computed-box {
-  padding: 9px 12px;
-  background-color: #FAF4EF;
-  border: 1.5px solid #E2CEBE;
-  border-radius: 6px;
+.purchase-num-prefix {
+  padding: 0 8px 0 10px;
+  font-weight: 800;
+  font-size: 14px;
+  color: #8C5325;
+  background-color: #F8EFE9;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  border-right: 1px solid #EAE0D8;
+}
+
+.purchase-num-input {
+  width: 100%;
+  border: none;
+  outline: none;
+  padding: 6px 10px;
   font-size: 14px;
   font-weight: 800;
   color: #31190B;
+  background: transparent;
+}
+
+.purchase-meta-date,
+.purchase-meta-select {
+  padding: 6px 8px;
+  font-size: 12.5px;
+  background-color: #FFFFFF;
+}
+
+.purchase-meta-hint {
+  font-size: 10px;
+  color: #9C8B82;
+}
+
+/* ===================================================
+   Two-Column Party Details (FROM / TO Side)
+   =================================================== */
+.purchase-parties-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 860px) {
+  .purchase-parties-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.purchase-party-card {
+  background-color: #FFFFFF;
+  border: 1.5px solid #EAE0D8;
+  border-radius: 10px;
+  padding: 16px 18px;
   display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.purchase-party-from {
+  border-left: 4px solid #C88D58;
+}
+
+.purchase-party-to {
+  border-left: 4px solid #2563EB;
+}
+
+.purchase-party-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #F0E6DE;
+  padding-bottom: 8px;
+}
+
+.purchase-party-tag {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+.from-tag {
+  background-color: #FAF1EE;
+  color: #8C5325;
+  border: 1px solid #EAE0D8;
+}
+
+.to-tag {
+  background-color: #EFF6FF;
+  color: #1D4ED8;
+  border: 1px solid #DBEAFE;
+}
+
+.purchase-party-role-text {
+  font-size: 11px;
+  color: #8C7B72;
+}
+
+.purchase-party-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.party-textarea {
+  min-height: 52px;
+  font-size: 12.5px;
+  line-height: 1.35;
+}
+
+.purchase-party-subgrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+@media (max-width: 520px) {
+  .purchase-party-subgrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.purchases-uppercase-input {
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+/* ===================================================
+   Line Items Section & Billing Table
+   =================================================== */
+.purchase-items-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.purchase-items-section-header {
+  display: flex;
+  justify-content: space-between;
   align-items: center;
 }
 
-.purchases-form-bottom-actions {
+.purchase-items-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.purchase-items-section-title {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: #31190B;
+  margin: 0;
+}
+
+.purchase-items-count {
+  font-size: 11px;
+  background-color: #FAF4EF;
+  color: #7D6C63;
+  padding: 2px 7px;
+  border-radius: 10px;
+  border: 1px solid #EFE4DC;
+  font-weight: 600;
+}
+
+.btn-add-item-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  background-color: #FAF4EF;
+  border: 1px solid #D3C4B8;
+  color: #6A3A1A;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-add-item-row:hover {
+  background-color: #F4E8DF;
+  border-color: #C88D58;
+}
+
+.purchase-items-error-banner {
+  background-color: #FEF2F2;
+  border: 1px solid #FECACA;
+  color: #DC2626;
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.purchase-items-table-wrapper {
+  overflow-x: auto;
+  border: 1.5px solid #EAE0D8;
+  border-radius: 8px;
+  background-color: #FFFFFF;
+}
+
+.purchase-items-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+  text-align: left;
+}
+
+.purchase-items-table th {
+  background-color: #FAF4EF;
+  color: #6A564A;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  padding: 10px 10px;
+  border-bottom: 1.5px solid #EAE0D8;
+  white-space: nowrap;
+}
+
+.purchase-items-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #F4E8DF;
+  vertical-align: middle;
+}
+
+.purchase-items-table tbody tr:hover {
+  background-color: #FCF9F6;
+}
+
+.purchase-table-input,
+.purchase-table-select {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #D3C4B8;
+  border-radius: 5px;
+  font-size: 12.5px;
+  color: #31190B;
+  background-color: #FFFFFF;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.purchase-table-input:focus,
+.purchase-table-select:focus {
+  outline: none;
+  border-color: #C88D58;
+  box-shadow: 0 0 0 2.5px rgba(200, 141, 88, 0.2);
+}
+
+.btn-remove-row {
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #FFF1F0;
+  border: 1px solid #FFA39E;
+  color: #CF1322;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.15s ease;
+}
+
+.btn-remove-row:hover:not(:disabled) {
+  background: #FF4D4F;
+  color: #FFFFFF;
+  border-color: #FF4D4F;
+}
+
+.btn-remove-row:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  border-color: #EAE0D8;
+  background: #FAF4EF;
+  color: #A6978F;
+}
+
+.purchase-items-bottom-bar {
+  display: flex;
+  margin-top: 4px;
+}
+
+.btn-add-item-dashed {
+  width: 100%;
+  padding: 8px 14px;
+  background-color: #FAF6F3;
+  border: 1.5px dashed #D3C4B8;
+  border-radius: 6px;
+  color: #7A4E2D;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+}
+
+.btn-add-item-dashed:hover {
+  background-color: #F4E8DF;
+  border-color: #C88D58;
+  color: #31190B;
+}
+
+/* ===================================================
+   Bottom Section: Notes (Left) & Financial Totals (Right)
+   =================================================== */
+.purchase-bottom-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+@media (max-width: 860px) {
+  .purchase-bottom-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.purchase-notes-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.purchase-financials-card {
+  background-color: #FAF4EF;
+  border: 1.5px solid #EAE0D8;
+  border-radius: 10px;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.purchase-summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: #4A3528;
+}
+
+.purchase-summary-label {
+  font-weight: 600;
+}
+
+.purchase-summary-val {
+  font-weight: 700;
+  font-size: 13.5px;
+  color: #31190B;
+}
+
+.purchase-summary-tax-split {
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  font-size: 11px;
+  color: #7D6C63;
+  margin-top: -4px;
+  padding-bottom: 4px;
+}
+
+.purchase-summary-grand-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 2px solid #E2CEBE;
+  padding-top: 10px;
+  margin-top: 4px;
+}
+
+.purchase-grand-label-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.purchase-grand-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: #31190B;
+  letter-spacing: 0.04em;
+}
+
+.purchase-grand-sub {
+  font-size: 11px;
+  color: #8C7B72;
+}
+
+.purchase-grand-amount {
+  font-size: 22px;
+  font-weight: 900;
+  color: #31190B;
+  letter-spacing: -0.02em;
+}
+
+.purchase-sheet-bottom-actions {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  padding: 16px 0 24px 0;
+  padding-top: 14px;
+  border-top: 1.5px solid #F0E6DE;
 }
+
+.purchases-bill-view-card {
+  max-width: 680px;
+}
+
