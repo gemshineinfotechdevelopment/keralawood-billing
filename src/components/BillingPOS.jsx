@@ -244,7 +244,7 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
   const sgstAmount = taxType === 'intra' ? totalGst / 2 : 0
   const igstAmount = taxType === 'inter' ? totalGst : 0
 
-  const grandTotal = Math.max(0, Math.round(itemsSubtotal + totalGst + deliveryCharge - discount))
+  const grandTotal = Math.max(0, Math.round(itemsSubtotal + totalGst - discount))
   const balanceDue = paymentStatus === 'Paid' ? 0 : Math.max(0, grandTotal - amountPaid)
 
   // -------------------------------------------------------------
@@ -1071,12 +1071,6 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
             <div className="pos-print-line">
               <span>Trade Discount:</span>
               <span>-₹{modalBillData.discount.toLocaleString('en-IN')}</span>
-            </div>
-          )}
-          {modalBillData.deliveryCharge > 0 && (
-            <div className="pos-print-line">
-              <span>Delivery Logistics:</span>
-              <span>+₹{modalBillData.deliveryCharge.toLocaleString('en-IN')}</span>
             </div>
           )}
           {modalBillData.taxType === 'inter' ? (
@@ -2032,15 +2026,15 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
             </div>
           </div>
 
-          {/* Discount, Delivery & GST Tax Options */}
+          {/* Discount & GST Tax Options */}
           <div className="pos-card pos-additional-options-card">
             <div className="pos-card-header-clean" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
               <span style={{ fontSize: '14px' }}>🏷️</span>
               <h3 style={{ fontSize: '13.5px', fontWeight: 700, margin: 0, color: '#31190B', letterSpacing: '-0.01em' }}>
-                Discounts, Logistics & GST Tax Mode
+                Discounts & GST Tax Mode
               </h3>
             </div>
-            <div className="pos-additional-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
+            <div className="pos-additional-grid" style={{ gridTemplateColumns: '1fr' }}>
               <div className="pos-input-group">
                 <label className="pos-label">Trade Discount (₹)</label>
                 <input
@@ -2049,18 +2043,6 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
                   className="pos-input"
                   value={discount}
                   onChange={(e) => updateCurrentBill({ discount: Math.max(0, Number(e.target.value) || 0) })}
-                  placeholder="0"
-                />
-              </div>
-
-              <div className="pos-input-group">
-                <label className="pos-label">Delivery Logistics Charges (₹)</label>
-                <input
-                  type="number"
-                  min="0"
-                  className="pos-input"
-                  value={deliveryCharge}
-                  onChange={(e) => updateCurrentBill({ deliveryCharge: Math.max(0, Number(e.target.value) || 0) })}
                   placeholder="0"
                 />
               </div>
@@ -2236,13 +2218,6 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
                     </div>
                   )}
 
-                  {deliveryCharge > 0 && (
-                    <div className="bill-dossier-calc-line">
-                      <span className="bill-dossier-calc-label">Delivery Charges:</span>
-                      <span className="bill-dossier-calc-val">+₹{deliveryCharge.toLocaleString('en-IN')}</span>
-                    </div>
-                  )}
-
                   {taxType === 'inter' ? (
                     <div className="bill-dossier-calc-line">
                       <span className="bill-dossier-calc-label">IGST ({(Number(settings.cgstRate) || 9) + (Number(settings.sgstRate) || 9)}%):</span>
@@ -2275,82 +2250,6 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
                       ₹{grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                   </div>
-                </div>
-              </div>
-
-              {/* Payment Settlement Section */}
-              <div className="dossier-section-box">
-                <h4 className="dossier-section-heading">Payment Settlement</h4>
-                <div className="pos-payment-status-block" style={{ marginBottom: '12px' }}>
-                  <label className="pos-label">Payment Status</label>
-                  <div className="pos-payment-status-segmented">
-                    {['Pending', 'Partial', 'Paid'].map((st) => (
-                      <button
-                        key={st}
-                        type="button"
-                        className={`pos-status-tab ${paymentStatus === st ? 'active' : ''}`}
-                        onClick={() => updateCurrentBill({ paymentStatus: st })}
-                      >
-                        {st}
-                      </button>
-                    ))}
-                  </div>
-
-                  {paymentStatus === 'Partial' && (
-                    <div className="pos-partial-input-wrap">
-                      <div className="pos-input-group">
-                        <label className="pos-label">Amount Paid (₹)</label>
-                        <input
-                          type="number"
-                          min="0"
-                          max={grandTotal}
-                          className="pos-input"
-                          value={amountPaid}
-                          onChange={(e) => updateCurrentBill({ amountPaid: Number(e.target.value) || 0 })}
-                        />
-                      </div>
-                      <div className="pos-partial-balance">
-                        <span>Balance Due:</span>
-                        <strong>₹{balanceDue.toLocaleString('en-IN')}</strong>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="pos-payment-mode-wrap">
-                    <label className="pos-label">Payment Mode</label>
-                    <select
-                      className="pos-select"
-                      value={paymentMode}
-                      onChange={(e) => updateCurrentBill({ paymentMode: e.target.value })}
-                    >
-                      {PAYMENT_MODES.map((pm) => (
-                        <option key={pm.value} value={pm.value}>
-                          {pm.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              {/* Invoice Metadata & Dates */}
-              <div className="dossier-section-box">
-                <h4 className="dossier-section-heading">Billing Metadata</h4>
-                <div className="dossier-details-grid">
-                  <div className="dossier-detail-row">
-                    <span className="dossier-label">INVOICE DATE</span>
-                    <span className="dossier-value">{invoiceDate || '-'}</span>
-                  </div>
-                  <div className="dossier-detail-row">
-                    <span className="dossier-label">DUE DATE</span>
-                    <span className="dossier-value">{dueDate || '-'}</span>
-                  </div>
-                  {notes && (
-                    <div className="dossier-detail-row full-width">
-                      <span className="dossier-label">NOTE / INSTRUCTION</span>
-                      <span className="dossier-value desc-text">{notes}</span>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>

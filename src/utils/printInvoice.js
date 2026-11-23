@@ -388,12 +388,6 @@ export function printInvoiceDocument(modalBillData, settings = {}, defaultLogo =
               <span>-₹${discount.toLocaleString('en-IN')}</span>
             </div>
           ` : ''}
-          ${deliveryCharge > 0 ? `
-            <div class="summary-line">
-              <span>Delivery Logistics:</span>
-              <span>+₹${deliveryCharge.toLocaleString('en-IN')}</span>
-            </div>
-          ` : ''}
           ${isInter ? `
             <div class="summary-line">
               <span>IGST (${igstRate}%):</span>
