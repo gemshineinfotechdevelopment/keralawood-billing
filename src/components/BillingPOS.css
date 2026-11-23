@@ -394,7 +394,7 @@
   text-align: right;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 768px) {
   .pos-items-table-header {
     display: none;
   }
@@ -1248,17 +1248,11 @@
   height: 40px;
 }
 
-/* Off-screen Isolated Print Portal for screen view */
-.pos-print-isolated-portal {
-  position: fixed !important;
-  left: -99999px !important;
-  top: 0 !important;
-  width: 900px !important;
-  height: 0 !important;
-  opacity: 0 !important;
-  overflow: hidden !important;
-  pointer-events: none !important;
-  z-index: -9999 !important;
+/* Items Section Card */
+.pos-items-card {
+  position: relative;
+  overflow: visible;
+  z-index: 1;
 }
 
 /* Print Media Styles */

@@ -436,45 +436,90 @@ export function getInvoicePrintHtml(modalBillData, settings = {}, defaultLogo = 
 }
 
 /**
+ * Cross-browser reliable printing via hidden in-viewport iframe with popup fallback
+ */
+export function printHtmlDocument(html, title = 'Document') {
+  if (typeof document === 'undefined') return
+
+  try {
+    const iframe = document.createElement('iframe')
+    iframe.id = 'kwf-print-frame-' + Date.now()
+    // Position inside viewport with near-zero opacity so Chromium renders and executes print reliably
+    iframe.style.position = 'fixed'
+    iframe.style.right = '0'
+    iframe.style.bottom = '0'
+    iframe.style.width = '1px'
+    iframe.style.height = '1px'
+    iframe.style.border = '0'
+    iframe.style.opacity = '0.01'
+    iframe.style.pointerEvents = 'none'
+    iframe.style.zIndex = '99999'
+    document.body.appendChild(iframe)
+
+    const doc = iframe.contentWindow.document
+    doc.open()
+    doc.write(html)
+    doc.close()
+
+    const triggerPrint = () => {
+      try {
+        iframe.contentWindow.focus()
+        iframe.contentWindow.print()
+      } catch (err) {
+        console.warn('[printHtmlDocument] Iframe print failed, opening print window:', err)
+        const printWindow = window.open('', '_blank', 'width=880,height=720')
+        if (printWindow) {
+          printWindow.document.open()
+          printWindow.document.write(html)
+          printWindow.document.close()
+          printWindow.focus()
+          setTimeout(() => {
+            printWindow.print()
+            printWindow.close()
+          }, 350)
+        } else {
+          window.print()
+        }
+      } finally {
+        setTimeout(() => {
+          if (iframe.parentNode) {
+            iframe.parentNode.removeChild(iframe)
+          }
+        }, 5000)
+      }
+    }
+
+    if (iframe.contentDocument && iframe.contentDocument.readyState === 'complete') {
+      setTimeout(triggerPrint, 250)
+    } else {
+      iframe.onload = () => setTimeout(triggerPrint, 250)
+      setTimeout(triggerPrint, 500)
+    }
+  } catch (outerErr) {
+    console.error('[printHtmlDocument] Top level print error:', outerErr)
+    const printWindow = window.open('', '_blank', 'width=880,height=720')
+    if (printWindow) {
+      printWindow.document.open()
+      printWindow.document.write(html)
+      printWindow.document.close()
+      printWindow.focus()
+      setTimeout(() => {
+        printWindow.print()
+        printWindow.close()
+      }, 350)
+    } else {
+      window.print()
+    }
+  }
+}
+
+/**
  * Print Customer Invoice via Isolated Iframe
  */
 export function printInvoiceDocument(modalBillData, settings = {}, defaultLogo = '') {
   if (!modalBillData) return
   const html = getInvoicePrintHtml(modalBillData, settings, defaultLogo)
-
-  const iframe = document.createElement('iframe')
-  iframe.style.position = 'fixed'
-  iframe.style.left = '-10000px'
-  iframe.style.top = '0'
-  iframe.style.width = '210mm'
-  iframe.style.height = '297mm'
-  iframe.style.border = '0'
-  iframe.style.visibility = 'visible'
-  iframe.style.zIndex = '-9999'
-  document.body.appendChild(iframe)
-
-  const doc = iframe.contentWindow.document
-  doc.open()
-  doc.write(html)
-  doc.close()
-
-  const executePrint = () => {
-    try {
-      iframe.contentWindow.focus()
-      iframe.contentWindow.print()
-    } catch (e) {
-      console.error('[printInvoiceDocument] Printing error:', e)
-      window.print()
-    } finally {
-      setTimeout(() => {
-        if (iframe.parentNode) {
-          iframe.parentNode.removeChild(iframe)
-        }
-      }, 5000)
-    }
-  }
-
-  setTimeout(executePrint, 300)
+  printHtmlDocument(html, 'Tax Invoice')
 }
 
 /**
@@ -682,40 +727,7 @@ export function getPurchaseBillPrintHtml(purchase, settings = {}) {
 export function printPurchaseBillDocument(purchase, settings = {}) {
   if (!purchase) return
   const html = getPurchaseBillPrintHtml(purchase, settings)
-
-  const iframe = document.createElement('iframe')
-  iframe.style.position = 'fixed'
-  iframe.style.left = '-10000px'
-  iframe.style.top = '0'
-  iframe.style.width = '210mm'
-  iframe.style.height = '297mm'
-  iframe.style.border = '0'
-  iframe.style.visibility = 'visible'
-  iframe.style.zIndex = '-9999'
-  document.body.appendChild(iframe)
-
-  const doc = iframe.contentWindow.document
-  doc.open()
-  doc.write(html)
-  doc.close()
-
-  const executePrint = () => {
-    try {
-      iframe.contentWindow.focus()
-      iframe.contentWindow.print()
-    } catch (e) {
-      console.error('[printPurchaseBillDocument] Printing error:', e)
-      window.print()
-    } finally {
-      setTimeout(() => {
-        if (iframe.parentNode) {
-          iframe.parentNode.removeChild(iframe)
-        }
-      }, 5000)
-    }
-  }
-
-  setTimeout(executePrint, 300)
+  printHtmlDocument(html, 'Purchase Bill')
 }
 
 /**
@@ -756,11 +768,12 @@ export async function downloadPurchaseBillPDF(purchase, settings = {}) {
 /**
  * Generate Clean Printable HTML for Products Catalog & Inventory
  */
-export function getProductsPrintHtml(products = [], settings = {}) {
+export function getProductsPrintHtml(products = [], settings = {}, defaultLogo = '') {
   const depotName = (settings.depotName || 'Kerala Wood Furniture').replace(/[-–—]\s*sivakasi\s*depot/gi, '').trim() || 'Kerala Wood Furniture'
   const address = (settings.address || 'Sivakasi Central Mill Yard, Sivakasi').replace(/Depot & /gi, '').replace(/Central Depot/gi, 'Central Yard')
   const printDate = new Date().toLocaleDateString('en-GB')
   const printTime = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
+  const logoUrl = settings.logoUrl || defaultLogo || ''
 
   const productRows = products.map((p, idx) => {
     const code = p.code || p.productCode || (100 + idx)
@@ -803,6 +816,11 @@ export function getProductsPrintHtml(products = [], settings = {}) {
   <div class="sheet">
     <table class="header-table">
       <tr>
+        ${logoUrl ? `
+          <td style="width: 75px; vertical-align: top; padding-right: 14px;">
+            <img src="${logoUrl}" alt="Logo" class="brand-logo" style="width: 64px; height: 64px; object-fit: contain; border-radius: 6px; border: 1px solid #D3C4B8;" />
+          </td>
+        ` : ''}
         <td style="vertical-align: top;">
           <h1 class="brand-title">${depotName}</h1>
           <p class="brand-sub">${address}</p>
@@ -851,53 +869,20 @@ export function getProductsPrintHtml(products = [], settings = {}) {
 /**
  * Print Products Catalog via Isolated Iframe
  */
-export function printProductsDocument(products = [], settings = {}) {
-  const html = getProductsPrintHtml(products, settings)
-
-  const iframe = document.createElement('iframe')
-  iframe.style.position = 'fixed'
-  iframe.style.left = '-10000px'
-  iframe.style.top = '0'
-  iframe.style.width = '210mm'
-  iframe.style.height = '297mm'
-  iframe.style.border = '0'
-  iframe.style.visibility = 'visible'
-  iframe.style.zIndex = '-9999'
-  document.body.appendChild(iframe)
-
-  const doc = iframe.contentWindow.document
-  doc.open()
-  doc.write(html)
-  doc.close()
-
-  const executePrint = () => {
-    try {
-      iframe.contentWindow.focus()
-      iframe.contentWindow.print()
-    } catch (e) {
-      console.error('[printProductsDocument] Printing error:', e)
-      window.print()
-    } finally {
-      setTimeout(() => {
-        if (iframe.parentNode) {
-          iframe.parentNode.removeChild(iframe)
-        }
-      }, 5000)
-    }
-  }
-
-  setTimeout(executePrint, 300)
+export function printProductsDocument(products = [], settings = {}, defaultLogo = '') {
+  const html = getProductsPrintHtml(products, settings, defaultLogo)
+  printHtmlDocument(html, 'Products Catalog')
 }
 
 /**
  * Download Products Catalog as PDF
  */
-export async function downloadProductsPDF(products = [], settings = {}) {
+export async function downloadProductsPDF(products = [], settings = {}, defaultLogo = '') {
   try {
     const html2pdfModule = await import('html2pdf.js')
     const html2pdf = html2pdfModule.default || html2pdfModule
 
-    const html = getProductsPrintHtml(products, settings)
+    const html = getProductsPrintHtml(products, settings, defaultLogo)
 
     const container = document.createElement('div')
     container.style.position = 'fixed'

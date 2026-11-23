@@ -499,7 +499,10 @@
 /* Responsive adjustments */
 @media (max-width: 900px) {
   .add-product-container {
-    padding: 10px 12px;
+    padding: 8px 10px 40px;
+    width: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
   }
   .add-product-header {
     flex-direction: column;
@@ -511,22 +514,34 @@
   }
   .product-page-title {
     font-size: 22px;
+    line-height: 1.2;
   }
   .product-page-subtitle {
-    font-size: 11px;
+    font-size: 11.5px;
     line-height: 1.4;
   }
   .product-header-actions {
     width: 100%;
     display: flex;
-    gap: 10px;
+    flex-wrap: wrap;
+    gap: 8px;
   }
-  .btn-add-new-product,
+  .btn-add-new-product {
+    flex: 1 1 45%;
+    justify-content: center;
+    min-height: 40px;
+    font-size: 12px;
+    padding: 8px 12px;
+    white-space: nowrap;
+    box-sizing: border-box;
+  }
   .btn-save-product {
-    flex: 1;
+    flex: 1 1 100%;
+    width: 100%;
     justify-content: center;
     min-height: 42px;
-    font-size: 12px;
+    font-size: 13px;
+    padding: 10px 16px;
     white-space: nowrap;
     box-sizing: border-box;
   }
@@ -535,11 +550,13 @@
     gap: 14px;
   }
   .add-product-single-card {
-    padding: 18px 14px;
-    border-radius: 8px;
+    padding: 16px 12px;
+    border-radius: 10px;
+    width: 100%;
+    box-sizing: border-box;
   }
   .form-section-card {
-    padding: 16px 14px;
+    padding: 14px 12px;
     gap: 12px;
   }
   .card-section-header {
@@ -551,7 +568,7 @@
     width: 100%;
   }
   .card-section-title {
-    font-size: 13.5px;
+    font-size: 14.5px;
     line-height: 1.25;
   }
   .section-badge-tan,
@@ -559,14 +576,31 @@
   .section-badge-green {
     align-self: flex-start;
   }
-  .form-row-4col {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-  }
   .form-row-2col,
-  .form-row-3col {
+  .form-row-3col,
+  .form-row-4col {
     grid-template-columns: 1fr;
     gap: 10px;
+    width: 100%;
+  }
+  .field-label-row {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .field-label {
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .field-action-link {
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .input-styled,
+  .select-styled {
+    height: 40px;
+    font-size: 13.5px;
+    padding: 0 10px;
+    box-sizing: border-box;
   }
   .product-toast-banner {
     top: 16px;
@@ -576,5 +610,21 @@
     width: auto;
     justify-content: center;
     text-align: center;
+  }
+  .quick-modal-panel {
+    width: 95vw !important;
+    max-width: 95vw !important;
+    padding: 16px 14px !important;
+    border-radius: 10px !important;
+  }
+  .drawer-footer {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+  }
+  .btn-drawer-cancel,
+  .btn-drawer-save {
+    width: 100% !important;
+    justify-content: center !important;
   }
 }

@@ -41,7 +41,6 @@ export default function StockManagement({ onAddNewProduct }) {
   const [quickProductId, setQuickProductId] = useState('')
   const [movementType, setMovementType] = useState('in') // 'in' or 'out'
   const [movementQty, setMovementQty] = useState(1)
-  const [movementReason, setMovementReason] = useState('Nilambur Mill Yard Delivery')
   const [quickSaving, setQuickSaving] = useState(false)
   const [quickSuccess, setQuickSuccess] = useState(false)
 
@@ -51,7 +50,6 @@ export default function StockManagement({ onAddNewProduct }) {
     }
     setMovementType('in')
     setMovementQty(1)
-    setMovementReason('Nilambur Mill Yard Delivery')
     setQuickSuccess(false)
     setQuickStockOpen(true)
   }
@@ -798,18 +796,6 @@ export default function StockManagement({ onAddNewProduct }) {
                     25 Bulk
                   </button>
                 </div>
-              </div>
-
-              {/* Movement Reason */}
-              <div className="drawer-form-group">
-                <label className="drawer-field-label">Audit / Movement Reference</label>
-                <input
-                  type="text"
-                  className="drawer-input-styled"
-                  value={movementReason}
-                  onChange={(e) => setMovementReason(e.target.value)}
-                  placeholder="e.g. Nilambur Mill Lot Receipt #KWF-884"
-                />
               </div>
             </div>
 

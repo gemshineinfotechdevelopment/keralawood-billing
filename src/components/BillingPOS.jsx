@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { createPortal } from 'react-dom'
 import { DataStore } from '../services/dataStore'
 import kwfLogo from '../assets/kwf.jpg'
 import { printInvoiceDocument, downloadInvoicePDF, numberToWordsINR } from '../utils/printInvoice'
@@ -59,7 +58,11 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
+    document.addEventListener('touchstart', handleClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('touchstart', handleClickOutside)
+    }
   }, [])
 
   useEffect(() => {
@@ -2365,16 +2368,6 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
           </div>
         </div>
       )}
-
-      {/* Isolated Print Portal attached directly to document.body:
-          guarantees 100% full-page, multi-page printing without clipping from #root or scroll containers */}
-      {typeof document !== 'undefined' &&
-        createPortal(
-          <div id="pos-print-isolated-portal" className="pos-print-isolated-portal" aria-hidden="true">
-            {renderPrintableInvoiceSheet()}
-          </div>,
-          document.body
-        )}
     </div>
   )
 }

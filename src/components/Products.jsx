@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { DataStore } from '../services/dataStore'
 import { printProductsDocument, downloadProductsPDF } from '../utils/printInvoice'
+import kwfLogo from '../assets/kwf.jpg'
 import AddProduct from './AddProduct'
 import './Products.css'
 
@@ -213,14 +214,14 @@ export default function Products({ initialViewMode = 'list' }) {
 
   const handlePrintProducts = () => {
     const settings = DataStore.getSettings()
-    printProductsDocument(filteredProducts, settings)
+    printProductsDocument(filteredProducts, settings, kwfLogo)
     setToastMessage('✓ Opening printable products catalog...')
     setTimeout(() => setToastMessage(''), 3000)
   }
 
   const handleDownloadProductsPDF = () => {
     const settings = DataStore.getSettings()
-    downloadProductsPDF(filteredProducts, settings)
+    downloadProductsPDF(filteredProducts, settings, kwfLogo)
     setToastMessage('✓ Downloading products catalog PDF...')
     setTimeout(() => setToastMessage(''), 3000)
   }
