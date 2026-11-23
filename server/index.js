@@ -343,9 +343,23 @@ app.post('/api/products', async (req, res) => {
       return cleaned ? Number(cleaned) : defaultVal;
     };
 
+    let sku = data.sku;
+    if (!sku) {
+      const allProducts = await Product.find({}, { sku: 1 });
+      const nums = allProducts
+        .map((p) => {
+          const d = String(p.sku || '').replace(/\D/g, '');
+          const n = parseInt(d, 10);
+          return !isNaN(n) && n >= 100 && n < 100000 ? n : null;
+        })
+        .filter((n) => n !== null);
+      const max = nums.length > 0 ? Math.max(...nums) : 99;
+      sku = String(Math.max(100, max + 1));
+    }
+
     const newProduct = new Product({
       name: data.name || '',
-      sku: data.sku || String(Math.floor(100000 + Math.random() * 900000)),
+      sku,
       category: data.category || '',
       woodSpecies: data.woodSpecies || '',
       description: data.description || '',

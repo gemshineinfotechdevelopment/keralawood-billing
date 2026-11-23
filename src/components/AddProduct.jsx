@@ -516,11 +516,11 @@ export default function AddProduct({ onProductSaved, onCancel, editProduct = nul
               <input
                 type="text"
                 className="input-styled input-readonly-code"
-                placeholder="e.g. 583921"
+                placeholder="e.g. 100"
                 value={skuCode}
                 readOnly
                 tabIndex={-1}
-                title="Numeric SKU code (Read-only)"
+                title="Numeric product code starting at 100 (Read-only)"
               />
             </div>
           </div>

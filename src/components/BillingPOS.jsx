@@ -1178,7 +1178,6 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
                 <thead>
                   <tr>
                     <th>INVOICE #</th>
-                    <th>DATE</th>
                     <th>CUSTOMER</th>
                     <th>ITEMS ORDERED</th>
                     <th>AMOUNT</th>
@@ -1189,7 +1188,7 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
                 <tbody>
                   {filteredSavedBills.length === 0 ? (
                     <tr>
-                      <td colSpan="7" className="pos-bills-empty-cell">
+                      <td colSpan="6" className="pos-bills-empty-cell">
                         <div className="pos-bills-empty-wrap">
                           <span className="pos-bills-empty-icon">🧾</span>
                           <h3 className="pos-bills-empty-title">
@@ -1231,14 +1230,6 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
                         <tr key={bill.id || bill.invoice || idx} className="pos-bills-table-row">
                           <td className="pos-col-invoice">
                             <span className="pos-invoice-pill">{inv}</span>
-                          </td>
-                          <td className="pos-col-date">
-                            <span className="pos-bill-date">{bill.date || 'Today'}</span>
-                            {(bill.billedBy || bill.salesPerson) && (
-                              <span style={{ fontSize: '11px', color: '#8A7B72', display: 'block', marginTop: '2px' }}>
-                                By: {bill.billedBy || bill.salesPerson}
-                              </span>
-                            )}
                           </td>
                           <td className="pos-col-customer">
                             <span className="pos-bill-cust-name">{typeof bill.customer === 'object' && bill.customer !== null ? (bill.customer.name || 'Walk-in Customer') : (bill.customer || 'Walk-in Customer')}</span>

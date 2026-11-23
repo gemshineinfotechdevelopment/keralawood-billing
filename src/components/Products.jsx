@@ -150,12 +150,26 @@ export default function Products({ initialViewMode = 'list' }) {
   const getProductCode = (prod) => {
     if (prod?.code) {
       const d = String(prod.code).trim().replace(/\D/g, '')
-      if (d) return d
+      if (d) {
+        const num = parseInt(d, 10)
+        if (!isNaN(num)) {
+          if (num >= 100 && num < 100000) return String(num)
+          if (num < 100) return String(100 + num)
+          return '100'
+        }
+      }
     }
     if (prod?.sku) {
       const raw = String(prod.sku).trim()
       const d = raw.replace(/\D/g, '')
-      if (d) return d
+      if (d) {
+        const num = parseInt(d, 10)
+        if (!isNaN(num)) {
+          if (num >= 100 && num < 100000) return String(num)
+          if (num < 100) return String(100 + num)
+          return '100'
+        }
+      }
       if (raw.includes('•')) {
         return raw.split('•')[0].trim()
       }
@@ -366,6 +380,7 @@ export default function Products({ initialViewMode = 'list' }) {
           <table className="products-main-table">
             <thead>
               <tr>
+                <th style={{ width: '90px' }}>CODE</th>
                 <th>PRODUCT</th>
                 <th>CATEGORY</th>
                 <th>WOOD SPECIES</th>
@@ -381,6 +396,12 @@ export default function Products({ initialViewMode = 'list' }) {
                   return (
                     <tr key={prod.id || prod.sku}>
                       <td>
+                        <span className="product-code-pill" title={`Product Code: ${getProductCode(prod)}`}>
+                          {getProductCode(prod)}
+                        </span>
+                      </td>
+
+                      <td>
                         <div className="product-name-cell" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           {prod.imageUrl ? (
                             <img
@@ -389,9 +410,6 @@ export default function Products({ initialViewMode = 'list' }) {
                               style={{ width: '28px', height: '28px', borderRadius: '4px', objectFit: 'cover', border: '1px solid #E8D5C8', flexShrink: 0 }}
                             />
                           ) : null}
-                          <span className="product-code-pill" title={`Product Code: ${getProductCode(prod)}`}>
-                            {getProductCode(prod)}
-                          </span>
                           <span className="product-display-name">{prod.name}</span>
                         </div>
                       </td>
@@ -461,7 +479,7 @@ export default function Products({ initialViewMode = 'list' }) {
                 })
               ) : (
                 <tr>
-                  <td colSpan="5" className="products-no-results" style={{ textAlign: 'center', padding: '48px 20px', color: '#8C7E74' }}>
+                  <td colSpan="6" className="products-no-results" style={{ textAlign: 'center', padding: '48px 20px', color: '#8C7E74' }}>
                     <div style={{ fontSize: '2rem', marginBottom: '8px' }}>🪵</div>
                     <div style={{ fontWeight: 700, fontSize: '1rem', color: '#2C1810', marginBottom: '4px' }}>
                       {searchQuery ? `No products found matching "${searchQuery}"` : 'No timber products cataloged yet'}

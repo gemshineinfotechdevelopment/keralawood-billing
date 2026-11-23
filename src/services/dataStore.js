@@ -474,8 +474,11 @@ export const DataStore = {
       const stockQuantity = Number(p.stockQuantity) || 0
       const stockOut = Number(p.stockOut) || 0
       const stockIn = p.stockIn !== undefined ? Number(p.stockIn) : (stockQuantity + stockOut)
+      let sku = p.sku
+      if (sku === '676939') sku = '100'
       return {
         ...p,
+        sku,
         stockQuantity,
         stockIn,
         stockOut,
@@ -526,10 +529,10 @@ export const DataStore = {
     const list = this.getProducts()
     const allNums = []
     list.forEach((p) => {
-      const digits = String(p.sku || p.id || '').replace(/\D/g, '')
+      const digits = String(p.sku || p.code || p.id || '').replace(/\D/g, '')
       if (digits) {
         const n = parseInt(digits, 10)
-        if (!isNaN(n) && n >= 100) {
+        if (!isNaN(n) && n >= 100 && n < 100000) {
           allNums.push(n)
         }
       }
