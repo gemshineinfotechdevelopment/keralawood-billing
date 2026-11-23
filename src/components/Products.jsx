@@ -148,15 +148,20 @@ export default function Products({ initialViewMode = 'list' }) {
   })
 
   const getProductCode = (prod) => {
-    if (prod?.code) return String(prod.code).trim()
+    if (prod?.code) {
+      const d = String(prod.code).trim().replace(/\D/g, '')
+      if (d) return d
+    }
     if (prod?.sku) {
       const raw = String(prod.sku).trim()
+      const d = raw.replace(/\D/g, '')
+      if (d) return d
       if (raw.includes('•')) {
         return raw.split('•')[0].trim()
       }
       return raw
     }
-    return `KWF-${prod?.id || '101'}`
+    return '100'
   }
 
   const getProductInitials = (prod) => {

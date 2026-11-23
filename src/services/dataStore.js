@@ -94,7 +94,7 @@ const EMPTY_INITIAL_CUSTOMER = {
 const INITIAL_BILLS = [
   {
     id: 'bill-1',
-    invoiceNumber: 'INV-1001',
+    invoiceNumber: '100',
     invoiceDate: new Date().toISOString().split('T')[0],
     dueDate: new Date(Date.now() + 15 * 86400000).toISOString().split('T')[0],
     name: 'Bill #1',
@@ -294,9 +294,24 @@ export const DataStore = {
     saveToStorage(STORAGE_KEYS.PURCHASES, list)
     notifyStoreUpdate()
   },
+  getNextPurchaseNumber() {
+    const list = this.getPurchases()
+    const allNums = []
+    list.forEach((p) => {
+      const digits = String(p.invoiceNumber || p.id || '').replace(/\D/g, '')
+      if (digits) {
+        const n = parseInt(digits, 10)
+        if (!isNaN(n) && n >= 100) {
+          allNums.push(n)
+        }
+      }
+    })
+    const maxNum = allNums.length > 0 ? Math.max(...allNums) : 99
+    return String(Math.max(100, maxNum + 1))
+  },
   addPurchase(purchase) {
     const list = this.getPurchases()
-    const id = purchase.id || `PUR-${Date.now().toString().slice(-4)}`
+    const id = purchase.id || this.getNextPurchaseNumber()
     const item = { ...purchase, id, invoiceNumber: purchase.invoiceNumber || id }
     const updated = [item, ...list]
     this.savePurchases(updated)
@@ -364,9 +379,24 @@ export const DataStore = {
     saveToStorage(STORAGE_KEYS.SALES_PERSONS, list)
     notifyStoreUpdate()
   },
+  getNextSalesPersonCode() {
+    const list = this.getSalesPersons()
+    const allNums = []
+    list.forEach((s) => {
+      const digits = String(s.code || s.id || '').replace(/\D/g, '')
+      if (digits) {
+        const n = parseInt(digits, 10)
+        if (!isNaN(n) && n >= 100) {
+          allNums.push(n)
+        }
+      }
+    })
+    const maxNum = allNums.length > 0 ? Math.max(...allNums) : 99
+    return String(Math.max(100, maxNum + 1))
+  },
   addSalesPerson(sp) {
     const list = this.getSalesPersons()
-    const id = sp.id || `SP-${100 + list.length + 1}`
+    const id = sp.id || this.getNextSalesPersonCode()
     const item = { ...sp, id, code: sp.code || id }
     const updated = [item, ...list]
     this.saveSalesPersons(updated)
@@ -463,6 +493,21 @@ export const DataStore = {
       this.saveProducts(list)
     }
   },
+  getNextProductSku() {
+    const list = this.getProducts()
+    const allNums = []
+    list.forEach((p) => {
+      const digits = String(p.sku || p.id || '').replace(/\D/g, '')
+      if (digits) {
+        const n = parseInt(digits, 10)
+        if (!isNaN(n) && n >= 100) {
+          allNums.push(n)
+        }
+      }
+    })
+    const maxNum = allNums.length > 0 ? Math.max(...allNums) : 99
+    return String(Math.max(100, maxNum + 1))
+  },
   addProduct(item) {
     const list = this.getProducts()
     const qty = Number(item.stockQuantity) || 4
@@ -519,7 +564,7 @@ export const DataStore = {
 
     const newProduct = {
       id: `prod-${Date.now()}`,
-      sku: item.sku || `KWF-${Date.now().toString().slice(-4)}`,
+      sku: item.sku || this.getNextProductSku(),
       name: item.name || 'Artisan Timber Furniture',
       finish: item.surfacePolish || item.finish || 'Matte Natural Wax Finish',
       category: item.category || 'Dining Sets',
@@ -844,19 +889,19 @@ export const DataStore = {
 
     const allNums = []
     existingInvoices.forEach((inv) => {
-      const m = String(inv).match(/INV-(\d+)/i)
-      if (m) {
-        const n = parseInt(m[1], 10)
-        if (!isNaN(n) && n > 0) {
+      const digits = String(inv).replace(/\D/g, '')
+      if (digits) {
+        const n = parseInt(digits, 10)
+        if (!isNaN(n) && n >= 100) {
           allNums.push(n)
         }
       }
     })
 
-    // Take the highest existing invoice number and increment by 1 (e.g. 1003 -> 1004)
-    const maxNum = allNums.length > 0 ? Math.max(...allNums) : 1000
-    const nextSeq = Math.max(1001, maxNum + 1)
-    return `INV-${nextSeq}`
+    // Take the highest existing invoice number and increment by 1 (e.g. 100 -> 101)
+    const maxNum = allNums.length > 0 ? Math.max(...allNums) : 99
+    const nextSeq = Math.max(100, maxNum + 1)
+    return String(nextSeq)
   },
   createNewDraft(preselectedCustomer = null) {
     const bills = this.getBills()
@@ -1108,9 +1153,10 @@ export const DataStore = {
     const igstAmount = taxType === 'inter' ? totalGst : 0
     const invDate = bill.invoiceDate || new Date().toISOString().split('T')[0]
 
+    const txInvNumber = bill.invoiceNumber || this.getNextInvoiceNumber()
     const newTx = {
-      id: bill.invoiceNumber || `INV-${Date.now().toString().slice(-4)}`,
-      invoice: bill.invoiceNumber || `INV-${Date.now().toString().slice(-4)}`,
+      id: txInvNumber,
+      invoice: txInvNumber,
       date: `${txDateStr}, ${txTimeStr}`,
       rawDate: invDate,
       year: txYear,

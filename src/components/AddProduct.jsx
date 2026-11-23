@@ -11,9 +11,9 @@ const DEFAULT_CATEGORIES = [
   'Executive Desks & Tables',
 ]
 
-// Auto-generate strictly numeric SKU code (digits only, strictly no letters)
+// Auto-generate strictly numeric SKU code starting at 100
 const generateAutoSku = () => {
-  return String(Math.floor(100000 + Math.random() * 900000))
+  return DataStore.getNextProductSku()
 }
 
 export default function AddProduct({ onProductSaved, onCancel, editProduct = null }) {

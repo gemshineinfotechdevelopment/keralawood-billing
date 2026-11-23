@@ -7,8 +7,8 @@ export default function Purchases() {
   const [searchQuery, setSearchQuery] = useState('')
   const [paymentModeFilter, setPaymentModeFilter] = useState('all')
 
-  // Modals
-  const [modalOpen, setModalOpen] = useState(false)
+  // View state: 'list' | 'form'
+  const [viewMode, setViewMode] = useState('list')
   const [editingPurchase, setEditingPurchase] = useState(null)
   const [viewDossierPurchase, setViewDossierPurchase] = useState(null)
   const [deleteModalPurchase, setDeleteModalPurchase] = useState(null)
@@ -99,7 +99,7 @@ export default function Purchases() {
   const handleOpenAdd = () => {
     setEditingPurchase(null)
     setFormData({
-      invoiceNumber: `PUR-${100 + purchases.length + 1}`,
+      invoiceNumber: DataStore.getNextPurchaseNumber(),
       supplier: '',
       supplierPhone: '',
       date: new Date().toISOString().split('T')[0],
@@ -111,13 +111,15 @@ export default function Purchases() {
       paymentMode: 'Bank Wire',
       notes: '',
     })
-    setModalOpen(true)
+    setViewMode('form')
   }
 
   const handleOpenEdit = (p) => {
     setEditingPurchase(p)
+    const rawInv = String(p.invoiceNumber || p.id || '')
+    const digitsOnly = rawInv.replace(/\D/g, '')
     setFormData({
-      invoiceNumber: p.invoiceNumber || p.id,
+      invoiceNumber: digitsOnly || rawInv || DataStore.getNextPurchaseNumber(),
       supplier: p.supplier || '',
       supplierPhone: p.supplierPhone || '',
       date: p.date || new Date().toISOString().split('T')[0],
@@ -129,7 +131,7 @@ export default function Purchases() {
       paymentMode: p.paymentMode || 'Bank Wire',
       notes: p.notes || '',
     })
-    setModalOpen(true)
+    setViewMode('form')
   }
 
   const handleSavePurchase = (e) => {
@@ -139,8 +141,11 @@ export default function Purchases() {
       return
     }
 
+    const cleanInvoiceNumber = String(formData.invoiceNumber).trim().replace(/\D/g, '') || DataStore.getNextPurchaseNumber()
+
     const payload = {
       ...formData,
+      invoiceNumber: cleanInvoiceNumber,
       amount: Number(formData.amount) || 0,
       gstAmount: Number(formData.gstAmount) || 0,
     }
@@ -153,7 +158,7 @@ export default function Purchases() {
       showToast(`✓ Recorded new purchase consignment ${payload.invoiceNumber}`)
     }
 
-    setModalOpen(false)
+    setViewMode('list')
   }
 
   const handleDelete = () => {
@@ -161,6 +166,282 @@ export default function Purchases() {
     DataStore.deletePurchase(deleteModalPurchase.id)
     showToast(`✓ Removed purchase record ${deleteModalPurchase.invoiceNumber}`)
     setDeleteModalPurchase(null)
+  }
+
+  if (viewMode === 'form') {
+    return (
+      <div className="purchases-page-container purchases-form-page">
+        {/* Toast Notification */}
+        {toastMessage && (
+          <div style={{
+            position: 'fixed',
+            top: '24px',
+            right: '28px',
+            zIndex: 9999,
+            backgroundColor: '#31190B',
+            color: '#FAF4EF',
+            padding: '12px 20px',
+            borderRadius: '8px',
+            fontSize: '13px',
+            fontWeight: 600,
+            boxShadow: '0 4px 14px rgba(49, 25, 11, 0.25)',
+          }}>
+            {toastMessage}
+          </div>
+        )}
+
+        {/* Topbar with Back button */}
+        <div className="purchases-form-topbar">
+          <button
+            type="button"
+            className="btn-purchases-back-link"
+            onClick={() => setViewMode('list')}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="19" y1="12" x2="5" y2="12" />
+              <polyline points="12 19 5 12 12 5" />
+            </svg>
+            <span>Back to Purchases</span>
+          </button>
+          <div className="purchases-form-top-actions">
+            <button
+              type="button"
+              className="btn-purchases-cancel"
+              onClick={() => setViewMode('list')}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              form="purchase-record-form"
+              className="btn-purchases-submit"
+            >
+              {editingPurchase ? 'Update Consignment' : 'Save Consignment'}
+            </button>
+          </div>
+        </div>
+
+        {/* Header */}
+        <div className="purchases-form-header">
+          <h1 className="purchases-form-main-title">
+            {editingPurchase ? `Edit Consignment #${formData.invoiceNumber}` : 'Record Inward Timber Purchase'}
+          </h1>
+          <p className="purchases-form-subtitle">
+            {editingPurchase
+              ? 'Update inward supplier logs, timber measurements, and transaction payments'
+              : 'Log new raw timber arrivals, sawmill stock, supplier bills, and payment settlements'}
+          </p>
+        </div>
+
+        {/* Main Form */}
+        <form id="purchase-record-form" onSubmit={handleSavePurchase} className="purchases-fullpage-form">
+          {/* Card 1: Consignment & Supplier Details */}
+          <div className="purchases-form-card">
+            <div className="purchases-card-heading">
+              <div className="purchases-card-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="16" y1="13" x2="8" y2="13" />
+                  <line x1="16" y1="17" x2="8" y2="17" />
+                  <polyline points="10 9 9 9 8 9" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="purchases-card-title">Consignment & Supplier Info</h3>
+                <p className="purchases-card-desc">Reference number and mill provenance</p>
+              </div>
+            </div>
+            <div className="purchases-form-grid">
+              <div className="purchases-input-group">
+                <label className="purchases-label">Purchase Consignment # *</label>
+                <input
+                  type="text"
+                  className="purchases-input"
+                  value={formData.invoiceNumber}
+                  onChange={(e) => setFormData({ ...formData, invoiceNumber: e.target.value.replace(/\D/g, '') })}
+                  placeholder="100"
+                  required
+                />
+                <span className="purchases-helper-text">Auto-generated number (strictly numeric from 100)</span>
+              </div>
+              <div className="purchases-input-group">
+                <label className="purchases-label">Purchase Date *</label>
+                <input
+                  type="date"
+                  className="purchases-input"
+                  value={formData.date}
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="purchases-input-group">
+                <label className="purchases-label">Supplier / Mill Name *</label>
+                <input
+                  type="text"
+                  className="purchases-input"
+                  value={formData.supplier}
+                  onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
+                  placeholder="e.g. Wayanad Forest Mills"
+                  required
+                />
+              </div>
+              <div className="purchases-input-group">
+                <label className="purchases-label">Supplier Phone</label>
+                <input
+                  type="text"
+                  className="purchases-input"
+                  value={formData.supplierPhone}
+                  onChange={(e) => setFormData({ ...formData, supplierPhone: e.target.value })}
+                  placeholder="+91 94471 28910"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Card 2: Timber Material & Volume */}
+          <div className="purchases-form-card">
+            <div className="purchases-card-heading">
+              <div className="purchases-card-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+                  <line x1="12" y1="22.08" x2="12" y2="12" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="purchases-card-title">Timber Material & Specifications</h3>
+                <p className="purchases-card-desc">Species, lot size, and cubic volume</p>
+              </div>
+            </div>
+            <div className="purchases-form-grid">
+              <div className="purchases-input-group purchases-full-width">
+                <label className="purchases-label">Item / Species Description *</label>
+                <input
+                  type="text"
+                  className="purchases-input"
+                  value={formData.item}
+                  onChange={(e) => setFormData({ ...formData, item: e.target.value })}
+                  placeholder="e.g. Grade-A Nilambur Teak Planks (6x4)"
+                  required
+                />
+              </div>
+              <div className="purchases-input-group">
+                <label className="purchases-label">Wood Category</label>
+                <select
+                  className="purchases-select"
+                  value={formData.category}
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                >
+                  <option value="Timber Logs">Timber Logs</option>
+                  <option value="Hardwood Timber">Hardwood Timber</option>
+                  <option value="Structural Lumber">Structural Lumber</option>
+                  <option value="Sawn Wood">Sawn Wood</option>
+                  <option value="Hardware & Finishes">Hardware & Finishes</option>
+                </select>
+              </div>
+              <div className="purchases-input-group">
+                <label className="purchases-label">Quantity / Volume</label>
+                <input
+                  type="text"
+                  className="purchases-input"
+                  value={formData.quantity}
+                  onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                  placeholder="e.g. 50 Pcs / 120 CFT"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Card 3: Financials & Settlement */}
+          <div className="purchases-form-card">
+            <div className="purchases-card-heading">
+              <div className="purchases-card-icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="4" width="20" height="16" rx="2" />
+                  <line x1="2" y1="10" x2="22" y2="10" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="purchases-card-title">Financials & Settlement</h3>
+                <p className="purchases-card-desc">Procurement cost, tax, and settlement terms</p>
+              </div>
+            </div>
+            <div className="purchases-form-grid">
+              <div className="purchases-input-group">
+                <label className="purchases-label">Purchase Amount (₹) *</label>
+                <input
+                  type="number"
+                  min="0"
+                  className="purchases-input"
+                  value={formData.amount}
+                  onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                  placeholder="145000"
+                  required
+                />
+              </div>
+              <div className="purchases-input-group">
+                <label className="purchases-label">GST Tax (₹)</label>
+                <input
+                  type="number"
+                  min="0"
+                  className="purchases-input"
+                  value={formData.gstAmount}
+                  onChange={(e) => setFormData({ ...formData, gstAmount: e.target.value })}
+                  placeholder="26100"
+                />
+              </div>
+              <div className="purchases-input-group">
+                <label className="purchases-label">Payment Mode *</label>
+                <select
+                  className="purchases-select"
+                  value={formData.paymentMode}
+                  onChange={(e) => setFormData({ ...formData, paymentMode: e.target.value })}
+                >
+                  <option value="Bank Wire">Bank Wire / NEFT / RTGS</option>
+                  <option value="UPI">UPI Transfer</option>
+                  <option value="Cash">Cash Settlement</option>
+                  <option value="Cheque">Commercial Cheque</option>
+                </select>
+              </div>
+              <div className="purchases-input-group">
+                <label className="purchases-label">Total Outflow (₹)</label>
+                <div className="purchases-computed-box">
+                  ₹{((Number(formData.amount) || 0) + (Number(formData.gstAmount) || 0)).toLocaleString('en-IN')}
+                </div>
+              </div>
+              <div className="purchases-input-group purchases-full-width">
+                <label className="purchases-label">Procurement Remarks / Notes</label>
+                <textarea
+                  className="purchases-textarea"
+                  rows="3"
+                  value={formData.notes || ''}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  placeholder="Add delivery vehicle number, lorry receipt, or timber grade notes..."
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Form Bottom Actions */}
+          <div className="purchases-form-bottom-actions">
+            <button
+              type="button"
+              className="btn-purchases-cancel"
+              onClick={() => setViewMode('list')}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="btn-purchases-submit"
+            >
+              {editingPurchase ? 'Update Consignment' : 'Save Inward Consignment'}
+            </button>
+          </div>
+        </form>
+      </div>
+    )
   }
 
   return (
@@ -470,148 +751,6 @@ export default function Purchases() {
           </div>
         </div>
       </div>
-
-      {/* Add / Edit Purchase Modal */}
-      {modalOpen && (
-        <div className="purchases-modal-overlay" onClick={() => setModalOpen(false)}>
-          <div className="purchases-modal-card" onClick={(e) => e.stopPropagation()}>
-            <div className="purchases-modal-header">
-              <h3 className="purchases-modal-title">
-                {editingPurchase ? `Edit Purchase • ${formData.invoiceNumber}` : 'Record Inward Timber Purchase'}
-              </h3>
-              <button type="button" className="purchases-modal-close-btn" onClick={() => setModalOpen(false)}>
-                ✕
-              </button>
-            </div>
-            <form onSubmit={handleSavePurchase}>
-              <div className="purchases-modal-body">
-                <div className="purchases-form-grid">
-                  <div className="purchases-input-group">
-                    <label className="purchases-label">Purchase Invoice # *</label>
-                    <input
-                      type="text"
-                      className="purchases-input"
-                      value={formData.invoiceNumber}
-                      onChange={(e) => setFormData({ ...formData, invoiceNumber: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="purchases-input-group">
-                    <label className="purchases-label">Purchase Date *</label>
-                    <input
-                      type="date"
-                      className="purchases-input"
-                      value={formData.date}
-                      onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                      required
-                    />
-                  </div>
-                  <div className="purchases-input-group">
-                    <label className="purchases-label">Supplier / Mill Name *</label>
-                    <input
-                      type="text"
-                      className="purchases-input"
-                      value={formData.supplier}
-                      onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
-                      placeholder="e.g. Wayanad Forest Mills"
-                      required
-                    />
-                  </div>
-                  <div className="purchases-input-group">
-                    <label className="purchases-label">Supplier Phone</label>
-                    <input
-                      type="text"
-                      className="purchases-input"
-                      value={formData.supplierPhone}
-                      onChange={(e) => setFormData({ ...formData, supplierPhone: e.target.value })}
-                      placeholder="+91 94471 28910"
-                    />
-                  </div>
-                  <div className="purchases-input-group purchases-full-width">
-                    <label className="purchases-label">Item / Species Description *</label>
-                    <input
-                      type="text"
-                      className="purchases-input"
-                      value={formData.item}
-                      onChange={(e) => setFormData({ ...formData, item: e.target.value })}
-                      placeholder="e.g. Grade-A Nilambur Teak Planks (6x4)"
-                      required
-                    />
-                  </div>
-                  <div className="purchases-input-group">
-                    <label className="purchases-label">Category</label>
-                    <select
-                      className="purchases-select"
-                      value={formData.category}
-                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    >
-                      <option value="Timber Logs">Timber Logs</option>
-                      <option value="Hardwood Timber">Hardwood Timber</option>
-                      <option value="Structural Lumber">Structural Lumber</option>
-                      <option value="Sawn Wood">Sawn Wood</option>
-                      <option value="Hardware & Finishes">Hardware & Finishes</option>
-                    </select>
-                  </div>
-                  <div className="purchases-input-group">
-                    <label className="purchases-label">Quantity / Volume</label>
-                    <input
-                      type="text"
-                      className="purchases-input"
-                      value={formData.quantity}
-                      onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
-                      placeholder="e.g. 50 Pcs / 120 CFT"
-                    />
-                  </div>
-                  <div className="purchases-input-group">
-                    <label className="purchases-label">Purchase Amount (₹) *</label>
-                    <input
-                      type="number"
-                      min="0"
-                      className="purchases-input"
-                      value={formData.amount}
-                      onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                      placeholder="145000"
-                      required
-                    />
-                  </div>
-                  <div className="purchases-input-group">
-                    <label className="purchases-label">GST Tax (₹)</label>
-                    <input
-                      type="number"
-                      min="0"
-                      className="purchases-input"
-                      value={formData.gstAmount}
-                      onChange={(e) => setFormData({ ...formData, gstAmount: e.target.value })}
-                      placeholder="26100"
-                    />
-                  </div>
-                  <div className="purchases-input-group purchases-full-width">
-                    <label className="purchases-label">Payment Mode *</label>
-                    <select
-                      className="purchases-select"
-                      value={formData.paymentMode}
-                      onChange={(e) => setFormData({ ...formData, paymentMode: e.target.value })}
-                    >
-                      <option value="Bank Wire">Bank Wire / NEFT / RTGS</option>
-                      <option value="UPI">UPI Transfer</option>
-                      <option value="Cash">Cash Settlement</option>
-                      <option value="Cheque">Commercial Cheque</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-              <div className="purchases-modal-footer">
-                <button type="button" className="btn-purchases-cancel" onClick={() => setModalOpen(false)}>
-                  Cancel
-                </button>
-                <button type="submit" className="btn-purchases-submit">
-                  {editingPurchase ? 'Save Changes' : 'Record Purchase'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* View Dossier Modal */}
       {viewDossierPurchase && (

@@ -66,7 +66,7 @@ export function numberToWordsINR(num) {
 export function printInvoiceDocument(modalBillData, settings = {}, defaultLogo = '') {
   if (!modalBillData) return
 
-  const invNumber = modalBillData.invoiceNumber || modalBillData.invoice || modalBillData.id || 'INV-1001'
+  const invNumber = modalBillData.invoiceNumber || modalBillData.invoice || modalBillData.id || '100'
   const invDate = modalBillData.invoiceDate || modalBillData.date || new Date().toISOString().split('T')[0]
 
   const rawCust = modalBillData.customer

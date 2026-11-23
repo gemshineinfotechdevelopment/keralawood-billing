@@ -520,3 +520,155 @@
 .btn-purchases-submit:hover {
   background-color: #4A2711;
 }
+
+/* ===================================================
+   Full Page Record Purchase Form Styles
+   =================================================== */
+.purchases-form-page {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.purchases-form-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.btn-purchases-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #7A4E2D;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+
+.btn-purchases-back-link:hover {
+  background-color: #F4E8DF;
+  color: #31190B;
+}
+
+.purchases-form-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.purchases-form-header {
+  margin-bottom: 24px;
+}
+
+.purchases-form-main-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #31190B;
+  margin: 0 0 6px 0;
+  letter-spacing: -0.3px;
+}
+
+.purchases-form-subtitle {
+  font-size: 13px;
+  color: #7D6C63;
+  margin: 0;
+}
+
+.purchases-fullpage-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.purchases-form-card {
+  background-color: #FFFFFF;
+  border: 1px solid #EAE0D8;
+  border-radius: 10px;
+  padding: 22px 24px;
+  box-shadow: 0 1px 3px rgba(49, 25, 11, 0.04);
+}
+
+.purchases-card-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #F0E6DE;
+}
+
+.purchases-card-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background-color: #FAF4EF;
+  border: 1px solid #EAE0D8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #7A4E2D;
+}
+
+.purchases-card-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #31190B;
+}
+
+.purchases-card-desc {
+  margin: 2px 0 0 0;
+  font-size: 12px;
+  color: #8C7B72;
+}
+
+.purchases-helper-text {
+  font-size: 11px;
+  color: #8C7B72;
+  margin-top: 3px;
+}
+
+.purchases-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1.5px solid #D3C4B8;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #31190B;
+  background-color: #FFFFFF;
+  box-sizing: border-box;
+  font-family: inherit;
+  resize: vertical;
+  transition: all 0.15s ease;
+}
+
+.purchases-textarea:focus {
+  outline: none;
+  border-color: #C88D58;
+  box-shadow: 0 0 0 3px rgba(200, 141, 88, 0.18);
+}
+
+.purchases-computed-box {
+  padding: 9px 12px;
+  background-color: #FAF4EF;
+  border: 1.5px solid #E2CEBE;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 800;
+  color: #31190B;
+  display: flex;
+  align-items: center;
+}
+
+.purchases-form-bottom-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 0 24px 0;
+}

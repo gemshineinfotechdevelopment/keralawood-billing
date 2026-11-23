@@ -678,7 +678,8 @@ app.delete('/api/sales/:invoice', async (req, res) => {
 app.post('/api/sales', async (req, res) => {
   try {
     const data = req.body;
-    const invNo = data.invoice || data.invoiceNumber || data.id || `INV-${Date.now().toString().slice(-4)}`;
+    const totalSalesCount = await Sale.countDocuments();
+    const invNo = data.invoice || data.invoiceNumber || data.id || String(100 + totalSalesCount);
     const rawAmt =
       typeof data.amount === 'number'
         ? data.amount
@@ -949,7 +950,7 @@ app.post('/api/purchases', async (req, res) => {
     }
 
     const totalCount = await Purchase.countDocuments();
-    const invoiceNumber = data.invoiceNumber?.trim() || `PUR-${100 + totalCount + 1}`;
+    const invoiceNumber = data.invoiceNumber?.trim() || String(100 + totalCount);
 
     const newPurchase = new Purchase({
       invoiceNumber,
@@ -1065,7 +1066,7 @@ app.post('/api/sales-persons', async (req, res) => {
     }
 
     const totalCount = await SalesPerson.countDocuments();
-    const code = data.code?.trim() || `SP-${100 + totalCount + 1}`;
+    const code = data.code?.trim() || String(100 + totalCount);
 
     const newPerson = new SalesPerson({
       code,

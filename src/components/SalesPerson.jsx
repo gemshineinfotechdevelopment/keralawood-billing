@@ -63,7 +63,7 @@ export default function SalesPerson() {
   const handleOpenAdd = () => {
     setEditingPerson(null)
     setFormData({
-      code: `SP-${100 + salesPersons.length + 1}`,
+      code: DataStore.getNextSalesPersonCode(),
       name: '',
       phone: '',
       ordersClosed: '0',
@@ -90,7 +90,7 @@ export default function SalesPerson() {
     }
 
     const payload = {
-      code: formData.code.trim() || `SP-${100 + salesPersons.length + 1}`,
+      code: formData.code.trim().replace(/\D/g, '') || DataStore.getNextSalesPersonCode(),
       name: formData.name.trim(),
       phone: formData.phone.trim(),
       ordersClosed: Number(formData.ordersClosed) || 0,

@@ -690,7 +690,7 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
         balanceDue,
       }
     }
-    const inv = previewBill.invoice || previewBill.invoiceNumber || previewBill.id || 'INV-000'
+    const inv = previewBill.invoice || previewBill.invoiceNumber || previewBill.id || '100'
     const dt = previewBill.date || new Date().toLocaleDateString('en-GB')
     const due = previewBill.dueDate || '15 Days Net'
     const st = previewBill.paymentStatus || previewBill.status || 'Paid'
@@ -1184,7 +1184,7 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
                     </tr>
                   ) : (
                     paginatedSavedBills.map((bill, idx) => {
-                      const inv = bill.invoice || bill.invoiceNumber || bill.id || `INV-${idx + 1}`
+                      const inv = bill.invoice || bill.invoiceNumber || bill.id || String(100 + idx)
                       const rawAmt = bill.rawAmount !== undefined
                         ? bill.rawAmount
                         : Number(String(bill.amount || 0).replace(/[^0-9.]/g, '')) || 0
@@ -1457,7 +1457,7 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
                   className="pos-input"
                   value={invoiceNumber}
                   onChange={(e) => updateCurrentBill({ invoiceNumber: e.target.value })}
-                  placeholder="INV-1001"
+                  placeholder="100"
                 />
               </div>
 
@@ -2084,7 +2084,7 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
               <div className="dossier-drawer-header-top">
                 <div className="dossier-badge-wrap">
                   <span className="dossier-eyebrow">BILL DOSSIER</span>
-                  <span className="dossier-badge-pill">{invoiceNumber || 'INV-1001'}</span>
+                  <span className="dossier-badge-pill">{invoiceNumber || '100'}</span>
                   <span style={{
                     display: 'inline-flex',
                     alignItems: 'center',
