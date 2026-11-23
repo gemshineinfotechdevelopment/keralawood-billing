@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { DataStore } from '../services/dataStore'
+import { validateRequired, validatePhone, validatePositiveNumber } from '../utils/validators'
 import './Purchases.css'
 
 export default function Purchases() {
@@ -13,6 +14,7 @@ export default function Purchases() {
   const [viewDossierPurchase, setViewDossierPurchase] = useState(null)
   const [deleteModalPurchase, setDeleteModalPurchase] = useState(null)
   const [toastMessage, setToastMessage] = useState('')
+  const [formErrors, setFormErrors] = useState({})
 
   // Form State
   const [formData, setFormData] = useState({
@@ -65,9 +67,9 @@ export default function Purchases() {
     })
   }, [purchases, searchQuery, paymentModeFilter])
 
-  const totalPages = Math.max(1, Math.ceil(filteredPurchases.length / itemsPerPage))
-  const safePage = Math.min(currentPage, totalPages)
-  const paginatedPurchases = filteredPurchases.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage)
+  const totalPages = Math.ceil(filteredPurchases.length / itemsPerPage)
+  const safePage = totalPages > 0 ? Math.min(currentPage, totalPages) : 1
+  const paginatedPurchases = totalPages > 0 ? filteredPurchases.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage) : []
 
   // KPIs
   const totalSpend = useMemo(() => {
@@ -111,6 +113,7 @@ export default function Purchases() {
       paymentMode: 'Bank Wire',
       notes: '',
     })
+    setFormErrors({})
     setViewMode('form')
   }
 
@@ -131,20 +134,38 @@ export default function Purchases() {
       paymentMode: p.paymentMode || 'Bank Wire',
       notes: p.notes || '',
     })
+    setFormErrors({})
     setViewMode('form')
   }
 
   const handleSavePurchase = (e) => {
     e.preventDefault()
-    if (!formData.supplier.trim() || !formData.item.trim() || !formData.amount) {
-      alert('Please fill in Supplier Name, Item Description, and Purchase Amount.')
+    const supplierVal = validateRequired(formData.supplier, 'Supplier Name', 2)
+    const phoneVal = validatePhone(formData.supplierPhone, false)
+    const itemVal = validateRequired(formData.item, 'Item Description', 2)
+    const amountVal = validatePositiveNumber(formData.amount, 'Purchase Amount', false)
+    const gstVal = formData.gstAmount ? validatePositiveNumber(formData.gstAmount, 'GST Tax', true) : { isValid: true, error: '' }
+
+    const errs = {}
+    if (!supplierVal.isValid) errs.supplier = supplierVal.error
+    if (!phoneVal.isValid) errs.supplierPhone = phoneVal.error
+    if (!itemVal.isValid) errs.item = itemVal.error
+    if (!amountVal.isValid) errs.amount = amountVal.error
+    if (!gstVal.isValid) errs.gstAmount = gstVal.error
+
+    if (Object.keys(errs).length > 0) {
+      setFormErrors(errs)
+      showToast('⚠️ Please correct highlighted purchase fields')
       return
     }
+    setFormErrors({})
 
     const cleanInvoiceNumber = String(formData.invoiceNumber).trim().replace(/\D/g, '') || DataStore.getNextPurchaseNumber()
+    const cleanPhone = phoneVal.clean ? `+91 ${phoneVal.clean}` : formData.supplierPhone.trim()
 
     const payload = {
       ...formData,
+      supplierPhone: cleanPhone,
       invoiceNumber: cleanInvoiceNumber,
       amount: Number(formData.amount) || 0,
       gstAmount: Number(formData.gstAmount) || 0,
@@ -279,22 +300,30 @@ export default function Purchases() {
                 <label className="purchases-label">Supplier / Mill Name *</label>
                 <input
                   type="text"
-                  className="purchases-input"
+                  className={`purchases-input ${formErrors.supplier ? 'kwf-input-error' : ''}`}
                   value={formData.supplier}
-                  onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, supplier: e.target.value })
+                    if (formErrors.supplier) setFormErrors({ ...formErrors, supplier: '' })
+                  }}
                   placeholder="e.g. Wayanad Forest Mills"
                   required
                 />
+                {formErrors.supplier && <span className="kwf-field-error">{formErrors.supplier}</span>}
               </div>
               <div className="purchases-input-group">
                 <label className="purchases-label">Supplier Phone</label>
                 <input
                   type="text"
-                  className="purchases-input"
+                  className={`purchases-input ${formErrors.supplierPhone ? 'kwf-input-error' : ''}`}
                   value={formData.supplierPhone}
-                  onChange={(e) => setFormData({ ...formData, supplierPhone: e.target.value })}
-                  placeholder="+91 94471 28910"
+                  onChange={(e) => {
+                    setFormData({ ...formData, supplierPhone: e.target.value })
+                    if (formErrors.supplierPhone) setFormErrors({ ...formErrors, supplierPhone: '' })
+                  }}
+                  placeholder="94471 28910"
                 />
+                {formErrors.supplierPhone && <span className="kwf-field-error">{formErrors.supplierPhone}</span>}
               </div>
             </div>
           </div>
@@ -319,12 +348,16 @@ export default function Purchases() {
                 <label className="purchases-label">Item / Species Description *</label>
                 <input
                   type="text"
-                  className="purchases-input"
+                  className={`purchases-input ${formErrors.item ? 'kwf-input-error' : ''}`}
                   value={formData.item}
-                  onChange={(e) => setFormData({ ...formData, item: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, item: e.target.value })
+                    if (formErrors.item) setFormErrors({ ...formErrors, item: '' })
+                  }}
                   placeholder="e.g. Grade-A Nilambur Teak Planks (6x4)"
                   required
                 />
+                {formErrors.item && <span className="kwf-field-error">{formErrors.item}</span>}
               </div>
               <div className="purchases-input-group">
                 <label className="purchases-label">Wood Category</label>
@@ -373,23 +406,31 @@ export default function Purchases() {
                 <input
                   type="number"
                   min="0"
-                  className="purchases-input"
+                  className={`purchases-input ${formErrors.amount ? 'kwf-input-error' : ''}`}
                   value={formData.amount}
-                  onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, amount: e.target.value })
+                    if (formErrors.amount) setFormErrors({ ...formErrors, amount: '' })
+                  }}
                   placeholder="145000"
                   required
                 />
+                {formErrors.amount && <span className="kwf-field-error">{formErrors.amount}</span>}
               </div>
               <div className="purchases-input-group">
                 <label className="purchases-label">GST Tax (₹)</label>
                 <input
                   type="number"
                   min="0"
-                  className="purchases-input"
+                  className={`purchases-input ${formErrors.gstAmount ? 'kwf-input-error' : ''}`}
                   value={formData.gstAmount}
-                  onChange={(e) => setFormData({ ...formData, gstAmount: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, gstAmount: e.target.value })
+                    if (formErrors.gstAmount) setFormErrors({ ...formErrors, gstAmount: '' })
+                  }}
                   placeholder="26100"
                 />
+                {formErrors.gstAmount && <span className="kwf-field-error">{formErrors.gstAmount}</span>}
               </div>
               <div className="purchases-input-group">
                 <label className="purchases-label">Payment Mode *</label>
@@ -702,7 +743,11 @@ export default function Purchases() {
         <div className="patron-table-footer">
           <div className="patron-footer-left">
             <span className="showing-records-text">
-              Showing <strong>{filteredPurchases.length > 0 ? `${(safePage - 1) * itemsPerPage + 1}-${Math.min(safePage * itemsPerPage, filteredPurchases.length)}` : '0'}</strong> of {filteredPurchases.length} consignments
+              Showing <strong>{filteredPurchases.length > 0 ? (
+                (safePage - 1) * itemsPerPage + 1 === Math.min(safePage * itemsPerPage, filteredPurchases.length)
+                  ? `${(safePage - 1) * itemsPerPage + 1}`
+                  : `${(safePage - 1) * itemsPerPage + 1}-${Math.min(safePage * itemsPerPage, filteredPurchases.length)}`
+              ) : '0'}</strong> of {filteredPurchases.length} consignments
             </span>
             <div className="patron-per-page-wrap">
               <span className="patron-per-page-label">Show:</span>
@@ -725,25 +770,36 @@ export default function Purchases() {
             <button
               type="button"
               className="pagination-arrow"
-              disabled={safePage <= 1}
+              disabled={safePage <= 1 || totalPages <= 1}
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             >
               ‹
             </button>
-            {Array.from({ length: totalPages }, (_, idx) => idx + 1).map((num) => (
+            {totalPages > 0 && filteredPurchases.length > 0 ? (
+              Array.from({ length: totalPages }, (_, idx) => idx + 1).map((num) => (
+                <button
+                  key={num}
+                  type="button"
+                  className={`pagination-num ${safePage === num ? 'active' : ''}`}
+                  onClick={() => setCurrentPage(num)}
+                >
+                  {num}
+                </button>
+              ))
+            ) : (
               <button
-                key={num}
                 type="button"
-                className={`pagination-num ${safePage === num ? 'active' : ''}`}
-                onClick={() => setCurrentPage(num)}
+                className="pagination-num"
+                disabled
+                style={{ opacity: 0.4, cursor: 'default' }}
               >
-                {num}
+                -
               </button>
-            ))}
+            )}
             <button
               type="button"
               className="pagination-arrow"
-              disabled={safePage >= totalPages}
+              disabled={safePage >= totalPages || totalPages <= 1}
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
             >
               ›

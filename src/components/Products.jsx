@@ -180,11 +180,11 @@ export default function Products({ initialViewMode = 'list' }) {
 
   // Dynamic Pagination calculations
   const totalItems = sortedProducts.length
-  const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage))
-  const safePage = Math.min(currentPage, totalPages)
-  const startIndex = (safePage - 1) * itemsPerPage
+  const totalPages = totalItems > 0 ? Math.ceil(totalItems / itemsPerPage) : 0
+  const safePage = totalPages > 0 ? Math.min(currentPage, totalPages) : 1
+  const startIndex = totalPages > 0 ? (safePage - 1) * itemsPerPage : 0
   const endIndex = Math.min(startIndex + itemsPerPage, totalItems)
-  const paginatedProducts = sortedProducts.slice(startIndex, endIndex)
+  const paginatedProducts = totalPages > 0 ? sortedProducts.slice(startIndex, endIndex) : []
 
   // Product Catalog KPI Metrics (Stock metrics removed per user requirement)
   const avgCatalogPrice = products.length > 0
@@ -489,7 +489,11 @@ export default function Products({ initialViewMode = 'list' }) {
         <div className="patron-table-footer">
           <div className="patron-footer-left">
             <span className="showing-records-text">
-              Showing <strong>{filteredProducts.length > 0 ? `${startIndex + 1}-${endIndex}` : '0'}</strong> of {filteredProducts.length} products
+              Showing <strong>{filteredProducts.length > 0 ? (
+                startIndex + 1 === endIndex
+                  ? `${startIndex + 1}`
+                  : `${startIndex + 1}-${endIndex}`
+              ) : '0'}</strong> of {filteredProducts.length} products
             </span>
             <div className="patron-per-page-wrap">
               <span className="patron-per-page-label">Show:</span>
@@ -512,25 +516,36 @@ export default function Products({ initialViewMode = 'list' }) {
             <button
               type="button"
               className="pagination-arrow"
-              disabled={safePage <= 1}
+              disabled={safePage <= 1 || totalPages <= 1}
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             >
               ‹
             </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((num) => (
+            {totalPages > 0 && filteredProducts.length > 0 ? (
+              Array.from({ length: totalPages }, (_, i) => i + 1).map((num) => (
+                <button
+                  key={num}
+                  type="button"
+                  className={`pagination-num ${safePage === num ? 'active' : ''}`}
+                  onClick={() => setCurrentPage(num)}
+                >
+                  {num}
+                </button>
+              ))
+            ) : (
               <button
-                key={num}
                 type="button"
-                className={`pagination-num ${safePage === num ? 'active' : ''}`}
-                onClick={() => setCurrentPage(num)}
+                className="pagination-num"
+                disabled
+                style={{ opacity: 0.4, cursor: 'default' }}
               >
-                {num}
+                -
               </button>
-            ))}
+            )}
             <button
               type="button"
               className="pagination-arrow"
-              disabled={safePage >= totalPages}
+              disabled={safePage >= totalPages || totalPages <= 1}
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
             >
               ›

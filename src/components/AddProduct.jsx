@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { DataStore } from '../services/dataStore'
 import { uploadImageToCloudinary } from '../services/cloudinaryService'
+import { validateRequired, validatePositiveNumber } from '../utils/validators'
 import './AddProduct.css'
 
 const DEFAULT_CATEGORIES = [
@@ -88,6 +89,7 @@ export default function AddProduct({ onProductSaved, onCancel, editProduct = nul
   const [isSaving, setIsSaving] = useState(false)
   const [savedSuccess, setSavedSuccess] = useState(false)
   const [toastMsg, setToastMsg] = useState('')
+  const [formErrors, setFormErrors] = useState({})
 
   // Reset / Clear form for fresh new product entry
   const handleAddNewProductForm = () => {
@@ -223,6 +225,27 @@ export default function AddProduct({ onProductSaved, onCancel, editProduct = nul
   }
 
   const handleSaveProduct = async () => {
+    const nameVal = validateRequired(productName, 'Product Name', 2)
+    const catVal = validateRequired(category, 'Category', 1)
+    const priceVal = validatePositiveNumber(sellingPrice || unitPrice, 'Selling Price', false)
+    const costVal = costPrice ? validatePositiveNumber(costPrice, 'Cost Price', true) : { isValid: true, error: '' }
+    const stockVal = validatePositiveNumber(stockQuantity === '' ? '0' : stockQuantity, 'Stock Quantity', true)
+
+    const errs = {}
+    if (!nameVal.isValid) errs.productName = nameVal.error
+    if (!catVal.isValid) errs.category = catVal.error
+    if (!priceVal.isValid) errs.sellingPrice = priceVal.error
+    if (!costVal.isValid) errs.costPrice = costVal.error
+    if (!stockVal.isValid) errs.stockQuantity = stockVal.error
+
+    if (Object.keys(errs).length > 0) {
+      setFormErrors(errs)
+      setToastMsg('⚠️ Please fill all required product fields correctly')
+      setTimeout(() => setToastMsg(''), 3000)
+      return
+    }
+    setFormErrors({})
+
     setIsSaving(true)
     const numericSellingPrice = Number(String(sellingPrice || unitPrice).replace(/[^0-9.]/g, '')) || 0
     const numericCostPrice = Number(String(costPrice).replace(/[^0-9.]/g, '')) || 0
@@ -449,11 +472,15 @@ export default function AddProduct({ onProductSaved, onCancel, editProduct = nul
             <label className="field-label">Product Name *</label>
             <input
               type="text"
-              className="input-styled"
+              className={`input-styled ${formErrors.productName ? 'kwf-input-error' : ''}`}
               placeholder="e.g. Solid Rosewood Dressing Table with Mirror"
               value={productName}
-              onChange={(e) => setProductName(e.target.value)}
+              onChange={(e) => {
+                setProductName(e.target.value)
+                if (formErrors.productName) setFormErrors({ ...formErrors, productName: '' })
+              }}
             />
+            {formErrors.productName && <span className="kwf-field-error">{formErrors.productName}</span>}
           </div>
 
           <div className="form-row-2col">
@@ -469,9 +496,12 @@ export default function AddProduct({ onProductSaved, onCancel, editProduct = nul
                 </button>
               </div>
               <select
-                className="select-styled"
+                className={`select-styled ${formErrors.category ? 'kwf-input-error' : ''}`}
                 value={category}
-                onChange={(e) => setCategory(e.target.value)}
+                onChange={(e) => {
+                  setCategory(e.target.value)
+                  if (formErrors.category) setFormErrors({ ...formErrors, category: '' })
+                }}
               >
                 {categories.map((cat) => (
                   <option key={cat} value={cat}>
@@ -479,6 +509,7 @@ export default function AddProduct({ onProductSaved, onCancel, editProduct = nul
                   </option>
                 ))}
               </select>
+              {formErrors.category && <span className="kwf-field-error">{formErrors.category}</span>}
             </div>
 
             <div className="form-field-group">
@@ -629,11 +660,15 @@ export default function AddProduct({ onProductSaved, onCancel, editProduct = nul
               <label className="field-label">Stock Quantity</label>
               <input
                 type="text"
-                className="input-styled"
+                className={`input-styled ${formErrors.stockQuantity ? 'kwf-input-error' : ''}`}
                 placeholder="e.g. 4"
                 value={stockQuantity}
-                onChange={(e) => setStockQuantity(e.target.value)}
+                onChange={(e) => {
+                  setStockQuantity(e.target.value)
+                  if (formErrors.stockQuantity) setFormErrors({ ...formErrors, stockQuantity: '' })
+                }}
               />
+              {formErrors.stockQuantity && <span className="kwf-field-error">{formErrors.stockQuantity}</span>}
             </div>
             <div className="form-field-group">
               <label className="field-label">Low Stock Alert Threshold</label>
@@ -679,24 +714,30 @@ export default function AddProduct({ onProductSaved, onCancel, editProduct = nul
               <label className="field-label">Cost Price (₹) *</label>
               <input
                 type="text"
-                className="input-styled"
+                className={`input-styled ${formErrors.costPrice ? 'kwf-input-error' : ''}`}
                 placeholder="e.g. 18000"
                 value={costPrice}
-                onChange={(e) => setCostPrice(e.target.value)}
+                onChange={(e) => {
+                  setCostPrice(e.target.value)
+                  if (formErrors.costPrice) setFormErrors({ ...formErrors, costPrice: '' })
+                }}
               />
+              {formErrors.costPrice && <span className="kwf-field-error">{formErrors.costPrice}</span>}
             </div>
             <div className="form-field-group">
               <label className="field-label">Selling Price (₹) *</label>
               <input
                 type="text"
-                className="input-styled"
+                className={`input-styled ${formErrors.sellingPrice ? 'kwf-input-error' : ''}`}
                 placeholder="e.g. 29500"
                 value={sellingPrice}
                 onChange={(e) => {
                   setSellingPrice(e.target.value)
                   setUnitPrice(e.target.value)
+                  if (formErrors.sellingPrice) setFormErrors({ ...formErrors, sellingPrice: '' })
                 }}
               />
+              {formErrors.sellingPrice && <span className="kwf-field-error">{formErrors.sellingPrice}</span>}
             </div>
           </div>
 

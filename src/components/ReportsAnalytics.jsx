@@ -210,11 +210,12 @@ export default function ReportsAnalytics() {
 
   // Pagination states: minimum 20 transactions per page
   const [itemsPerPage, setItemsPerPage] = useState(20)
-  const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1
-  const displayed = filtered.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  )
+  const totalPages = filtered.length > 0 ? Math.ceil(filtered.length / itemsPerPage) : 0
+  const safeCurrentPage = totalPages > 0 ? Math.min(currentPage, totalPages) : 1
+  const displayed = totalPages > 0 ? filtered.slice(
+    (safeCurrentPage - 1) * itemsPerPage,
+    safeCurrentPage * itemsPerPage
+  ) : []
 
   const handleExport = () => {
     setExportSuccess(true)
@@ -887,7 +888,11 @@ export default function ReportsAnalytics() {
         <div className="patron-table-footer">
           <div className="patron-footer-left">
             <span className="showing-records-text">
-              Showing <strong>{filtered.length > 0 ? `${(currentPage - 1) * itemsPerPage + 1}-${Math.min(currentPage * itemsPerPage, filtered.length)}` : '0'}</strong> of {filtered.length} transactions
+              Showing <strong>{filtered.length > 0 ? (
+                (safeCurrentPage - 1) * itemsPerPage + 1 === Math.min(safeCurrentPage * itemsPerPage, filtered.length)
+                  ? `${(safeCurrentPage - 1) * itemsPerPage + 1}`
+                  : `${(safeCurrentPage - 1) * itemsPerPage + 1}-${Math.min(safeCurrentPage * itemsPerPage, filtered.length)}`
+              ) : '0'}</strong> of {filtered.length} transactions
             </span>
             <div className="patron-per-page-wrap">
               <span className="patron-per-page-label">Show:</span>
@@ -910,25 +915,36 @@ export default function ReportsAnalytics() {
             <button
               type="button"
               className="pagination-arrow"
-              disabled={currentPage <= 1}
+              disabled={safeCurrentPage <= 1 || totalPages <= 1}
               onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
             >
               ‹
             </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((num) => (
+            {totalPages > 0 && filtered.length > 0 ? (
+              Array.from({ length: totalPages }, (_, i) => i + 1).map((num) => (
+                <button
+                  key={num}
+                  type="button"
+                  className={`pagination-num ${safeCurrentPage === num ? 'active' : ''}`}
+                  onClick={() => setCurrentPage(num)}
+                >
+                  {num}
+                </button>
+              ))
+            ) : (
               <button
-                key={num}
                 type="button"
-                className={`pagination-num ${currentPage === num ? 'active' : ''}`}
-                onClick={() => setCurrentPage(num)}
+                className="pagination-num"
+                disabled
+                style={{ opacity: 0.4, cursor: 'default' }}
               >
-                {num}
+                -
               </button>
-            ))}
+            )}
             <button
               type="button"
               className="pagination-arrow"
-              disabled={currentPage >= totalPages}
+              disabled={safeCurrentPage >= totalPages || totalPages <= 1}
               onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
             >
               ›

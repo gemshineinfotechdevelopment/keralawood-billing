@@ -1,10 +1,14 @@
 import { useState, useEffect } from 'react'
 import { DataStore } from '../services/dataStore'
 import { uploadImageToCloudinary } from '../services/cloudinaryService'
+import { validateRequired, validatePhone, validateEmail, validateGSTIN, validateHSN } from '../utils/validators'
 import './Settings.css'
 
 export default function Settings() {
   const initial = DataStore.getSettings()
+
+  // Form error state
+  const [formErrors, setFormErrors] = useState({})
 
   // General Depot Profile
   const [depotName, setDepotName] = useState(initial.depotName || 'Kerala Wood Furniture - Sivakasi Depot')
@@ -109,17 +113,38 @@ export default function Settings() {
   }
 
   const handleSaveSettings = () => {
+    const nameVal = validateRequired(depotName, 'Depot Name', 2)
+    const phoneVal = validatePhone(contactPhone, true)
+    const emailVal = validateEmail(contactEmail, false)
+    const gstinVal = validateGSTIN(gstin, false)
+    const hsnVal = validateHSN(hsnCode, false)
+
+    const errs = {}
+    if (!nameVal.isValid) errs.depotName = nameVal.error
+    if (!phoneVal.isValid) errs.contactPhone = phoneVal.error
+    if (!emailVal.isValid) errs.contactEmail = emailVal.error
+    if (!gstinVal.isValid) errs.gstin = gstinVal.error
+    if (!hsnVal.isValid) errs.hsnCode = hsnVal.error
+
+    if (Object.keys(errs).length > 0) {
+      setFormErrors(errs)
+      return
+    }
+    setFormErrors({})
+
+    const cleanPhone = phoneVal.clean ? `+91 ${phoneVal.clean}` : contactPhone.trim()
+
     const updated = {
       ...initial,
-      depotName,
+      depotName: depotName.trim(),
       logoUrl,
-      contactPhone,
-      contactEmail,
-      address,
-      dealerLicense,
-      operatingHours,
-      gstin,
-      hsnCode,
+      contactPhone: cleanPhone,
+      contactEmail: contactEmail.trim(),
+      address: address.trim(),
+      dealerLicense: dealerLicense.trim(),
+      operatingHours: operatingHours.trim(),
+      gstin: gstin.trim().toUpperCase(),
+      hsnCode: hsnCode.trim(),
       taxRate,
       cgstRate,
       sgstRate,
@@ -298,33 +323,45 @@ export default function Settings() {
           </div>
 
           <div className="settings-field-group">
-            <label className="settings-field-label">Depot Name</label>
+            <label className="settings-field-label">Depot Name *</label>
             <input
               type="text"
-              className="settings-input"
+              className={`settings-input ${formErrors.depotName ? 'kwf-input-error' : ''}`}
               value={depotName}
-              onChange={(e) => setDepotName(e.target.value)}
+              onChange={(e) => {
+                setDepotName(e.target.value)
+                if (formErrors.depotName) setFormErrors({ ...formErrors, depotName: '' })
+              }}
             />
+            {formErrors.depotName && <span className="kwf-field-error">{formErrors.depotName}</span>}
           </div>
 
           <div className="settings-form-row-2col">
             <div className="settings-field-group">
-              <label className="settings-field-label">Contact Phone</label>
+              <label className="settings-field-label">Contact Phone *</label>
               <input
                 type="text"
-                className="settings-input"
+                className={`settings-input ${formErrors.contactPhone ? 'kwf-input-error' : ''}`}
                 value={contactPhone}
-                onChange={(e) => setContactPhone(e.target.value)}
+                onChange={(e) => {
+                  setContactPhone(e.target.value)
+                  if (formErrors.contactPhone) setFormErrors({ ...formErrors, contactPhone: '' })
+                }}
               />
+              {formErrors.contactPhone && <span className="kwf-field-error">{formErrors.contactPhone}</span>}
             </div>
             <div className="settings-field-group">
               <label className="settings-field-label">Contact Email</label>
               <input
                 type="text"
-                className="settings-input"
+                className={`settings-input ${formErrors.contactEmail ? 'kwf-input-error' : ''}`}
                 value={contactEmail}
-                onChange={(e) => setContactEmail(e.target.value)}
+                onChange={(e) => {
+                  setContactEmail(e.target.value)
+                  if (formErrors.contactEmail) setFormErrors({ ...formErrors, contactEmail: '' })
+                }}
               />
+              {formErrors.contactEmail && <span className="kwf-field-error">{formErrors.contactEmail}</span>}
             </div>
           </div>
 
@@ -397,19 +434,28 @@ export default function Settings() {
               <label className="settings-field-label">GSTIN Number</label>
               <input
                 type="text"
-                className="settings-input"
+                className={`settings-input ${formErrors.gstin ? 'kwf-input-error' : ''}`}
                 value={gstin}
-                onChange={(e) => setGstin(e.target.value)}
+                maxLength={15}
+                onChange={(e) => {
+                  setGstin(e.target.value.toUpperCase())
+                  if (formErrors.gstin) setFormErrors({ ...formErrors, gstin: '' })
+                }}
               />
+              {formErrors.gstin && <span className="kwf-field-error">{formErrors.gstin}</span>}
             </div>
             <div className="settings-field-group">
               <label className="settings-field-label">Default HSN Code</label>
               <input
                 type="text"
-                className="settings-input"
+                className={`settings-input ${formErrors.hsnCode ? 'kwf-input-error' : ''}`}
                 value={hsnCode}
-                onChange={(e) => setHsnCode(e.target.value)}
+                onChange={(e) => {
+                  setHsnCode(e.target.value)
+                  if (formErrors.hsnCode) setFormErrors({ ...formErrors, hsnCode: '' })
+                }}
               />
+              {formErrors.hsnCode && <span className="kwf-field-error">{formErrors.hsnCode}</span>}
             </div>
             <div className="settings-field-group">
               <label className="settings-field-label">Default Tax Rate (GST)</label>

@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { DataStore } from '../services/dataStore'
+import { validatePhone, validateGSTIN, validateRequired } from '../utils/validators'
 import './Customers.css'
 
 const getInitials = (patron) => {
@@ -30,6 +31,7 @@ export default function Customers({ onNavigateToBilling }) {
   const [newPhone, setNewPhone] = useState('')
   const [newGstin, setNewGstin] = useState('')
   const [newAddress, setNewAddress] = useState('')
+  const [formErrors, setFormErrors] = useState({})
 
   // Listen to store updates
   useEffect(() => {
@@ -151,6 +153,7 @@ export default function Customers({ onNavigateToBilling }) {
     setNewPhone('')
     setNewGstin('')
     setNewAddress('')
+    setFormErrors({})
     setRegisterModalOpen(true)
   }
 
@@ -160,6 +163,7 @@ export default function Customers({ onNavigateToBilling }) {
     setNewPhone(patron.phone || '')
     setNewGstin(patron.gstin && patron.gstin !== 'Unregistered / Personal' ? patron.gstin : '')
     setNewAddress(patron.address || patron.deliveryAddress || patron.location || '')
+    setFormErrors({})
     setRegisterModalOpen(true)
   }
 
@@ -260,9 +264,9 @@ export default function Customers({ onNavigateToBilling }) {
     return list
   }, [filtered, sortBy])
 
-  const totalPages = Math.max(1, Math.ceil(sortedPatrons.length / itemsPerPage))
-  const safePage = Math.min(currentPage, totalPages)
-  const paginatedPatrons = sortedPatrons.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage)
+  const totalPages = Math.ceil(sortedPatrons.length / itemsPerPage)
+  const safePage = totalPages > 0 ? Math.min(currentPage, totalPages) : 1
+  const paginatedPatrons = totalPages > 0 ? sortedPatrons.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage) : []
 
   // Selected patron details
   const currentPatron = enrichedPatrons.find((p) => p.id === selectedCustomerId) || enrichedPatrons[0] || {}
@@ -275,15 +279,30 @@ export default function Customers({ onNavigateToBilling }) {
   // Handle register / update patron
   const handleRegisterSubmit = (e) => {
     e.preventDefault()
-    if (!newName.trim()) return
+    const nameVal = validateRequired(newName, 'Customer Name', 2)
+    const phoneVal = validatePhone(newPhone, true)
+    const gstinVal = validateGSTIN(newGstin, false)
+
+    const errs = {}
+    if (!nameVal.isValid) errs.name = nameVal.error
+    if (!phoneVal.isValid) errs.phone = phoneVal.error
+    if (!gstinVal.isValid) errs.gstin = gstinVal.error
+
+    if (Object.keys(errs).length > 0) {
+      setFormErrors(errs)
+      return
+    }
+    setFormErrors({})
+
+    const cleanPhoneStr = phoneVal.clean ? `+91 ${phoneVal.clean}` : newPhone.trim()
 
     if (editingPatron) {
       const updated = {
         ...editingPatron,
         name: newName.trim(),
         personName: newName.trim(),
-        phone: newPhone.trim(),
-        gstin: newGstin.trim() || 'Unregistered / Personal',
+        phone: cleanPhoneStr,
+        gstin: newGstin.trim().toUpperCase() || 'Unregistered / Personal',
         address: newAddress.trim() || editingPatron.address || 'Sivakasi, Tamil Nadu',
         deliveryAddress: newAddress.trim() || editingPatron.deliveryAddress || editingPatron.address || 'Sivakasi, Tamil Nadu',
         location: newAddress.trim() ? newAddress.trim().split(',')[0].trim() : (editingPatron.location || 'Sivakasi Yard Division'),
@@ -296,8 +315,8 @@ export default function Customers({ onNavigateToBilling }) {
     } else {
       const added = DataStore.addCustomer({
         name: newName.trim(),
-        phone: newPhone.trim() || '+91 98470 00000',
-        gstin: newGstin.trim() || 'Unregistered / Personal',
+        phone: cleanPhoneStr,
+        gstin: newGstin.trim().toUpperCase() || 'Unregistered / Personal',
         address: newAddress.trim() || 'Sivakasi, Tamil Nadu',
         location: newAddress.trim() ? newAddress.trim().split(',')[0].trim() : 'Sivakasi Yard Division',
       })
@@ -668,7 +687,11 @@ export default function Customers({ onNavigateToBilling }) {
           <div className="patron-table-footer">
             <div className="patron-footer-left">
               <span className="showing-records-text">
-                Showing <strong>{filtered.length > 0 ? `${(safePage - 1) * itemsPerPage + 1}-${Math.min(safePage * itemsPerPage, filtered.length)}` : '0'}</strong> of {filtered.length} customers
+                Showing <strong>{filtered.length > 0 ? (
+                  (safePage - 1) * itemsPerPage + 1 === Math.min(safePage * itemsPerPage, filtered.length)
+                    ? `${(safePage - 1) * itemsPerPage + 1}`
+                    : `${(safePage - 1) * itemsPerPage + 1}-${Math.min(safePage * itemsPerPage, filtered.length)}`
+                ) : '0'}</strong> of {filtered.length} customers
               </span>
               <div className="patron-per-page-wrap">
                 <span className="patron-per-page-label">Show:</span>
@@ -691,25 +714,36 @@ export default function Customers({ onNavigateToBilling }) {
               <button
                 type="button"
                 className="pagination-arrow"
-                disabled={safePage <= 1}
+                disabled={safePage <= 1 || totalPages <= 1}
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               >
                 ‹
               </button>
-              {Array.from({ length: totalPages }, (_, idx) => idx + 1).map((num) => (
+              {totalPages > 0 && filtered.length > 0 ? (
+                Array.from({ length: totalPages }, (_, idx) => idx + 1).map((num) => (
+                  <button
+                    key={num}
+                    type="button"
+                    className={`pagination-num ${safePage === num ? 'active' : ''}`}
+                    onClick={() => setCurrentPage(num)}
+                  >
+                    {num}
+                  </button>
+                ))
+              ) : (
                 <button
-                  key={num}
                   type="button"
-                  className={`pagination-num ${safePage === num ? 'active' : ''}`}
-                  onClick={() => setCurrentPage(num)}
+                  className="pagination-num"
+                  disabled
+                  style={{ opacity: 0.4, cursor: 'default' }}
                 >
-                  {num}
+                  -
                 </button>
-              ))}
+              )}
               <button
                 type="button"
                 className="pagination-arrow"
-                disabled={safePage >= totalPages}
+                disabled={safePage >= totalPages || totalPages <= 1}
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
               >
                 ›
@@ -852,29 +886,35 @@ export default function Customers({ onNavigateToBilling }) {
               </button>
             </div>
 
-            <form className="customers-modal-form" onSubmit={handleRegisterSubmit}>
+            <form className="customers-modal-form" onSubmit={handleRegisterSubmit} noValidate>
               <div className="modal-form-group">
-                <label className="modal-label">Customer / Company Name</label>
+                <label className="modal-label">Customer / Company Name *</label>
                 <input
                   type="text"
-                  required
                   placeholder="e.g. Suresh Kumar / Sri Amman Stores"
-                  className="modal-input"
+                  className={`modal-input ${formErrors.name ? 'kwf-input-error' : ''}`}
                   value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
+                  onChange={(e) => {
+                    setNewName(e.target.value)
+                    if (formErrors.name) setFormErrors({ ...formErrors, name: '' })
+                  }}
                 />
+                {formErrors.name && <span className="kwf-field-error">{formErrors.name}</span>}
               </div>
 
               <div className="modal-form-group">
-                <label className="modal-label">Phone Number</label>
+                <label className="modal-label">Phone Number *</label>
                 <input
                   type="text"
-                  required
-                  placeholder="+91 98470 00000"
-                  className="modal-input"
+                  placeholder="98470 00000"
+                  className={`modal-input ${formErrors.phone ? 'kwf-input-error' : ''}`}
                   value={newPhone}
-                  onChange={(e) => setNewPhone(e.target.value)}
+                  onChange={(e) => {
+                    setNewPhone(e.target.value)
+                    if (formErrors.phone) setFormErrors({ ...formErrors, phone: '' })
+                  }}
                 />
+                {formErrors.phone && <span className="kwf-field-error">{formErrors.phone}</span>}
               </div>
 
               <div className="modal-form-group">
@@ -882,10 +922,15 @@ export default function Customers({ onNavigateToBilling }) {
                 <input
                   type="text"
                   placeholder="33XXXXX1234X1ZX"
-                  className="modal-input"
+                  className={`modal-input ${formErrors.gstin ? 'kwf-input-error' : ''}`}
                   value={newGstin}
-                  onChange={(e) => setNewGstin(e.target.value)}
+                  onChange={(e) => {
+                    setNewGstin(e.target.value.toUpperCase())
+                    if (formErrors.gstin) setFormErrors({ ...formErrors, gstin: '' })
+                  }}
+                  maxLength={15}
                 />
+                {formErrors.gstin && <span className="kwf-field-error">{formErrors.gstin}</span>}
               </div>
 
               <div className="modal-form-group">

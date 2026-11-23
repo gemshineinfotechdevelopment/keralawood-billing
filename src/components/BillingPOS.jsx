@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { DataStore } from '../services/dataStore'
 import treeLogo from '../assets/tree-logo.png'
 import { printInvoiceDocument, numberToWordsINR } from '../utils/printInvoice'
+import { validatePhone, validateGSTIN } from '../utils/validators'
 import './BillingPOS.css'
 
 const getCustomerInitials = (name) => {
@@ -40,6 +41,7 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
   const [customerSearchQuery, setCustomerSearchQuery] = useState('')
   const [customerSearchOpen, setCustomerSearchOpen] = useState(false)
   const [sameAsBillTo, setSameAsBillTo] = useState(false)
+  const [customerValidationErrors, setCustomerValidationErrors] = useState({})
   const customerSearchRef = useRef(null)
 
   useEffect(() => {
@@ -504,9 +506,9 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
 
   const [billsPage, setBillsPage] = useState(1)
   const [billsPerPage, setBillsPerPage] = useState(20)
-  const totalBillsPages = Math.max(1, Math.ceil(filteredSavedBills.length / billsPerPage))
-  const safeBillsPage = Math.min(billsPage, totalBillsPages)
-  const paginatedSavedBills = filteredSavedBills.slice((safeBillsPage - 1) * billsPerPage, safeBillsPage * billsPerPage)
+  const totalBillsPages = filteredSavedBills.length > 0 ? Math.ceil(filteredSavedBills.length / billsPerPage) : 0
+  const safeBillsPage = totalBillsPages > 0 ? Math.min(billsPage, totalBillsPages) : 1
+  const paginatedSavedBills = totalBillsPages > 0 ? filteredSavedBills.slice((safeBillsPage - 1) * billsPerPage, safeBillsPage * billsPerPage) : []
 
   const handleStartNewBill = () => {
     const defaultBilledBy = salesPersonsList[0]?.name || ''
@@ -816,6 +818,25 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
       setTimeout(() => setPrintSuccessToast(''), 3000)
       return
     }
+
+    // Validate customer phone & GSTIN if provided
+    const custErrs = {}
+    if (customer.phone && customer.phone.trim()) {
+      const phoneVal = validatePhone(customer.phone, false)
+      if (!phoneVal.isValid) custErrs.phone = phoneVal.error
+    }
+    if (customer.gstin && customer.gstin.trim() && customer.gstin !== 'Unregistered / Personal') {
+      const gstinVal = validateGSTIN(customer.gstin, false)
+      if (!gstinVal.isValid) custErrs.gstin = gstinVal.error
+    }
+    if (Object.keys(custErrs).length > 0) {
+      setCustomerValidationErrors(custErrs)
+      const firstErr = Object.values(custErrs)[0]
+      setPrintSuccessToast(`⚠️ ${firstErr}`)
+      setTimeout(() => setPrintSuccessToast(''), 3500)
+      return
+    }
+    setCustomerValidationErrors({})
 
     // Check if any item selected is out of stock in catalog
     for (const it of validItems) {
@@ -1310,7 +1331,11 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
             <div className="patron-table-footer">
               <div className="patron-footer-left">
                 <span className="showing-records-text">
-                  Showing <strong>{filteredSavedBills.length > 0 ? `${(safeBillsPage - 1) * billsPerPage + 1}-${Math.min(safeBillsPage * billsPerPage, filteredSavedBills.length)}` : '0'}</strong> of {filteredSavedBills.length} invoices
+                  Showing <strong>{filteredSavedBills.length > 0 ? (
+                    (safeBillsPage - 1) * billsPerPage + 1 === Math.min(safeBillsPage * billsPerPage, filteredSavedBills.length)
+                      ? `${(safeBillsPage - 1) * billsPerPage + 1}`
+                      : `${(safeBillsPage - 1) * billsPerPage + 1}-${Math.min(safeBillsPage * billsPerPage, filteredSavedBills.length)}`
+                  ) : '0'}</strong> of {filteredSavedBills.length} invoices
                 </span>
                 <div className="patron-per-page-wrap">
                   <span className="patron-per-page-label">Show:</span>
@@ -1333,25 +1358,36 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
                 <button
                   type="button"
                   className="pagination-arrow"
-                  disabled={safeBillsPage <= 1}
+                  disabled={safeBillsPage <= 1 || totalBillsPages <= 1}
                   onClick={() => setBillsPage((p) => Math.max(1, p - 1))}
                 >
                   ‹
                 </button>
-                {Array.from({ length: totalBillsPages }, (_, idx) => idx + 1).map((num) => (
+                {totalBillsPages > 0 && filteredSavedBills.length > 0 ? (
+                  Array.from({ length: totalBillsPages }, (_, idx) => idx + 1).map((num) => (
+                    <button
+                      key={num}
+                      type="button"
+                      className={`pagination-num ${safeBillsPage === num ? 'active' : ''}`}
+                      onClick={() => setBillsPage(num)}
+                    >
+                      {num}
+                    </button>
+                  ))
+                ) : (
                   <button
-                    key={num}
                     type="button"
-                    className={`pagination-num ${safeBillsPage === num ? 'active' : ''}`}
-                    onClick={() => setBillsPage(num)}
+                    className="pagination-num"
+                    disabled
+                    style={{ opacity: 0.4, cursor: 'default' }}
                   >
-                    {num}
+                    -
                   </button>
-                ))}
+                )}
                 <button
                   type="button"
                   className="pagination-arrow"
-                  disabled={safeBillsPage >= totalBillsPages}
+                  disabled={safeBillsPage >= totalBillsPages || totalBillsPages <= 1}
                   onClick={() => setBillsPage((p) => Math.min(totalBillsPages, p + 1))}
                 >
                   ›
@@ -1656,11 +1692,15 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
               <div className="pos-input-group">
                 <input
                   type="text"
-                  className="pos-input"
+                  className={`pos-input ${customerValidationErrors.phone ? 'kwf-input-error' : ''}`}
                   value={customer.phone || ''}
-                  onChange={(e) => handleCustomerChange('phone', e.target.value)}
-                  placeholder="Phone Number (Optional)"
+                  onChange={(e) => {
+                    handleCustomerChange('phone', e.target.value)
+                    if (customerValidationErrors.phone) setCustomerValidationErrors({ ...customerValidationErrors, phone: '' })
+                  }}
+                  placeholder="Phone Number (10 Digits)"
                 />
+                {customerValidationErrors.phone && <span className="kwf-field-error">{customerValidationErrors.phone}</span>}
               </div>
 
               <div className="pos-input-group pos-full-width">

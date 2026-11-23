@@ -196,13 +196,14 @@ export default function StockManagement({ onAddNewProduct }) {
 
   // Dynamic pagination calculations
   const totalItems = filteredProducts.length
-  const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage))
-  const safeCurrentPage = Math.min(currentPage, totalPages)
-  const startIndex = (safeCurrentPage - 1) * itemsPerPage
+  const totalPages = totalItems > 0 ? Math.ceil(totalItems / itemsPerPage) : 0
+  const safeCurrentPage = totalPages > 0 ? Math.min(currentPage, totalPages) : 1
+  const startIndex = totalPages > 0 ? (safeCurrentPage - 1) * itemsPerPage : 0
   const endIndex = Math.min(startIndex + itemsPerPage, totalItems)
-  const paginatedProducts = filteredProducts.slice(startIndex, endIndex)
+  const paginatedProducts = totalPages > 0 ? filteredProducts.slice(startIndex, endIndex) : []
 
   const getPageNumbers = () => {
+    if (totalPages === 0) return []
     const pages = []
     if (totalPages <= 5) {
       for (let i = 1; i <= totalPages; i++) pages.push(i)
@@ -505,7 +506,11 @@ export default function StockManagement({ onAddNewProduct }) {
         <div className="patron-table-footer">
           <div className="patron-footer-left">
             <span className="showing-records-text">
-              Showing <strong>{totalItems === 0 ? '0' : `${startIndex + 1}-${endIndex}`}</strong> of {totalItems} products
+              Showing <strong>{totalItems > 0 ? (
+                startIndex + 1 === endIndex
+                  ? `${startIndex + 1}`
+                  : `${startIndex + 1}-${endIndex}`
+              ) : '0'}</strong> of {totalItems} products
             </span>
             <div className="patron-per-page-wrap">
               <span className="patron-per-page-label">Show:</span>
@@ -529,31 +534,42 @@ export default function StockManagement({ onAddNewProduct }) {
               type="button"
               className="pagination-arrow"
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={safeCurrentPage <= 1}
+              disabled={safeCurrentPage <= 1 || totalPages <= 1}
             >
               ‹
             </button>
-            {getPageNumbers().map((pageNum, idx) =>
-              pageNum === '...' ? (
-                <span key={`dots-${idx}`} className="pagination-dots">
-                  ...
-                </span>
-              ) : (
-                <button
-                  key={`page-${pageNum}`}
-                  type="button"
-                  className={`pagination-num ${safeCurrentPage === pageNum ? 'active' : ''}`}
-                  onClick={() => setCurrentPage(pageNum)}
-                >
-                  {pageNum}
-                </button>
+            {totalPages > 0 && totalItems > 0 ? (
+              getPageNumbers().map((pageNum, idx) =>
+                pageNum === '...' ? (
+                  <span key={`dots-${idx}`} className="pagination-dots">
+                    ...
+                  </span>
+                ) : (
+                  <button
+                    key={`page-${pageNum}`}
+                    type="button"
+                    className={`pagination-num ${safeCurrentPage === pageNum ? 'active' : ''}`}
+                    onClick={() => setCurrentPage(pageNum)}
+                  >
+                    {pageNum}
+                  </button>
+                )
               )
+            ) : (
+              <button
+                type="button"
+                className="pagination-num"
+                disabled
+                style={{ opacity: 0.4, cursor: 'default' }}
+              >
+                -
+              </button>
             )}
             <button
               type="button"
               className="pagination-arrow"
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={safeCurrentPage >= totalPages}
+              disabled={safeCurrentPage >= totalPages || totalPages <= 1}
             >
               ›
             </button>

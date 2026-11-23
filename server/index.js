@@ -783,14 +783,35 @@ app.post('/api/sales', async (req, res) => {
     const saved = await newSale.save();
     console.log('[MongoDB] Stored new sale record in MongoDB:', saved.invoice, 'Amount: ₹' + saved.amount);
 
-    // If customer name is provided, update customer's lifetime value and order count in MongoDB
-    if (data.customer && data.customer !== 'Walk-in Patron') {
-      const cust = await Customer.findOne({ name: new RegExp(`^${data.customer.trim()}$`, 'i') });
+    // If customer name is provided, update or auto-create customer in MongoDB
+    if (data.customer && typeof data.customer === 'string' && !data.customer.toLowerCase().includes('walk-in')) {
+      const custName = data.customer.trim();
+      let cust = await Customer.findOne({
+        $or: [
+          { name: new RegExp(`^${custName}$`, 'i') },
+          ...(data.customerPhone ? [{ phone: data.customerPhone }] : [])
+        ]
+      });
       if (cust) {
         cust.totalOrders = (cust.totalOrders || 0) + 1;
         const currentLtv = Number(String(cust.lifetimeValue || 0).replace(/[^0-9.]/g, '')) || 0;
         cust.lifetimeValue = (currentLtv + rawAmt).toLocaleString('en-IN');
+        if (data.customerPhone && !cust.phone) cust.phone = data.customerPhone;
         await cust.save();
+      } else {
+        await Customer.create({
+          name: custName,
+          personName: custName,
+          phone: data.customerPhone || '',
+          address: data.deliveryAddress || data.address || 'Sivakasi, Tamil Nadu',
+          deliveryAddress: data.deliveryAddress || data.address || 'Sivakasi, Tamil Nadu',
+          location: data.location || (data.address ? data.address.split(',')[0] : 'Sivakasi'),
+          gstin: data.customerGstin || 'Unregistered / Personal',
+          type: 'Residential',
+          totalOrders: 1,
+          lifetimeValue: rawAmt.toLocaleString('en-IN'),
+        });
+        console.log('[MongoDB] Auto-registered customer in MongoDB from sale:', custName);
       }
     }
 

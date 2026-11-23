@@ -188,11 +188,12 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
     })
   }, [todaySalesList, salesSearch])
 
-  const totalSalesPages = Math.ceil(filteredSales.length / salesPerPage) || 1
-  const displayedSales = filteredSales.slice(
-    (salesPage - 1) * salesPerPage,
-    salesPage * salesPerPage
-  )
+  const totalSalesPages = filteredSales.length > 0 ? Math.ceil(filteredSales.length / salesPerPage) : 0
+  const safeSalesPage = totalSalesPages > 0 ? Math.min(salesPage, totalSalesPages) : 1
+  const displayedSales = totalSalesPages > 0 ? filteredSales.slice(
+    (safeSalesPage - 1) * salesPerPage,
+    safeSalesPage * salesPerPage
+  ) : []
 
   return (
     <div className="dashboard-container">
@@ -415,7 +416,11 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
         <div className="patron-table-footer">
           <div className="patron-footer-left">
             <span className="showing-records-text">
-              Showing <strong>{filteredSales.length > 0 ? `${(salesPage - 1) * salesPerPage + 1}-${Math.min(salesPage * salesPerPage, filteredSales.length)}` : '0'}</strong> of {filteredSales.length} orders
+              Showing <strong>{filteredSales.length > 0 ? (
+                (safeSalesPage - 1) * salesPerPage + 1 === Math.min(safeSalesPage * salesPerPage, filteredSales.length)
+                  ? `${(safeSalesPage - 1) * salesPerPage + 1}`
+                  : `${(safeSalesPage - 1) * salesPerPage + 1}-${Math.min(safeSalesPage * salesPerPage, filteredSales.length)}`
+              ) : '0'}</strong> of {filteredSales.length} orders
             </span>
             <div className="patron-per-page-wrap">
               <span className="patron-per-page-label">Show:</span>
@@ -437,25 +442,36 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
             <button
               type="button"
               className="pagination-arrow"
-              disabled={salesPage <= 1}
+              disabled={safeSalesPage <= 1 || totalSalesPages <= 1}
               onClick={() => setSalesPage((p) => Math.max(1, p - 1))}
             >
               ‹
             </button>
-            {Array.from({ length: totalSalesPages }, (_, idx) => idx + 1).map((num) => (
+            {totalSalesPages > 0 && filteredSales.length > 0 ? (
+              Array.from({ length: totalSalesPages }, (_, idx) => idx + 1).map((num) => (
+                <button
+                  key={num}
+                  type="button"
+                  className={`pagination-num ${safeSalesPage === num ? 'active' : ''}`}
+                  onClick={() => setSalesPage(num)}
+                >
+                  {num}
+                </button>
+              ))
+            ) : (
               <button
-                key={num}
                 type="button"
-                className={`pagination-num ${salesPage === num ? 'active' : ''}`}
-                onClick={() => setSalesPage(num)}
+                className="pagination-num"
+                disabled
+                style={{ opacity: 0.4, cursor: 'default' }}
               >
-                {num}
+                -
               </button>
-            ))}
+            )}
             <button
               type="button"
               className="pagination-arrow"
-              disabled={salesPage >= totalSalesPages}
+              disabled={safeSalesPage >= totalSalesPages || totalSalesPages <= 1}
               onClick={() => setSalesPage((p) => Math.min(totalSalesPages, p + 1))}
             >
               ›

@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { DataStore } from '../services/dataStore'
+import { validateRequired, validatePhone, validatePositiveNumber } from '../utils/validators'
 import './SalesPerson.css'
 
 export default function SalesPerson() {
@@ -11,6 +12,7 @@ export default function SalesPerson() {
   const [editingPerson, setEditingPerson] = useState(null)
   const [deleteModalPerson, setDeleteModalPerson] = useState(null)
   const [toastMessage, setToastMessage] = useState('')
+  const [formErrors, setFormErrors] = useState({})
 
   // Form State - strictly staff id, name, phone, ordersClosed
   const [formData, setFormData] = useState({
@@ -50,9 +52,9 @@ export default function SalesPerson() {
 
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(20)
-  const totalPages = Math.max(1, Math.ceil(filteredList.length / itemsPerPage))
-  const safePage = Math.min(currentPage, totalPages)
-  const paginatedList = filteredList.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage)
+  const totalPages = filteredList.length > 0 ? Math.ceil(filteredList.length / itemsPerPage) : 0
+  const safePage = totalPages > 0 ? Math.min(currentPage, totalPages) : 1
+  const paginatedList = totalPages > 0 ? filteredList.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage) : []
 
   // KPIs
   const totalOrdersClosed = useMemo(() => {
@@ -68,6 +70,7 @@ export default function SalesPerson() {
       phone: '',
       ordersClosed: '0',
     })
+    setFormErrors({})
     setModalOpen(true)
   }
 
@@ -79,20 +82,33 @@ export default function SalesPerson() {
       phone: sp.phone || '',
       ordersClosed: sp.ordersClosed !== undefined ? String(sp.ordersClosed) : '0',
     })
+    setFormErrors({})
     setModalOpen(true)
   }
 
   const handleSavePerson = (e) => {
     e.preventDefault()
-    if (!formData.name.trim()) {
-      alert('Please enter sales person name.')
+    const nameVal = validateRequired(formData.name, 'Staff Name', 2)
+    const phoneVal = validatePhone(formData.phone, true)
+    const ordersVal = validatePositiveNumber(formData.ordersClosed || '0', 'Orders Closed', true)
+
+    const errs = {}
+    if (!nameVal.isValid) errs.name = nameVal.error
+    if (!phoneVal.isValid) errs.phone = phoneVal.error
+    if (!ordersVal.isValid) errs.ordersClosed = ordersVal.error
+
+    if (Object.keys(errs).length > 0) {
+      setFormErrors(errs)
       return
     }
+    setFormErrors({})
+
+    const cleanPhoneStr = phoneVal.clean ? `+91 ${phoneVal.clean}` : formData.phone.trim()
 
     const payload = {
       code: formData.code.trim().replace(/\D/g, '') || DataStore.getNextSalesPersonCode(),
       name: formData.name.trim(),
-      phone: formData.phone.trim(),
+      phone: cleanPhoneStr,
       ordersClosed: Number(formData.ordersClosed) || 0,
     }
 
@@ -298,7 +314,11 @@ export default function SalesPerson() {
         <div className="patron-table-footer">
           <div className="patron-footer-left">
             <span className="showing-records-text">
-              Showing <strong>{filteredList.length > 0 ? `${(safePage - 1) * itemsPerPage + 1}-${Math.min(safePage * itemsPerPage, filteredList.length)}` : '0'}</strong> of {filteredList.length} staff
+              Showing <strong>{filteredList.length > 0 ? (
+                (safePage - 1) * itemsPerPage + 1 === Math.min(safePage * itemsPerPage, filteredList.length)
+                  ? `${(safePage - 1) * itemsPerPage + 1}`
+                  : `${(safePage - 1) * itemsPerPage + 1}-${Math.min(safePage * itemsPerPage, filteredList.length)}`
+              ) : '0'}</strong> of {filteredList.length} staff
             </span>
             <div className="patron-per-page-wrap">
               <span className="patron-per-page-label">Show:</span>
@@ -321,25 +341,36 @@ export default function SalesPerson() {
             <button
               type="button"
               className="pagination-arrow"
-              disabled={safePage <= 1}
+              disabled={safePage <= 1 || totalPages <= 1}
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             >
               ‹
             </button>
-            {Array.from({ length: totalPages }, (_, idx) => idx + 1).map((num) => (
+            {totalPages > 0 && filteredList.length > 0 ? (
+              Array.from({ length: totalPages }, (_, idx) => idx + 1).map((num) => (
+                <button
+                  key={num}
+                  type="button"
+                  className={`pagination-num ${safePage === num ? 'active' : ''}`}
+                  onClick={() => setCurrentPage(num)}
+                >
+                  {num}
+                </button>
+              ))
+            ) : (
               <button
-                key={num}
                 type="button"
-                className={`pagination-num ${safePage === num ? 'active' : ''}`}
-                onClick={() => setCurrentPage(num)}
+                className="pagination-num"
+                disabled
+                style={{ opacity: 0.4, cursor: 'default' }}
               >
-                {num}
+                -
               </button>
-            ))}
+            )}
             <button
               type="button"
               className="pagination-arrow"
-              disabled={safePage >= totalPages}
+              disabled={safePage >= totalPages || totalPages <= 1}
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
             >
               ›
@@ -364,7 +395,7 @@ export default function SalesPerson() {
               </button>
             </div>
 
-            <form onSubmit={handleSavePerson}>
+            <form onSubmit={handleSavePerson} noValidate>
               <div className="sp-modal-body">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <div className="sp-form-group">
@@ -373,8 +404,8 @@ export default function SalesPerson() {
                       type="text"
                       className="sp-form-input"
                       value={formData.code}
-                      onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                      placeholder="e.g. SP-105"
+                      onChange={(e) => setFormData({ ...formData, code: e.target.value.replace(/\D/g, '') })}
+                      placeholder="101"
                       required
                     />
                   </div>
@@ -383,24 +414,32 @@ export default function SalesPerson() {
                     <label className="sp-form-label">NAME *</label>
                     <input
                       type="text"
-                      className="sp-form-input"
+                      className={`sp-form-input ${formErrors.name ? 'kwf-input-error' : ''}`}
                       value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      onChange={(e) => {
+                        setFormData({ ...formData, name: e.target.value })
+                        if (formErrors.name) setFormErrors({ ...formErrors, name: '' })
+                      }}
                       placeholder="e.g. Anand Kumar"
                       required
                     />
+                    {formErrors.name && <span className="kwf-field-error">{formErrors.name}</span>}
                   </div>
 
                   <div className="sp-form-group">
                     <label className="sp-form-label">PHONE NUMBER *</label>
                     <input
                       type="text"
-                      className="sp-form-input"
+                      className={`sp-form-input ${formErrors.phone ? 'kwf-input-error' : ''}`}
                       value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      placeholder="+91 98421 55670"
+                      onChange={(e) => {
+                        setFormData({ ...formData, phone: e.target.value })
+                        if (formErrors.phone) setFormErrors({ ...formErrors, phone: '' })
+                      }}
+                      placeholder="98421 55670"
                       required
                     />
+                    {formErrors.phone && <span className="kwf-field-error">{formErrors.phone}</span>}
                   </div>
 
                   <div className="sp-form-group">
@@ -408,11 +447,15 @@ export default function SalesPerson() {
                     <input
                       type="number"
                       min="0"
-                      className="sp-form-input"
+                      className={`sp-form-input ${formErrors.ordersClosed ? 'kwf-input-error' : ''}`}
                       value={formData.ordersClosed}
-                      onChange={(e) => setFormData({ ...formData, ordersClosed: e.target.value })}
+                      onChange={(e) => {
+                        setFormData({ ...formData, ordersClosed: e.target.value })
+                        if (formErrors.ordersClosed) setFormErrors({ ...formErrors, ordersClosed: '' })
+                      }}
                       placeholder="0"
                     />
+                    {formErrors.ordersClosed && <span className="kwf-field-error">{formErrors.ordersClosed}</span>}
                   </div>
                 </div>
               </div>
