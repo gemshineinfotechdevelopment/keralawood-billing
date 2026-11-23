@@ -1,5 +1,6 @@
 // Centralized Dynamic Data Store with LocalStorage Persistence & MongoDB Backend Sync
 // Supports multiple concurrent bills, dynamic products, customers, settings, and reports
+import kwfLogo from '../assets/kwf.jpg'
 
 const STORAGE_KEYS = {
   PRODUCTS: 'sivakasi_wood_products',
@@ -40,7 +41,7 @@ const INITIAL_SETTINGS = {
   signatoryName: 'Rajesh Sivan',
   signatoryDesignation: 'Depot Lead & Store Manager',
   disclaimer: 'We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct',
-  logoUrl: '',
+  logoUrl: kwfLogo,
   systemTime: '10:30 AM',
   systemDate: '',
 }
@@ -284,6 +285,10 @@ export const DataStore = {
   // SETTINGS
   getSettings() {
     const s = loadFromStorage(STORAGE_KEYS.SETTINGS, INITIAL_SETTINGS)
+    if (!s.logoUrl || s.logoUrl.includes('cloudinary')) {
+      s.logoUrl = kwfLogo
+      saveToStorage(STORAGE_KEYS.SETTINGS, s)
+    }
     if (!s.disclaimer || s.disclaimer.includes('Natural variations in teak')) {
       s.disclaimer = 'We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct'
       saveToStorage(STORAGE_KEYS.SETTINGS, s)

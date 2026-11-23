@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { DataStore } from '../services/dataStore'
-import { uploadImageToCloudinary } from '../services/cloudinaryService'
+import kwfLogo from '../assets/kwf.jpg'
 import { validateRequired, validatePhone, validateEmail, validateGSTIN, validateHSN } from '../utils/validators'
 import './Settings.css'
 
@@ -73,10 +73,7 @@ export default function Settings() {
       .catch(() => {})
   }, [])
 
-  const [isUploadingLogo, setIsUploadingLogo] = useState(false)
-  const [logoUploadMsg, setLogoUploadMsg] = useState('')
-
-  const handleLogoUpload = async (e) => {
+  const handleLogoUpload = (e) => {
     const file = e.target.files?.[0]
     if (!file) return
     if (file.size > 8 * 1024 * 1024) {
@@ -84,32 +81,22 @@ export default function Settings() {
       return
     }
 
-    try {
-      setIsUploadingLogo(true)
-      setLogoUploadMsg('Uploading to Cloudinary CDN...')
-      const result = await uploadImageToCloudinary(file, 'kerala_wood_billing/logos', 'depot_logo')
-      if (result?.url) {
-        setLogoUrl(result.url)
-        setLogoUploadMsg('✓ Uploaded to Cloudinary CDN successfully!')
-        setTimeout(() => setLogoUploadMsg(''), 4000)
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const res = event.target?.result
+      if (res) {
+        setLogoUrl(res)
+        setLogoUploadMsg('✓ Logo updated successfully!')
+        setTimeout(() => setLogoUploadMsg(''), 3000)
       }
-    } catch (err) {
-      console.warn('[Cloudinary] Backend upload failed, using local preview:', err)
-      const reader = new FileReader()
-      reader.onload = (event) => {
-        const res = event.target?.result
-        if (res) setLogoUrl(res)
-      }
-      reader.readAsDataURL(file)
-      setLogoUploadMsg('Saved locally')
-      setTimeout(() => setLogoUploadMsg(''), 3000)
-    } finally {
-      setIsUploadingLogo(false)
     }
+    reader.readAsDataURL(file)
   }
 
-  const handleRemoveLogo = () => {
-    setLogoUrl('')
+  const handleResetToDefaultLogo = () => {
+    setLogoUrl(kwfLogo)
+    setLogoUploadMsg('✓ Reset to official KWF logo')
+    setTimeout(() => setLogoUploadMsg(''), 3000)
   }
 
   const handleSaveSettings = () => {
@@ -233,49 +220,42 @@ export default function Settings() {
             <label className="settings-field-label">Official Depot Logo</label>
             <div className="settings-logo-row">
               <div className="settings-logo-preview-frame">
-                {logoUrl ? (
-                  <img src={logoUrl} alt="Depot Logo Preview" className="settings-logo-preview-img" />
-                ) : (
-                  <div className="settings-logo-empty-box">
-                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#8C7E74" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                      <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
-                      <circle cx="9" cy="9" r="2" />
-                      <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
-                    </svg>
-                    <span>No Logo</span>
-                  </div>
-                )}
+                <img
+                  src={logoUrl || kwfLogo}
+                  alt="Official Depot Logo"
+                  className="settings-logo-preview-img"
+                  style={{ maxHeight: '72px', maxWidth: '140px', objectFit: 'contain' }}
+                />
               </div>
 
               <div className="settings-logo-details">
                 <p className="settings-logo-hint-text">
-                  Upload an image for Kerala Wood Furniture. This logo appears on your bills, tax invoices, and header.
+                  Official Kerala Wood Furniture logo (<strong>src/assets/kwf.jpg</strong>). Appears on all tax invoices, billing POS, headers, and reports.
                 </p>
                 <div className="settings-logo-actions-bar">
-                  <label className={`btn-settings-choose-logo ${isUploadingLogo ? 'uploading' : ''}`}>
+                  <label className="btn-settings-choose-logo">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                       <polyline points="17 8 12 3 7 8" />
                       <line x1="12" y1="3" x2="12" y2="15" />
                     </svg>
-                    <span>{isUploadingLogo ? '☁️ Uploading to Cloudinary...' : 'Upload Logo to Cloudinary'}</span>
+                    <span>Upload Custom Logo</span>
                     <input
                       type="file"
-                      disabled={isUploadingLogo}
                       accept="image/png, image/jpeg, image/jpg, image/svg+xml, image/webp"
                       style={{ display: 'none' }}
                       onChange={handleLogoUpload}
                     />
                   </label>
 
-                  {logoUrl && (
+                  {logoUrl && logoUrl !== kwfLogo && (
                     <button
                       type="button"
                       className="btn-settings-remove-logo"
-                      onClick={handleRemoveLogo}
-                      title="Remove custom logo"
+                      onClick={handleResetToDefaultLogo}
+                      title="Reset to official Kerala Wood Furniture logo"
                     >
-                      ✕ Remove
+                      ↺ Reset to Default Logo
                     </button>
                   )}
                 </div>
@@ -285,38 +265,26 @@ export default function Settings() {
                     fontSize: '11px',
                     fontWeight: 600,
                     margin: '6px 0 0 0',
-                    color: logoUploadMsg.startsWith('✓') ? '#2E7D32' : '#C0392B'
+                    color: '#2E7D32'
                   }}>
                     {logoUploadMsg}
                   </p>
                 )}
 
-                {logoUrl && logoUrl.includes('cloudinary') && (
-                  <div style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    margin: '6px 0 0 0',
-                    padding: '3px 8px',
-                    backgroundColor: '#E8F5E9',
-                    borderRadius: '4px',
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    color: '#2E7D32'
-                  }}>
-                    <span>☁️ Hosted on Cloudinary CDN</span>
-                  </div>
-                )}
-
-                <div className="settings-logo-url-row">
-                  <span className="settings-logo-url-label">Or Image URL:</span>
-                  <input
-                    type="text"
-                    className="settings-input settings-logo-url-input"
-                    placeholder="https://.../logo.png"
-                    value={logoUrl.startsWith('data:') ? '' : logoUrl}
-                    onChange={(e) => setLogoUrl(e.target.value)}
-                  />
+                <div style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  margin: '6px 0 0 0',
+                  padding: '3px 8px',
+                  backgroundColor: '#FAF5F1',
+                  border: '1px solid #E8DACF',
+                  borderRadius: '4px',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  color: '#5C3A21'
+                }}>
+                  <span>🪵 Active Source: src/assets/kwf.jpg</span>
                 </div>
               </div>
             </div>

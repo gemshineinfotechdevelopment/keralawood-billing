@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import treeLogo from './assets/tree-logo.png'
+import kwfLogo from './assets/kwf.jpg'
 import Sidebar from './components/Sidebar'
 import Dashboard from './components/Dashboard'
 import StockManagement from './components/StockManagement'
@@ -169,7 +169,7 @@ function App() {
       {/* Top Header */}
       <header className="login-header">
         <div className="brand-section">
-          <img src={settings.logoUrl || treeLogo} alt="Kerala Wood Furniture" className="header-logo" />
+          <img src={settings.logoUrl || kwfLogo} alt="Kerala Wood Furniture" className="header-logo" />
           <div className="brand-text">
             <span className="brand-title">Kerala Wood Furniture</span>
             <span className="brand-subtitle">Sivakasi</span>
@@ -203,7 +203,7 @@ function App() {
       {/* Main Login Card */}
       <main className="login-main">
         <div className="login-card">
-          <img src={settings.logoUrl || treeLogo} alt="Kerala Wood Furniture" className="card-logo" />
+          <img src={settings.logoUrl || kwfLogo} alt="Kerala Wood Furniture" className="card-logo" />
           <h2 className="card-brand-title">Kerala Wood Furniture</h2>
           <div className="card-brand-subtitle">Billing & Inventory</div>
 

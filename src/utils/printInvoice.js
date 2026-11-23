@@ -134,7 +134,7 @@ export function printInvoiceDocument(modalBillData, settings = {}, defaultLogo =
 
   const depotName = (settings.depotName || 'Kerala Wood Furniture').replace(/[-–—]\s*sivakasi\s*depot/gi, '').trim() || 'Kerala Wood Furniture'
   const address = (settings.address || 'Sivakasi Central Mill Yard, Sivakasi').replace(/Depot & /gi, '').replace(/Central Depot/gi, 'Central Yard')
-  const logoSrc = settings.logoUrl || defaultLogo || ''
+  const logoSrc = settings.logoUrl || defaultLogo || '/kwf.jpg'
 
   const itemsRows = rawItems.map((it, idx) => {
     const qty = Number(it.quantity) || 1

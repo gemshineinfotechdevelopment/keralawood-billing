@@ -14,7 +14,6 @@ import { Stock } from './models/Stock.js';
 import { Purchase } from './models/Purchase.js';
 import { SalesPerson } from './models/SalesPerson.js';
 import { seedInitialData } from './seed.js';
-import { uploadToCloudinary, isCloudinaryConfigured, deleteFromCloudinary } from './config/cloudinary.js';
 
 // Resolve __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -107,66 +106,6 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// -------------------------------------------------------------
-// CLOUDINARY UPLOAD API
-// -------------------------------------------------------------
-app.get('/api/cloudinary/status', (req, res) => {
-  const configured = isCloudinaryConfigured();
-  res.json({
-    success: true,
-    configured,
-    cloudName: process.env.CLOUDINARY_CLOUD_NAME || '',
-  });
-});
-
-app.post('/api/upload', async (req, res) => {
-  try {
-    const { image, folder = 'kerala_wood_billing', filename = '' } = req.body;
-    if (!image) {
-      return res.status(400).json({ success: false, message: 'Image data (base64 or URL) is required' });
-    }
-
-    if (!isCloudinaryConfigured()) {
-      return res.status(500).json({
-        success: false,
-        message: 'Cloudinary credentials are not configured in server/.env',
-      });
-    }
-
-    const uploadResult = await uploadToCloudinary(image, folder, filename);
-    console.log('[Cloudinary] Successfully uploaded image:', uploadResult.secure_url);
-
-    res.json({
-      success: true,
-      url: uploadResult.secure_url,
-      public_id: uploadResult.public_id,
-      format: uploadResult.format,
-      width: uploadResult.width,
-      height: uploadResult.height,
-    });
-  } catch (err) {
-    console.error('[Cloudinary] Upload error:', err);
-    res.status(500).json({
-      success: false,
-      message: 'Failed to upload image to Cloudinary',
-      error: err.message,
-    });
-  }
-});
-
-app.delete('/api/upload', async (req, res) => {
-  try {
-    const { public_id } = req.body;
-    if (!public_id) {
-      return res.status(400).json({ success: false, message: 'public_id is required' });
-    }
-    await deleteFromCloudinary(public_id);
-    res.json({ success: true, message: 'Deleted from Cloudinary' });
-  } catch (err) {
-    console.error('[Cloudinary] Delete error:', err);
-    res.status(500).json({ success: false, message: 'Failed to delete from Cloudinary', error: err.message });
-  }
-});
 
 // -------------------------------------------------------------
 // CATEGORIES API

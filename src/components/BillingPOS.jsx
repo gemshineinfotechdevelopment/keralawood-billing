@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { DataStore } from '../services/dataStore'
-import treeLogo from '../assets/tree-logo.png'
+import kwfLogo from '../assets/kwf.jpg'
 import { printInvoiceDocument, numberToWordsINR } from '../utils/printInvoice'
 import { validatePhone, validateGSTIN } from '../utils/validators'
 import './BillingPOS.css'
@@ -960,7 +960,7 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
       <div className="pos-print-top">
         <div className="pos-print-brand">
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px' }}>
-            <img src={settings.logoUrl || treeLogo} alt="Kerala Wood Furniture Logo" className="pos-print-custom-logo" style={{ maxHeight: '42px', maxWidth: '42px', objectFit: 'contain', margin: 0 }} />
+            <img src={settings.logoUrl || kwfLogo} alt="Kerala Wood Furniture Logo" className="pos-print-custom-logo" style={{ maxHeight: '42px', maxWidth: '42px', objectFit: 'contain', margin: 0 }} />
             <h2 style={{ margin: 0, fontSize: '22px', fontWeight: 800, color: '#31190B', lineHeight: 1.1 }}>
               {(settings.depotName || 'Kerala Wood Furniture').replace(/[-–—]\s*sivakasi\s*depot/gi, '').trim() || 'Kerala Wood Furniture'}
             </h2>
@@ -1409,7 +1409,7 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
             </button>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <img
-                src={settings.logoUrl || treeLogo}
+                src={settings.logoUrl || kwfLogo}
                 alt="Logo"
                 style={{ width: '26px', height: '26px', objectFit: 'contain', borderRadius: '4px' }}
               />
@@ -2431,7 +2431,7 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
             <div className="pos-modal-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <img
-                  src={settings.logoUrl || treeLogo}
+                  src={settings.logoUrl || kwfLogo}
                   alt="Logo"
                   style={{ width: '38px', height: '38px', objectFit: 'contain', borderRadius: '4px', background: '#fff', padding: '2px' }}
                 />

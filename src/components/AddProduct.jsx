@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { DataStore } from '../services/dataStore'
-import { uploadImageToCloudinary } from '../services/cloudinaryService'
 import { validateRequired, validatePositiveNumber } from '../utils/validators'
 import './AddProduct.css'
 
@@ -187,7 +186,7 @@ export default function AddProduct({ onProductSaved, onCancel, editProduct = nul
     setSkuCode(generateAutoSku())
   }
 
-  const handleProductImageUpload = async (e) => {
+  const handleProductImageUpload = (e) => {
     const file = e.target.files?.[0]
     if (!file) return
     if (file.size > 10 * 1024 * 1024) {
@@ -195,28 +194,15 @@ export default function AddProduct({ onProductSaved, onCancel, editProduct = nul
       return
     }
 
-    try {
-      setIsUploadingImage(true)
-      setImageUploadMsg('Uploading to Cloudinary...')
-      const result = await uploadImageToCloudinary(file, 'kerala_wood_billing/products', `${skuCode || 'prod'}_photo`)
-      if (result?.url) {
-        setImageUrl(result.url)
-        setImagePublicId(result.public_id || '')
-        setImageUploadMsg('✓ Uploaded to Cloudinary CDN')
-        setTimeout(() => setImageUploadMsg(''), 4000)
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        setImageUrl(event.target.result)
+        setImageUploadMsg('✓ Photo added')
+        setTimeout(() => setImageUploadMsg(''), 3000)
       }
-    } catch (err) {
-      console.warn('[Cloudinary] Upload failed, using local preview:', err)
-      const reader = new FileReader()
-      reader.onload = (event) => {
-        if (event.target?.result) setImageUrl(event.target.result)
-      }
-      reader.readAsDataURL(file)
-      setImageUploadMsg('Saved locally')
-      setTimeout(() => setImageUploadMsg(''), 3000)
-    } finally {
-      setIsUploadingImage(false)
     }
+    reader.readAsDataURL(file)
   }
 
   const handleRemoveProductImage = () => {
@@ -550,9 +536,9 @@ export default function AddProduct({ onProductSaved, onCancel, editProduct = nul
             />
           </div>
 
-          {/* Cloudinary Product Photo Upload */}
+          {/* Product Photo Upload */}
           <div className="form-field-group" style={{ marginTop: '14px' }}>
-            <label className="field-label">Product Photo (Cloudinary CDN)</label>
+            <label className="field-label">Product Photo</label>
             <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
               <div style={{
                 width: '60px',
@@ -580,16 +566,15 @@ export default function AddProduct({ onProductSaved, onCancel, editProduct = nul
                     gap: '6px',
                     padding: '6px 12px',
                     borderRadius: '6px',
-                    backgroundColor: isUploadingImage ? '#D3C4B8' : '#5C3A21',
+                    backgroundColor: '#5C3A21',
                     color: '#FFF',
                     fontSize: '12px',
                     fontWeight: 600,
-                    cursor: isUploadingImage ? 'wait' : 'pointer',
+                    cursor: 'pointer',
                   }}>
-                    <span>{isUploadingImage ? '☁️ Uploading...' : 'Upload Photo'}</span>
+                    <span>Upload Photo</span>
                     <input
                       type="file"
-                      disabled={isUploadingImage}
                       accept="image/png, image/jpeg, image/jpg, image/webp"
                       style={{ display: 'none' }}
                       onChange={handleProductImageUpload}
@@ -616,13 +601,8 @@ export default function AddProduct({ onProductSaved, onCancel, editProduct = nul
                 </div>
 
                 {imageUploadMsg && (
-                  <span style={{ fontSize: '11px', fontWeight: 600, color: imageUploadMsg.startsWith('✓') ? '#2E7D32' : '#5C3A21' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 600, color: '#2E7D32' }}>
                     {imageUploadMsg}
-                  </span>
-                )}
-                {imageUrl && imageUrl.includes('cloudinary') && (
-                  <span style={{ fontSize: '11px', color: '#2E7D32', fontWeight: 600 }}>
-                    ☁️ Cloudinary CDN Active
                   </span>
                 )}
               </div>
