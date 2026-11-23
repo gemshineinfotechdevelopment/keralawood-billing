@@ -572,4 +572,20 @@
     flex-direction: column;
     align-items: flex-start;
   }
+  .settings-logo-actions-bar {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    width: 100% !important;
+    gap: 8px !important;
+  }
+  .btn-settings-choose-logo,
+  .btn-settings-remove-logo {
+    width: 100% !important;
+    justify-content: center !important;
+    text-align: center !important;
+    font-size: 11.5px !important;
+    padding: 8px 6px !important;
+    box-sizing: border-box;
+    white-space: nowrap;
+  }
 }

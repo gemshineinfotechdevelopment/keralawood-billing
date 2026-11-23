@@ -828,19 +828,22 @@
     gap: 12px;
   }
   .reports-header-actions {
-    display: flex;
-    flex-direction: row;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
     align-items: center;
-    width: 100%;
-    gap: 10px;
+    width: 100% !important;
+    gap: 8px !important;
   }
   .reports-month-select-wrap,
   .btn-export-report {
-    flex: 1;
+    width: 100% !important;
     justify-content: center;
     min-height: 40px;
+    padding: 8px 6px !important;
+    font-size: 11.5px !important;
     box-sizing: border-box;
     white-space: nowrap;
+    text-align: center;
   }
   .reports-table-header {
     flex-direction: column;

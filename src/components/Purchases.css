@@ -102,12 +102,49 @@
 }
 
 @media (max-width: 992px) {
+  .purchases-page-container,
+  .purchases-billing-container {
+    padding: 12px 14px 40px;
+    gap: 16px;
+  }
+
+  .purchases-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .purchases-header-actions {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    align-items: center;
+    width: 100% !important;
+    gap: 8px !important;
+  }
+
+  .btn-purchases-print,
+  .btn-new-purchase-primary {
+    width: 100% !important;
+    justify-content: center;
+    min-height: 40px;
+    padding: 8px 6px !important;
+    font-size: 11.5px !important;
+    box-sizing: border-box;
+    white-space: nowrap;
+    text-align: center;
+  }
+
   .purchases-kpi-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
 @media (max-width: 576px) {
+  .purchases-page-container,
+  .purchases-billing-container {
+    padding: 10px 12px 32px;
+  }
+
   .purchases-kpi-grid {
     grid-template-columns: 1fr;
   }
