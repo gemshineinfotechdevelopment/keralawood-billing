@@ -15,6 +15,14 @@ const getCustomerInitials = (name) => {
   return String(name).trim().slice(0, 2).toUpperCase() || 'WC'
 }
 
+const PAYMENT_MODES = [
+  { value: 'UPI', label: 'UPI / QR Transfer' },
+  { value: 'Cash', label: 'Cash Payment' },
+  { value: 'Card', label: 'Credit / Debit Card' },
+  { value: 'Bank Transfer', label: 'Net Banking / Wire Transfer' },
+  { value: 'Cheque', label: 'Commercial Cheque' },
+]
+
 export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'list' }) {
   const [viewMode, setViewMode] = useState(initialViewMode) // 'list' | 'editor'
   const [billsSearch, setBillsSearch] = useState('')
@@ -202,7 +210,9 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
 
   // Payment status & modes
   const paymentStatus = currentBill.paymentStatus || 'Pending' // 'Pending' | 'Partial' | 'Paid'
-  const paymentMode = currentBill.paymentMode || 'UPI'
+  const rawMode = currentBill.paymentMode || 'UPI'
+  const paymentMode =
+    rawMode === 'Net Banking' || rawMode === 'Bank Wire' ? 'Bank Transfer' : rawMode
   const billedBy = currentBill.billedBy || currentBill.salesPerson || (salesPersonsList[0]?.name || '')
   const amountPaid = Number(currentBill.amountPaid) || 0
   const discount = Number(currentBill.discount) || 0
@@ -642,7 +652,7 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
   const handlePrintBill = (bill) => {
     setPreviewBill(bill)
     // Direct isolated print: guarantees 100% full-page crisp print without clipping or blank gaps
-    printInvoiceDocument(bill, settings, treeLogo)
+    printInvoiceDocument(bill, settings, kwfLogo)
   }
 
   const handleDeleteBillClick = (bill) => {
@@ -932,7 +942,7 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
         setInvoiceModalOpen(false)
         setPrintSuccessToast(`✓ Bill ${invoiceNumber} saved! Opening print preview...`)
         setTimeout(() => {
-          printInvoiceDocument(billToRecord, settings, treeLogo)
+          printInvoiceDocument(billToRecord, settings, kwfLogo)
           setTimeout(() => setPrintSuccessToast(''), 3000)
         }, 150)
         setViewMode('list')
@@ -951,7 +961,7 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
   }
 
   const handlePrint = () => {
-    printInvoiceDocument(modalBillData, settings, treeLogo)
+    printInvoiceDocument(modalBillData, settings, kwfLogo)
   }
 
   const renderPrintableInvoiceSheet = () => (
@@ -1518,11 +1528,11 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
                   value={paymentMode}
                   onChange={(e) => updateCurrentBill({ paymentMode: e.target.value })}
                 >
-                  <option value="UPI">UPI</option>
-                  <option value="Cash">Cash</option>
-                  <option value="Card">Card</option>
-                  <option value="Net Banking">Net Banking</option>
-                  <option value="Cheque">Cheque</option>
+                  {PAYMENT_MODES.map((pm) => (
+                    <option key={pm.value} value={pm.value}>
+                      {pm.label}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -2322,11 +2332,11 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
                       value={paymentMode}
                       onChange={(e) => updateCurrentBill({ paymentMode: e.target.value })}
                     >
-                      <option value="UPI">UPI / QR Transfer</option>
-                      <option value="Cash">Cash at Yard</option>
-                      <option value="Bank Transfer">Bank Wire (NEFT/RTGS)</option>
-                      <option value="Cheque">Commercial Cheque</option>
-                      <option value="Card">Credit / Debit Card</option>
+                      {PAYMENT_MODES.map((pm) => (
+                        <option key={pm.value} value={pm.value}>
+                          {pm.label}
+                        </option>
+                      ))}
                     </select>
                   </div>
                 </div>

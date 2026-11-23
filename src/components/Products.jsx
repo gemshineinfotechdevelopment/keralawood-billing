@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { DataStore } from '../services/dataStore'
 import AddProduct from './AddProduct'
 import './Products.css'
@@ -369,7 +369,6 @@ export default function Products({ initialViewMode = 'list' }) {
                 <th>PRODUCT</th>
                 <th>CATEGORY</th>
                 <th>WOOD SPECIES</th>
-                <th>COST PRICE</th>
                 <th>SELLING PRICE</th>
                 <th style={{ textAlign: 'right' }}>ACTIONS</th>
               </tr>
@@ -377,7 +376,6 @@ export default function Products({ initialViewMode = 'list' }) {
             <tbody>
               {paginatedProducts.length > 0 ? (
                 paginatedProducts.map((prod) => {
-                  const numCost = Number(String(prod.costPrice || 0).replace(/[^0-9.]/g, '')) || 0
                   const numSelling = Number(String(prod.sellingPrice || prod.unitPrice || prod.price || 0).replace(/[^0-9.]/g, '')) || 0
 
                   return (
@@ -404,13 +402,6 @@ export default function Products({ initialViewMode = 'list' }) {
 
                       <td>
                         <span className="product-wood-tag">{prod.woodSpecies || '-'}</span>
-                      </td>
-
-                      <td>
-                        <span className="product-cost-val" style={{ color: '#6D5C52', fontWeight: 600 }}>
-                          <span className="straight-rupee">₹</span>
-                          {numCost > 0 ? numCost.toLocaleString('en-IN') : '-'}
-                        </span>
                       </td>
 
                       <td>
@@ -756,7 +747,6 @@ export default function Products({ initialViewMode = 'list' }) {
               <th>Product Name</th>
               <th>Category</th>
               <th>Wood Species</th>
-              <th style={{ textAlign: 'right' }}>Cost Price (₹)</th>
               <th style={{ textAlign: 'right' }}>Selling Price (₹)</th>
               <th style={{ textAlign: 'right' }}>Stock</th>
             </tr>
@@ -764,13 +754,12 @@ export default function Products({ initialViewMode = 'list' }) {
           <tbody>
             {filteredProducts.length === 0 ? (
               <tr>
-                <td colSpan="8" style={{ textAlign: 'center', padding: '16px' }}>
+                <td colSpan="7" style={{ textAlign: 'center', padding: '16px' }}>
                   No products in catalog.
                 </td>
               </tr>
             ) : (
               filteredProducts.map((p, idx) => {
-                const numCost = Number(String(p.costPrice || 0).replace(/[^0-9.]/g, '')) || 0
                 const numSelling = Number(String(p.sellingPrice || p.unitPrice || p.price || 0).replace(/[^0-9.]/g, '')) || 0
                 return (
                   <tr key={p.id || p.sku || idx}>
@@ -779,7 +768,6 @@ export default function Products({ initialViewMode = 'list' }) {
                     <td><strong>{p.name}</strong></td>
                     <td>{p.category || '-'}</td>
                     <td>{p.woodSpecies || '-'}</td>
-                    <td style={{ textAlign: 'right' }}>{numCost > 0 ? `₹${numCost.toLocaleString('en-IN')}` : '-'}</td>
                     <td style={{ textAlign: 'right' }}>₹{numSelling.toLocaleString('en-IN')}</td>
                     <td style={{ textAlign: 'right' }}>{p.stockQuantity !== undefined ? p.stockQuantity : '-'}</td>
                   </tr>
