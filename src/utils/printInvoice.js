@@ -483,8 +483,6 @@ export function printPurchaseBillDocument(purchase, settings = {}, defaultLogo =
   const companyGstin = purchase.companyGstin || settings.gstin || '32AABCP9821K1ZK'
   const companyPhone = purchase.companyPhone || settings.contactPhone || '+91 484 289 1204'
 
-  const logoSrc = settings.logoUrl || defaultLogo || '/kwf.jpg'
-
   const rawItems = Array.isArray(purchase.itemsList) && purchase.itemsList.length > 0
     ? purchase.itemsList
     : [
@@ -682,10 +680,7 @@ export function printPurchaseBillDocument(purchase, settings = {}, defaultLogo =
     <table class="header-table">
       <tr>
         <td style="vertical-align: top;">
-          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 4px;">
-            ${logoSrc ? `<img src="${logoSrc}" alt="Logo" style="max-height: 42px; max-width: 42px; object-fit: contain;" />` : ''}
-            <h1 class="brand-title">${depotName}</h1>
-          </div>
+          <h1 class="brand-title" style="margin-bottom: 4px;">${depotName}</h1>
           <p class="brand-sub">${companyAddress}</p>
           <p class="brand-sub">Phone: ${companyPhone} • GSTIN: ${companyGstin} • HSN: ${settings.hsnCode || '9403'}</p>
         </td>

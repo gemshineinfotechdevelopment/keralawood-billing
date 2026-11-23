@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo } from 'react'
 import { DataStore } from '../services/dataStore'
 import { validateRequired, validatePhone } from '../utils/validators'
 import { printPurchaseBillDocument, numberToWordsINR } from '../utils/printInvoice'
-import kwfLogo from '../assets/kwf.jpg'
 import './Purchases.css'
 
 const createEmptyItem = () => ({
@@ -199,7 +198,7 @@ export default function Purchases() {
 
   const handlePrintPurchase = (p) => {
     const settings = DataStore.getSettings()
-    printPurchaseBillDocument(p, settings, kwfLogo)
+    printPurchaseBillDocument(p, settings)
     showToast(`✓ Printing purchase bill #${p.invoiceNumber}`)
   }
 
@@ -401,17 +400,9 @@ export default function Purchases() {
         {/* Top Header */}
         <div className="pos-print-top">
           <div className="pos-print-brand">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px' }}>
-              <img
-                src={kwfLogo}
-                alt="Kerala Wood Furniture Logo"
-                className="pos-print-custom-logo"
-                style={{ maxHeight: '42px', maxWidth: '42px', objectFit: 'contain', margin: 0 }}
-              />
-              <h2 style={{ margin: 0, fontSize: '22px', fontWeight: 800, color: '#31190B', lineHeight: 1.1 }}>
-                {(settings.depotName || 'Kerala Wood Furniture').replace(/[-–—]\s*sivakasi\s*depot/gi, '').trim() || 'Kerala Wood Furniture'}
-              </h2>
-            </div>
+            <h2 style={{ margin: '0 0 4px 0', fontSize: '22px', fontWeight: 800, color: '#31190B', lineHeight: 1.1 }}>
+              {(settings.depotName || 'Kerala Wood Furniture').replace(/[-–—]\s*sivakasi\s*depot/gi, '').trim() || 'Kerala Wood Furniture'}
+            </h2>
             <p>{(settings.address || 'Sivakasi Central Mill Yard, Sivakasi').replace(/Depot & /gi, '').replace(/Central Depot/gi, 'Central Yard')}</p>
             <p>
               Phone: {settings.contactPhone || companyPhone} • GSTIN: {settings.gstin || companyGstin} • HSN: {settings.hsnCode || '9403'}
