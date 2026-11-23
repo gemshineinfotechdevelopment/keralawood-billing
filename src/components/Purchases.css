@@ -6,11 +6,11 @@
 .purchases-page-container {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  max-width: 1240px;
+  gap: 28px;
+  max-width: 1480px;
   width: 100%;
   margin: 0 auto;
-  padding: 10px 16px 40px;
+  padding: 20px 32px 60px;
   box-sizing: border-box;
   font-family: inherit;
   color: #31190B;
@@ -98,7 +98,7 @@
 .purchases-kpi-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
+  gap: 20px;
 }
 
 @media (max-width: 992px) {
@@ -116,43 +116,43 @@
 .purchases-kpi-card {
   background-color: #FFFFFF;
   border: 1px solid #EFE4DC;
-  border-radius: 10px;
-  padding: 16px 18px;
+  border-radius: 12px;
+  padding: 20px 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 1px 3px rgba(49, 25, 11, 0.04);
+  box-shadow: 0 1px 4px rgba(49, 25, 11, 0.04);
 }
 
 .purchases-kpi-left {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
 }
 
 .purchases-kpi-label {
-  font-size: 11px;
-  font-weight: 700;
+  font-size: 11.5px;
+  font-weight: 800;
   color: #8A7B72;
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
 .purchases-kpi-value {
-  font-size: 22px;
-  font-weight: 800;
+  font-size: 24px;
+  font-weight: 900;
   color: #31190B;
 }
 
 .purchases-kpi-sub {
-  font-size: 11px;
+  font-size: 11.5px;
   color: #A6978F;
 }
 
 .purchases-kpi-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
   background-color: #FEF6EE;
   color: #C88D58;
   display: flex;
@@ -165,12 +165,12 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 16px;
+  gap: 20px;
   flex-wrap: wrap;
   background-color: #FFFFFF;
   border: 1px solid #EFE4DC;
-  border-radius: 8px;
-  padding: 12px 16px;
+  border-radius: 10px;
+  padding: 14px 20px;
 }
 
 .purchases-search-wrap {
@@ -178,22 +178,22 @@
   display: flex;
   align-items: center;
   flex: 1;
-  max-width: 380px;
+  max-width: 420px;
 }
 
 .purchases-search-icon {
   position: absolute;
-  left: 12px;
+  left: 14px;
   color: #8A7B72;
   pointer-events: none;
 }
 
 .purchases-search-input {
   width: 100%;
-  padding: 8px 12px 8px 36px;
+  padding: 10px 14px 10px 40px;
   border: 1.5px solid #D3C4B8;
-  border-radius: 6px;
-  font-size: 13px;
+  border-radius: 7px;
+  font-size: 13.5px;
   color: #31190B;
   background-color: #FFFFFF;
   transition: all 0.15s ease;
@@ -208,14 +208,14 @@
 .purchases-filter-group {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .purchases-select-filter {
-  padding: 8px 12px;
+  padding: 9px 14px;
   border: 1.5px solid #D3C4B8;
-  border-radius: 6px;
-  font-size: 12.5px;
+  border-radius: 7px;
+  font-size: 13px;
   font-weight: 600;
   color: #31190B;
   background-color: #FFFFFF;
@@ -231,7 +231,7 @@
 .purchases-table-card {
   background-color: #FFFFFF;
   border: 1px solid #EFE4DC;
-  border-radius: 10px;
+  border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 1px 4px rgba(49, 25, 11, 0.04);
 }
@@ -245,7 +245,7 @@
   width: 100%;
   border-collapse: collapse;
   text-align: left;
-  font-size: 13px;
+  font-size: 13.5px;
 }
 
 .purchases-table thead {
@@ -254,8 +254,8 @@
 }
 
 .purchases-table th {
-  padding: 12px 14px;
-  font-size: 11px;
+  padding: 14px 18px;
+  font-size: 11.5px;
   font-weight: 800;
   color: #5C4537;
   letter-spacing: 0.05em;
@@ -272,35 +272,37 @@
 }
 
 .purchases-table td {
-  padding: 12px 14px;
+  padding: 14px 18px;
   vertical-align: middle;
   color: #31190B;
 }
 
 .purchases-invoice-no {
-  font-weight: 700;
+  font-weight: 800;
   color: #31190B;
-  font-size: 13.5px;
+  font-size: 14px;
 }
 
 .purchases-invoice-date {
-  font-size: 11px;
+  font-size: 11.5px;
   color: #8A7B72;
-  margin-top: 2px;
+  margin-top: 3px;
 }
 
 .purchases-supplier-name {
   font-weight: 700;
   color: #31190B;
+  font-size: 14px;
 }
 
 .purchases-supplier-phone {
-  font-size: 11px;
+  font-size: 11.5px;
   color: #8C5325;
+  margin-top: 2px;
 }
 
 .purchases-amt-val {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 800;
   color: #31190B;
 }
@@ -308,9 +310,9 @@
 .purchases-payment-mode-pill {
   display: inline-flex;
   align-items: center;
-  padding: 4px 10px;
+  padding: 5px 12px;
   border-radius: 6px;
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 700;
   background-color: #F5EAE4;
   color: #5C3A21;
@@ -327,9 +329,9 @@
 }
 
 .btn-purchase-action {
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
+  width: 34px;
+  height: 34px;
+  border-radius: 7px;
   border: 1px solid #E4D8CE;
   background: #FFFFFF;
   display: inline-flex;
@@ -526,22 +528,23 @@
    Theme: Kerala Wood Furniture (Rich Teak & Modern ERP)
    =================================================== */
 .purchases-billing-container {
-  max-width: 1240px;
+  max-width: 1480px;
   margin: 0 auto;
+  padding: 20px 32px 60px;
 }
 
 .purchases-toast-banner {
   position: fixed;
-  top: 24px;
-  right: 28px;
+  top: 28px;
+  right: 32px;
   z-index: 9999;
   background-color: #31190B;
   color: #FAF4EF;
-  padding: 12px 20px;
+  padding: 14px 24px;
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 600;
-  box-shadow: 0 4px 14px rgba(49, 25, 11, 0.25);
+  box-shadow: 0 6px 18px rgba(49, 25, 11, 0.28);
   animation: fadeIn 0.2s ease-in-out;
 }
 
@@ -549,51 +552,55 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 22px;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 16px;
 }
 
 .btn-purchases-back-link {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  background: transparent;
-  border: none;
-  font-size: 13.5px;
-  font-weight: 600;
-  color: #7A4E2D;
+  gap: 10px;
+  background: #FFFFFF;
+  border: 1.5px solid #D8C7BC;
+  font-size: 14px;
+  font-weight: 700;
+  color: #6A3A1A;
   cursor: pointer;
-  padding: 6px 12px;
-  border-radius: 6px;
+  padding: 8px 18px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(49, 25, 11, 0.04);
   transition: all 0.15s ease;
 }
 
 .btn-purchases-back-link:hover {
-  background-color: #F4E8DF;
+  background-color: #FAF4EF;
+  border-color: #C88D58;
   color: #31190B;
+  transform: translateX(-2px);
 }
 
 .purchases-billing-top-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .btn-purchases-submit-primary {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 8px 20px;
-  border-radius: 6px;
+  gap: 8px;
+  padding: 10px 24px;
+  border-radius: 8px;
   background-color: #31190B;
   color: #FFFFFF;
   border: 1px solid #31190B;
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(49, 25, 11, 0.2);
+  box-shadow: 0 2px 8px rgba(49, 25, 11, 0.22);
   transition: all 0.15s ease;
+  height: 42px;
 }
 
 .btn-purchases-submit-primary:hover {
@@ -608,47 +615,47 @@
 .purchase-bill-sheet {
   background-color: #FFFFFF;
   border: 1.5px solid #EAE0D8;
-  border-radius: 12px;
-  padding: 24px 28px;
-  box-shadow: 0 3px 12px rgba(49, 25, 11, 0.05);
+  border-radius: 14px;
+  padding: 34px 40px;
+  box-shadow: 0 4px 20px rgba(49, 25, 11, 0.05);
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 30px;
 }
 
 /* Header Row: Title & Top Meta Box */
 .purchase-bill-header-row {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  padding-bottom: 20px;
+  align-items: center;
+  padding-bottom: 24px;
   border-bottom: 1.5px solid #F0E6DE;
-  gap: 20px;
+  gap: 24px;
   flex-wrap: wrap;
 }
 
 .purchase-bill-title-block {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
 .purchase-bill-badge {
   display: inline-block;
   align-self: flex-start;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: #8C5325;
   background-color: #FAF1EE;
   border: 1px solid #EFE4DC;
-  padding: 2px 8px;
-  border-radius: 4px;
+  padding: 3px 10px;
+  border-radius: 5px;
 }
 
 .purchase-bill-main-title {
-  font-size: 24px;
+  font-size: 28px;
   font-weight: 800;
   color: #31190B;
   margin: 4px 0 0 0;
@@ -656,7 +663,7 @@
 }
 
 .purchase-bill-subtitle {
-  font-size: 12.5px;
+  font-size: 13.5px;
   color: #7D6C63;
   margin: 2px 0 0 0;
 }
@@ -664,15 +671,15 @@
 /* Meta Box: Purchase #, Date, Payment Mode */
 .purchase-bill-meta-box {
   display: grid;
-  grid-template-columns: 140px 150px 180px;
-  gap: 12px;
+  grid-template-columns: 190px 190px 230px;
+  gap: 16px;
   background-color: #FAF4EF;
-  border: 1px solid #EAE0D8;
-  border-radius: 8px;
-  padding: 12px 14px;
+  border: 1.5px solid #EAE0D8;
+  border-radius: 10px;
+  padding: 16px 20px;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .purchase-bill-meta-box {
     grid-template-columns: 1fr;
     width: 100%;
@@ -682,13 +689,13 @@
 .purchase-meta-field {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
 }
 
 .purchase-meta-label {
-  font-size: 11px;
-  font-weight: 700;
-  color: #6A564A;
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #5C4537;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -698,8 +705,9 @@
   align-items: center;
   background-color: #FFFFFF;
   border: 1.5px solid #D3C4B8;
-  border-radius: 6px;
+  border-radius: 7px;
   overflow: hidden;
+  height: 42px;
   transition: all 0.15s ease;
 }
 
@@ -709,23 +717,23 @@
 }
 
 .purchase-num-prefix {
-  padding: 0 8px 0 10px;
+  padding: 0 12px;
   font-weight: 800;
-  font-size: 14px;
+  font-size: 15px;
   color: #8C5325;
   background-color: #F8EFE9;
   align-self: stretch;
   display: flex;
   align-items: center;
-  border-right: 1px solid #EAE0D8;
+  border-right: 1.5px solid #EAE0D8;
 }
 
 .purchase-num-input {
   width: 100%;
   border: none;
   outline: none;
-  padding: 6px 10px;
-  font-size: 14px;
+  padding: 8px 12px;
+  font-size: 15px;
   font-weight: 800;
   color: #31190B;
   background: transparent;
@@ -733,14 +741,17 @@
 
 .purchase-meta-date,
 .purchase-meta-select {
-  padding: 6px 8px;
-  font-size: 12.5px;
+  height: 42px;
+  padding: 8px 12px;
+  font-size: 13.5px;
   background-color: #FFFFFF;
+  border-radius: 7px;
 }
 
 .purchase-meta-hint {
-  font-size: 10px;
+  font-size: 10.5px;
   color: #9C8B82;
+  margin-top: 2px;
 }
 
 /* ===================================================
@@ -749,7 +760,7 @@
 .purchase-parties-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 20px;
+  gap: 28px;
 }
 
 @media (max-width: 860px) {
@@ -761,35 +772,36 @@
 .purchase-party-card {
   background-color: #FFFFFF;
   border: 1.5px solid #EAE0D8;
-  border-radius: 10px;
-  padding: 16px 18px;
+  border-radius: 12px;
+  padding: 22px 26px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
+  box-shadow: 0 1px 4px rgba(49, 25, 11, 0.02);
 }
 
 .purchase-party-from {
-  border-left: 4px solid #C88D58;
+  border-left: 5px solid #C88D58;
 }
 
 .purchase-party-to {
-  border-left: 4px solid #2563EB;
+  border-left: 5px solid #2563EB;
 }
 
 .purchase-party-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid #F0E6DE;
-  padding-bottom: 8px;
+  border-bottom: 1.5px solid #F0E6DE;
+  padding-bottom: 12px;
 }
 
 .purchase-party-tag {
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 800;
   letter-spacing: 0.05em;
-  padding: 3px 8px;
-  border-radius: 4px;
+  padding: 4px 10px;
+  border-radius: 5px;
 }
 
 .from-tag {
@@ -805,26 +817,28 @@
 }
 
 .purchase-party-role-text {
-  font-size: 11px;
+  font-size: 12px;
   color: #8C7B72;
 }
 
 .purchase-party-body {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 14px;
 }
 
 .party-textarea {
-  min-height: 52px;
-  font-size: 12.5px;
-  line-height: 1.35;
+  min-height: 78px;
+  font-size: 13.5px;
+  line-height: 1.45;
+  padding: 10px 14px;
+  border-radius: 8px;
 }
 
 .purchase-party-subgrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 16px;
 }
 
 @media (max-width: 520px) {
@@ -835,8 +849,8 @@
 
 .purchases-uppercase-input {
   text-transform: uppercase;
-  font-weight: 600;
-  letter-spacing: 0.03em;
+  font-weight: 700;
+  letter-spacing: 0.04em;
 }
 
 /* ===================================================
@@ -845,95 +859,99 @@
 .purchase-items-section {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 14px;
 }
 
 .purchase-items-section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding-bottom: 4px;
 }
 
 .purchase-items-title-wrap {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 .purchase-items-section-title {
-  font-size: 14.5px;
+  font-size: 16px;
   font-weight: 800;
   color: #31190B;
   margin: 0;
 }
 
 .purchase-items-count {
-  font-size: 11px;
+  font-size: 11.5px;
   background-color: #FAF4EF;
   color: #7D6C63;
-  padding: 2px 7px;
-  border-radius: 10px;
+  padding: 3px 9px;
+  border-radius: 12px;
   border: 1px solid #EFE4DC;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .btn-add-item-row {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  padding: 6px 12px;
-  border-radius: 6px;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 7px;
   background-color: #FAF4EF;
-  border: 1px solid #D3C4B8;
+  border: 1.5px solid #D3C4B8;
   color: #6A3A1A;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.15s ease;
+  height: 38px;
 }
 
 .btn-add-item-row:hover {
   background-color: #F4E8DF;
   border-color: #C88D58;
+  color: #31190B;
 }
 
 .purchase-items-error-banner {
   background-color: #FEF2F2;
   border: 1px solid #FECACA;
   color: #DC2626;
-  font-size: 12px;
-  padding: 6px 12px;
-  border-radius: 6px;
+  font-size: 13px;
+  padding: 8px 14px;
+  border-radius: 7px;
   font-weight: 600;
 }
 
 .purchase-items-table-wrapper {
   overflow-x: auto;
   border: 1.5px solid #EAE0D8;
-  border-radius: 8px;
+  border-radius: 10px;
   background-color: #FFFFFF;
+  box-shadow: 0 1px 4px rgba(49, 25, 11, 0.03);
 }
 
 .purchase-items-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12.5px;
+  font-size: 13px;
   text-align: left;
 }
 
 .purchase-items-table th {
   background-color: #FAF4EF;
   color: #6A564A;
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 800;
-  letter-spacing: 0.04em;
-  padding: 10px 10px;
+  letter-spacing: 0.05em;
+  padding: 13px 14px;
   border-bottom: 1.5px solid #EAE0D8;
   white-space: nowrap;
 }
 
 .purchase-items-table td {
-  padding: 8px 10px;
+  padding: 11px 13px;
   border-bottom: 1px solid #F4E8DF;
   vertical-align: middle;
 }
@@ -945,35 +963,37 @@
 .purchase-table-input,
 .purchase-table-select {
   width: 100%;
-  padding: 6px 8px;
-  border: 1px solid #D3C4B8;
-  border-radius: 5px;
-  font-size: 12.5px;
+  height: 40px;
+  padding: 8px 12px;
+  border: 1.5px solid #D3C4B8;
+  border-radius: 6px;
+  font-size: 13px;
   color: #31190B;
   background-color: #FFFFFF;
   box-sizing: border-box;
   font-family: inherit;
+  transition: all 0.15s ease;
 }
 
 .purchase-table-input:focus,
 .purchase-table-select:focus {
   outline: none;
   border-color: #C88D58;
-  box-shadow: 0 0 0 2.5px rgba(200, 141, 88, 0.2);
+  box-shadow: 0 0 0 3px rgba(200, 141, 88, 0.18);
 }
 
 .btn-remove-row {
-  width: 26px;
-  height: 26px;
+  width: 30px;
+  height: 30px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   background: #FFF1F0;
   border: 1px solid #FFA39E;
   color: #CF1322;
-  border-radius: 5px;
+  border-radius: 6px;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 13px;
   transition: all 0.15s ease;
 }
 
@@ -993,17 +1013,17 @@
 
 .purchase-items-bottom-bar {
   display: flex;
-  margin-top: 4px;
+  margin-top: 6px;
 }
 
 .btn-add-item-dashed {
   width: 100%;
-  padding: 8px 14px;
+  padding: 12px 18px;
   background-color: #FAF6F3;
-  border: 1.5px dashed #D3C4B8;
-  border-radius: 6px;
+  border: 2px dashed #D3C4B8;
+  border-radius: 8px;
   color: #7A4E2D;
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.15s ease;
@@ -1021,9 +1041,10 @@
    =================================================== */
 .purchase-bottom-grid {
   display: grid;
-  grid-template-columns: 1.2fr 1fr;
-  gap: 20px;
+  grid-template-columns: 1.25fr 1fr;
+  gap: 28px;
   align-items: flex-start;
+  margin-top: 6px;
 }
 
 @media (max-width: 860px) {
@@ -1035,25 +1056,26 @@
 .purchase-notes-card {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .purchase-financials-card {
   background-color: #FAF4EF;
   border: 1.5px solid #EAE0D8;
-  border-radius: 10px;
-  padding: 16px 20px;
+  border-radius: 12px;
+  padding: 24px 28px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 14px;
 }
 
 .purchase-summary-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 13px;
+  font-size: 14px;
   color: #4A3528;
+  padding: 3px 0;
 }
 
 .purchase-summary-label {
@@ -1061,19 +1083,19 @@
 }
 
 .purchase-summary-val {
-  font-weight: 700;
-  font-size: 13.5px;
+  font-weight: 800;
+  font-size: 14.5px;
   color: #31190B;
 }
 
 .purchase-summary-tax-split {
   display: flex;
   justify-content: flex-end;
-  gap: 16px;
-  font-size: 11px;
+  gap: 20px;
+  font-size: 12px;
   color: #7D6C63;
   margin-top: -4px;
-  padding-bottom: 4px;
+  padding-bottom: 6px;
 }
 
 .purchase-summary-grand-total {
@@ -1081,8 +1103,8 @@
   justify-content: space-between;
   align-items: center;
   border-top: 2px solid #E2CEBE;
-  padding-top: 10px;
-  margin-top: 4px;
+  padding-top: 14px;
+  margin-top: 6px;
 }
 
 .purchase-grand-label-wrap {
@@ -1091,19 +1113,19 @@
 }
 
 .purchase-grand-title {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 800;
   color: #31190B;
   letter-spacing: 0.04em;
 }
 
 .purchase-grand-sub {
-  font-size: 11px;
+  font-size: 11.5px;
   color: #8C7B72;
 }
 
 .purchase-grand-amount {
-  font-size: 22px;
+  font-size: 26px;
   font-weight: 900;
   color: #31190B;
   letter-spacing: -0.02em;
@@ -1112,12 +1134,13 @@
 .purchase-sheet-bottom-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
-  padding-top: 14px;
+  gap: 14px;
+  padding-top: 18px;
   border-top: 1.5px solid #F0E6DE;
+  margin-top: 6px;
 }
 
 .purchases-bill-view-card {
-  max-width: 680px;
+  max-width: 760px;
 }
 

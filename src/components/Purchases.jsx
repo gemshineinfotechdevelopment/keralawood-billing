@@ -485,7 +485,7 @@ export default function Purchases() {
                 <div className="purchases-input-group">
                   <label className="purchases-label">Supplier Address</label>
                   <textarea
-                    rows="2"
+                    rows="3"
                     className="purchases-textarea party-textarea"
                     value={formData.supplierAddress}
                     onChange={(e) => setFormData({ ...formData, supplierAddress: e.target.value })}
@@ -551,7 +551,7 @@ export default function Purchases() {
                 <div className="purchases-input-group">
                   <label className="purchases-label">Depot Delivery Address</label>
                   <textarea
-                    rows="2"
+                    rows="3"
                     className="purchases-textarea party-textarea"
                     value={formData.companyAddress}
                     onChange={(e) => setFormData({ ...formData, companyAddress: e.target.value })}
@@ -619,15 +619,15 @@ export default function Purchases() {
               <table className="purchase-items-table">
                 <thead>
                   <tr>
-                    <th style={{ width: '40px', textAlign: 'center' }}>#</th>
-                    <th style={{ minWidth: '240px' }}>ITEM NAME / DESCRIPTION *</th>
-                    <th style={{ width: '170px' }}>WOOD CATEGORY</th>
-                    <th style={{ width: '100px', textAlign: 'right' }}>QUANTITY *</th>
-                    <th style={{ width: '130px', textAlign: 'right' }}>AMOUNT / RATE (₹) *</th>
-                    <th style={{ width: '95px', textAlign: 'center' }}>GST (%)</th>
-                    <th style={{ width: '120px', textAlign: 'right' }}>GST (₹)</th>
-                    <th style={{ width: '140px', textAlign: 'right' }}>TOTAL (₹)</th>
-                    <th style={{ width: '48px', textAlign: 'center' }}></th>
+                    <th style={{ width: '45px', textAlign: 'center' }}>#</th>
+                    <th style={{ minWidth: '280px' }}>ITEM NAME / DESCRIPTION *</th>
+                    <th style={{ width: '180px' }}>WOOD CATEGORY</th>
+                    <th style={{ width: '110px', textAlign: 'right' }}>QUANTITY *</th>
+                    <th style={{ width: '150px', textAlign: 'right' }}>AMOUNT / RATE (₹) *</th>
+                    <th style={{ width: '100px', textAlign: 'center' }}>GST (%)</th>
+                    <th style={{ width: '130px', textAlign: 'right' }}>GST (₹)</th>
+                    <th style={{ width: '150px', textAlign: 'right' }}>TOTAL (₹)</th>
+                    <th style={{ width: '50px', textAlign: 'center' }}></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -738,7 +738,7 @@ export default function Purchases() {
               <label className="purchases-label">Procurement Remarks / Lorry & Mill Notes</label>
               <textarea
                 className="purchases-textarea"
-                rows="4"
+                rows="5"
                 value={formData.notes || ''}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 placeholder="Add lorry receipt (LR) #, delivery vehicle number, saw mill lot code, timber grading notes..."
