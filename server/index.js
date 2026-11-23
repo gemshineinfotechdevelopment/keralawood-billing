@@ -631,35 +631,16 @@ app.delete('/api/sales/:invoice', async (req, res) => {
       const custName = typeof rawCust === 'object' && rawCust !== null ? rawCust.name : rawCust;
       if (custName && typeof custName === 'string' && !custName.toLowerCase().includes('walk-in')) {
         const trimmedCust = custName.trim();
-        const otherSalesCount = await Sale.countDocuments({
-          invoice: { $ne: sale.invoice },
+        // Decrement customer total orders if customer exists
+        const cust = await Customer.findOne({
           $or: [
-            { customer: trimmedCust },
-            { 'customer.name': trimmedCust },
-            { customerPhone: sale.customerPhone || '___none___' }
+            { name: { $regex: new RegExp(`^${trimmedCust}$`, 'i') } },
+            { phone: sale.customerPhone ? sale.customerPhone : '___none___' }
           ]
         });
-
-        if (otherSalesCount === 0) {
-          // No other sales: delete customer from Customers directory
-          await Customer.deleteMany({
-            $or: [
-              { name: { $regex: new RegExp(`^${trimmedCust}$`, 'i') } },
-              { phone: sale.customerPhone ? sale.customerPhone : '___none___' }
-            ]
-          });
-        } else {
-          // Decrement customer total orders
-          const cust = await Customer.findOne({
-            $or: [
-              { name: { $regex: new RegExp(`^${trimmedCust}$`, 'i') } },
-              { phone: sale.customerPhone ? sale.customerPhone : '___none___' }
-            ]
-          });
-          if (cust) {
-            cust.totalOrders = Math.max(0, (Number(cust.totalOrders) || 1) - 1);
-            await cust.save();
-          }
+        if (cust) {
+          cust.totalOrders = Math.max(0, (Number(cust.totalOrders) || 1) - 1);
+          await cust.save();
         }
       }
 

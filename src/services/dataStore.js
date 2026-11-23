@@ -14,29 +14,6 @@ const STORAGE_KEYS = {
 
 const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) || ''
 
-// One-time cache clear to remove old hardcoded seed data
-const DATA_VERSION_KEY = 'sivakasi_wood_data_version'
-const CURRENT_DATA_VERSION = '7'
-;(function clearOldSeedData() {
-  try {
-    const storedVersion = localStorage.getItem(DATA_VERSION_KEY)
-    if (storedVersion !== CURRENT_DATA_VERSION) {
-      localStorage.removeItem('sivakasi_wood_customers')
-      localStorage.removeItem('sivakasi_wood_transactions')
-      localStorage.removeItem('sivakasi_wood_products')
-      localStorage.removeItem('sivakasi_wood_bills')
-      localStorage.removeItem('sivakasi_wood_purchases')
-      localStorage.removeItem('sivakasi_wood_sales_persons')
-      localStorage.setItem('sivakasi_wood_customers', JSON.stringify([]))
-      localStorage.setItem('sivakasi_wood_transactions', JSON.stringify([]))
-      localStorage.setItem('sivakasi_wood_products', JSON.stringify([]))
-      localStorage.setItem('sivakasi_wood_purchases', JSON.stringify([]))
-      localStorage.setItem('sivakasi_wood_sales_persons', JSON.stringify([]))
-      localStorage.setItem(DATA_VERSION_KEY, CURRENT_DATA_VERSION)
-    }
-  } catch (e) { /* ignore */ }
-})()
-
 // System Settings (Company: Kerala Wood Furniture, Location: Sivakasi)
 const INITIAL_SETTINGS = {
   depotName: 'Kerala Wood Furniture - Sivakasi Depot',
@@ -148,19 +125,30 @@ export const DataStore = {
       }
 
       // 2. Sync Products
+      const localProducts = loadFromStorage(STORAGE_KEYS.PRODUCTS, [])
       const resProducts = await fetch(`${API_BASE}/api/products`).catch(() => null)
       if (resProducts && resProducts.ok) {
         const data = await resProducts.json()
-        if (data && Array.isArray(data.products)) {
+        if (data && Array.isArray(data.products) && data.products.length > 0) {
           saveToStorage(STORAGE_KEYS.PRODUCTS, data.products)
+        } else if (localProducts.length > 0) {
+          // Upload local products to backend MongoDB if backend is empty
+          for (const prod of localProducts) {
+            fetch(`${API_BASE}/api/products`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(prod),
+            }).catch(() => {})
+          }
         }
       }
 
       // 3. Sync Customers
+      const localCustomers = loadFromStorage(STORAGE_KEYS.CUSTOMERS, [])
       const resCustomers = await fetch(`${API_BASE}/api/customers`).catch(() => null)
       if (resCustomers && resCustomers.ok) {
         const data = await resCustomers.json()
-        if (data && Array.isArray(data.customers)) {
+        if (data && Array.isArray(data.customers) && data.customers.length > 0) {
           const formatted = data.customers.map((c) => ({
             id: c._id || c.id || Date.now(),
             name: c.name,
@@ -180,14 +168,24 @@ export const DataStore = {
             recentTx: c.recentTx || [],
           }))
           saveToStorage(STORAGE_KEYS.CUSTOMERS, formatted)
+        } else if (localCustomers.length > 0) {
+          // Upload local customers to backend MongoDB if backend is empty
+          for (const cust of localCustomers) {
+            fetch(`${API_BASE}/api/customers`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(cust),
+            }).catch(() => {})
+          }
         }
       }
 
       // 4. Sync Sales / Transactions
+      const localSales = loadFromStorage(STORAGE_KEYS.TRANSACTIONS, [])
       const resSales = await fetch(`${API_BASE}/api/sales`).catch(() => null)
       if (resSales && resSales.ok) {
         const data = await resSales.json()
-        if (data && Array.isArray(data.sales)) {
+        if (data && Array.isArray(data.sales) && data.sales.length > 0) {
           const formatted = data.sales.map((s) => ({
             id: s.invoice || s._id,
             invoice: s.invoice,
@@ -212,6 +210,7 @@ export const DataStore = {
       }
 
       // 5. Sync Purchases from Backend MongoDB
+      const localPurchases = loadFromStorage(STORAGE_KEYS.PURCHASES, [])
       const resPurchases = await fetch(`${API_BASE}/api/purchases`).catch(() => null)
       if (resPurchases && resPurchases.ok) {
         const data = await resPurchases.json()
@@ -231,10 +230,19 @@ export const DataStore = {
             notes: p.notes,
           }))
           saveToStorage(STORAGE_KEYS.PURCHASES, formatted)
+        } else if (localPurchases.length > 0) {
+          for (const p of localPurchases) {
+            fetch(`${API_BASE}/api/purchases`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(p),
+            }).catch(() => {})
+          }
         }
       }
 
       // 6. Sync Sales Persons from Backend MongoDB
+      const localSalesPersons = loadFromStorage(STORAGE_KEYS.SALES_PERSONS, [])
       const resSalesPersons = await fetch(`${API_BASE}/api/sales-persons`).catch(() => null)
       if (resSalesPersons && resSalesPersons.ok) {
         const data = await resSalesPersons.json()
@@ -256,6 +264,14 @@ export const DataStore = {
             notes: sp.notes,
           }))
           saveToStorage(STORAGE_KEYS.SALES_PERSONS, formatted)
+        } else if (localSalesPersons.length > 0) {
+          for (const sp of localSalesPersons) {
+            fetch(`${API_BASE}/api/sales-persons`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(sp),
+            }).catch(() => {})
+          }
         }
       }
 
