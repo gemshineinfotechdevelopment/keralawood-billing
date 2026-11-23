@@ -196,6 +196,9 @@ export const DataStore = {
             year: s.year || '2026',
             monthYear: s.monthYear || '',
             customer: s.customer,
+            customerPhone: s.customerPhone || '',
+            billedBy: s.billedBy || s.salesPerson || '',
+            salesPerson: s.salesPerson || s.billedBy || '',
             location: s.location || s.project || 'Sivakasi Yard Sale',
             project: s.location || s.project || 'Sivakasi Yard Sale',
             wood: s.wood || 'Artisan Timber',
@@ -205,6 +208,8 @@ export const DataStore = {
             amount: Number(s.amount || 0).toLocaleString('en-IN'),
             rawAmount: Number(s.amount || 0),
             status: s.paymentStatus || s.status || 'Paid',
+            paymentStatus: s.paymentStatus || s.status || 'Paid',
+            paymentMode: s.paymentMode || 'UPI',
           }))
           saveToStorage(STORAGE_KEYS.TRANSACTIONS, formatted)
         }
@@ -388,19 +393,23 @@ export const DataStore = {
   getSalesPersons() {
     const raw = loadFromStorage(STORAGE_KEYS.SALES_PERSONS, INITIAL_SALES_PERSONS)
     const txs = this.getTransactions()
-    // Calculate exact ordersClosed from real sales records (1 bill = 1 count)
+    const bills = this.getBills()
     return (Array.isArray(raw) ? raw : []).map((sp) => {
       const spName = (sp.name || '').trim().toLowerCase()
       const spCode = (sp.code || '').trim().toLowerCase()
-      const realOrderCount = txs.filter((t) => {
+      const realOrderCount = [...txs, ...bills].filter((t) => {
+        if (!t) return false
         const b = (t.billedBy || '').trim().toLowerCase()
         const s = (t.salesPerson || '').trim().toLowerCase()
         return (spName && (b === spName || s === spName)) || (spCode && (b === spCode || s === spCode))
       }).length
 
+      const baseOrders = sp.ordersClosed !== undefined && sp.ordersClosed !== null ? Number(sp.ordersClosed) : 0
+      const finalOrders = Math.max(baseOrders, realOrderCount)
+
       return {
         ...sp,
-        ordersClosed: realOrderCount,
+        ordersClosed: finalOrders,
       }
     })
   },
@@ -443,14 +452,18 @@ export const DataStore = {
   },
   updateSalesPerson(sp) {
     const list = this.getSalesPersons()
-    const updated = list.map((s) => (s.id === sp.id || s.code === sp.code ? { ...s, ...sp } : s))
+    const updated = list.map((s) =>
+      s.id === sp.id || s.code === sp.code || (sp._id && s._id === sp._id)
+        ? { ...s, ...sp, ordersClosed: sp.ordersClosed !== undefined ? Number(sp.ordersClosed) : s.ordersClosed }
+        : s
+    )
     this.saveSalesPersons(updated)
 
     const key = sp._id || sp.id || sp.code
     fetch(`${API_BASE}/api/sales-persons/${encodeURIComponent(key)}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(sp),
+      body: JSON.stringify({ ...sp, ordersClosed: Number(sp.ordersClosed) || 0 }),
     }).catch((err) => {
       console.warn('[dataStore] Offline sales person update saved locally:', err.message)
     })
