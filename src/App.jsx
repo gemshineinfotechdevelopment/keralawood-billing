@@ -10,6 +10,7 @@ import BillingPOS from './components/BillingPOS'
 import Customers from './components/Customers'
 import Purchases from './components/Purchases'
 import SalesPerson from './components/SalesPerson'
+import ErrorBoundary from './components/ErrorBoundary'
 import { DataStore } from './services/dataStore'
 import './App.css'
 
@@ -99,65 +100,67 @@ function App() {
             </div>
           </div>
 
-          {activeNav === 'Products' ? (
-            <Products initialViewMode={productsInitialMode} />
-          ) : activeNav === 'Stock Management' ? (
-            <StockManagement
-              onAddNewProduct={() => {
-                setProductsInitialMode('add')
-                setActiveNav('Products')
-              }}
-            />
-          ) : activeNav === 'Dashboard' ? (
-            <Dashboard
-              onNavigateToNewBill={() => {
-                DataStore.createNewDraft()
+          <ErrorBoundary>
+            {activeNav === 'Products' ? (
+              <Products initialViewMode={productsInitialMode} />
+            ) : activeNav === 'Stock Management' ? (
+              <StockManagement
+                onAddNewProduct={() => {
+                  setProductsInitialMode('add')
+                  setActiveNav('Products')
+                }}
+              />
+            ) : activeNav === 'Dashboard' ? (
+              <Dashboard
+                onNavigateToNewBill={() => {
+                  DataStore.createNewDraft()
+                  setBillingInitialMode('editor')
+                  setActiveNav('Billing & POS')
+                }}
+                onNavigateToNewInvoice={() => {
+                  DataStore.createNewDraft()
+                  setBillingInitialMode('editor')
+                  setActiveNav('Billing & POS')
+                }}
+                onNavigate={(nav) => {
+                  if (nav === 'Billing & POS') setBillingInitialMode('list')
+                  setActiveNav(nav)
+                }}
+              />
+            ) : activeNav === 'Settings' ? (
+              <Settings />
+            ) : activeNav === 'Reports & Analytics' ? (
+              <ReportsAnalytics />
+            ) : activeNav === 'Billing & POS' ? (
+              <BillingPOS
+                initialViewMode={billingInitialMode}
+                onNavigateToProducts={() => setActiveNav('Products')}
+              />
+            ) : activeNav === 'Customers' ? (
+              <Customers onNavigateToBilling={() => {
                 setBillingInitialMode('editor')
                 setActiveNav('Billing & POS')
-              }}
-              onNavigateToNewInvoice={() => {
-                DataStore.createNewDraft()
-                setBillingInitialMode('editor')
-                setActiveNav('Billing & POS')
-              }}
-              onNavigate={(nav) => {
-                if (nav === 'Billing & POS') setBillingInitialMode('list')
-                setActiveNav(nav)
-              }}
-            />
-          ) : activeNav === 'Settings' ? (
-            <Settings />
-          ) : activeNav === 'Reports & Analytics' ? (
-            <ReportsAnalytics />
-          ) : activeNav === 'Billing & POS' ? (
-            <BillingPOS
-              initialViewMode={billingInitialMode}
-              onNavigateToProducts={() => setActiveNav('Products')}
-            />
-          ) : activeNav === 'Customers' ? (
-            <Customers onNavigateToBilling={() => {
-              setBillingInitialMode('editor')
-              setActiveNav('Billing & POS')
-            }} />
-          ) : activeNav === 'Purchases' ? (
-            <Purchases />
-          ) : activeNav === 'Sales Person' ? (
-            <SalesPerson />
-          ) : (
-            <div className="module-placeholder">
-              <div className="placeholder-card">
-                <h2>{activeNav}</h2>
-                <p>This module is connected to the Kerala Wood Furniture ERP system.</p>
-                <button
-                  type="button"
-                  className="btn-back-dash"
-                  onClick={() => setActiveNav('Products')}
-                >
-                  ← Return to Products
-                </button>
+              }} />
+            ) : activeNav === 'Purchases' ? (
+              <Purchases />
+            ) : activeNav === 'Sales Person' ? (
+              <SalesPerson />
+            ) : (
+              <div className="module-placeholder">
+                <div className="placeholder-card">
+                  <h2>{activeNav}</h2>
+                  <p>This module is connected to the Kerala Wood Furniture ERP system.</p>
+                  <button
+                    type="button"
+                    className="btn-back-dash"
+                    onClick={() => setActiveNav('Products')}
+                  >
+                    ← Return to Products
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </ErrorBoundary>
         </main>
       </div>
     )

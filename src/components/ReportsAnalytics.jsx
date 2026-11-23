@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { DataStore } from '../services/dataStore'
 import './ReportsAnalytics.css'
 
@@ -75,16 +75,25 @@ export default function ReportsAnalytics() {
 
   const availableYears = yearNumbers.map(String)
 
-  const yearOptions = [
-    {
-      value: currentYear,
-      label: `This Year (${currentYear})`,
-    },
-    ...availableYears
-      .filter((y) => y !== currentYear)
-      .map((y) => ({ value: y, label: `Year ${y}` })),
-    { value: 'all', label: 'All-Time' },
-  ]
+  const yearOptions = useMemo(() => {
+    const raw = [
+      {
+        value: String(currentYear),
+        label: `This Year (${currentYear})`,
+      },
+      ...availableYears
+        .filter((y) => String(y) !== String(currentYear))
+        .map((y) => ({ value: String(y), label: `Year ${y}` })),
+      { value: 'all', label: 'All-Time' },
+    ]
+    const seen = new Set()
+    return raw.filter((opt) => {
+      const val = String(opt.value)
+      if (seen.has(val)) return false
+      seen.add(val)
+      return true
+    })
+  }, [currentYear, availableYears])
 
   // Helper to extract ISO YYYY-MM-DD from any transaction date format
   const getTxDateString = (tx) => {
@@ -232,25 +241,7 @@ export default function ReportsAnalytics() {
       ? `${(totalRawAmount / 100000).toFixed(2)} Lakhs`
       : totalRawAmount.toLocaleString('en-IN')
 
-  // Top Selling Wood Species calculated dynamically from this year's transactions
-  const speciesList = [
-    { name: 'Nilambur Teak', color: '#31190B' },
-    { name: 'Sivakasi Rosewood', color: '#C88D58' },
-    { name: 'Wild Anjili Wood', color: '#1A4D2E' },
-    { name: 'Country Hardwood & Mahogany', color: '#8C7B72' },
-  ].map((spec) => {
-    const specTxs = yearTransactions.filter((tx) =>
-      (tx.wood || '').toLowerCase().includes(spec.name.toLowerCase().split(' ')[0])
-    )
-    const specRaw = specTxs.reduce((sum, tx) => sum + (Number(tx.rawAmount) || 0), 0)
-    const pct = totalRawAmount > 0 ? Math.round((specRaw / totalRawAmount) * 100) : 0
-    return {
-      ...spec,
-      orders: specTxs.length,
-      raw: specRaw,
-      percent: pct,
-    }
-  })
+
 
   return (
     <div className="reports-page-container">
@@ -293,7 +284,7 @@ export default function ReportsAnalytics() {
               }}
             >
               {yearOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
+                <option key={`hdr-yr-${opt.value}`} value={opt.value}>
                   {opt.label}
                 </option>
               ))}
@@ -805,7 +796,7 @@ export default function ReportsAnalytics() {
                 }}
               >
                 {yearOptions.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
+                  <option key={`tbl-yr-${opt.value}`} value={opt.value}>
                     {opt.label}
                   </option>
                 ))}
@@ -829,8 +820,8 @@ export default function ReportsAnalytics() {
             </thead>
             <tbody>
               {displayed.length > 0 ? (
-                displayed.map((tx) => (
-                  <tr key={tx.id}>
+                displayed.map((tx, idx) => (
+                  <tr key={tx.id ? `tx-${tx.id}-${idx}` : tx.invoice ? `tx-inv-${tx.invoice}-${idx}` : `tx-row-${idx}`}>
                     <td>
                       <div className="sales-bill-no">{tx.id}</div>
                       <div className="sales-bill-date">{tx.date}</div>
@@ -923,7 +914,7 @@ export default function ReportsAnalytics() {
             {totalPages > 0 && filtered.length > 0 ? (
               Array.from({ length: totalPages }, (_, i) => i + 1).map((num) => (
                 <button
-                  key={num}
+                  key={`page-btn-${num}`}
                   type="button"
                   className={`pagination-num ${safeCurrentPage === num ? 'active' : ''}`}
                   onClick={() => setCurrentPage(num)}
