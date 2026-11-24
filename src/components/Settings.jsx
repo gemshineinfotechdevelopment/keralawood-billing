@@ -425,7 +425,7 @@ export default function Settings() {
         </div>
 
         <div className="settings-form-col">
-          <div className="settings-form-row-3col">
+          <div className="settings-form-row-2col">
             <div className="settings-field-group">
               <label className="settings-field-label">GSTIN Number</label>
               <input
@@ -452,35 +452,6 @@ export default function Settings() {
                 }}
               />
               {formErrors.hsnCode && <span className="kwf-field-error">{formErrors.hsnCode}</span>}
-            </div>
-            <div className="settings-field-group">
-              <label className="settings-field-label">Default Tax Rate (GST)</label>
-              <select
-                className="settings-input"
-                value={taxRate}
-                onChange={(e) => {
-                  const val = e.target.value
-                  setTaxRate(val)
-                  if (val.includes('18%')) {
-                    setCgstRate(9)
-                    setSgstRate(9)
-                  } else if (val.includes('12%')) {
-                    setCgstRate(6)
-                    setSgstRate(6)
-                  } else if (val.includes('5%')) {
-                    setCgstRate(2.5)
-                    setSgstRate(2.5)
-                  } else if (val.includes('28%')) {
-                    setCgstRate(14)
-                    setSgstRate(14)
-                  }
-                }}
-              >
-                <option value="18% (Standard GST)">18% (Standard GST) • CGST 9% + SGST 9%</option>
-                <option value="12% (Artisan Timber)">12% (Artisan Timber) • CGST 6% + SGST 6%</option>
-                <option value="5% (Raw Logs)">5% (Raw Logs) • CGST 2.5% + SGST 2.5%</option>
-                <option value="28% (Luxury Craft)">28% (Luxury Craft) • CGST 14% + SGST 14%</option>
-              </select>
             </div>
           </div>
         </div>

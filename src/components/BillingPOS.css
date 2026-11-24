@@ -374,8 +374,8 @@
 
 .pos-items-table-header {
   display: grid;
-  grid-template-columns: 36px 1fr 90px 125px 120px 80px;
-  gap: 10px;
+  grid-template-columns: 32px 1fr 70px 105px 72px 72px 105px 65px;
+  gap: 8px;
   padding: 8px 6px;
   font-size: 11px;
   font-weight: 700;
@@ -384,7 +384,9 @@
   text-transform: uppercase;
 }
 
-.pos-items-table-header .pos-col-qty {
+.pos-items-table-header .pos-col-qty,
+.pos-items-table-header .pos-col-gst,
+.pos-items-table-header .pos-col-igst {
   text-align: center;
 }
 
@@ -420,9 +422,34 @@
 
 .pos-item-row-main {
   display: grid;
-  grid-template-columns: 36px 1fr 90px 125px 120px 80px;
-  gap: 10px;
+  grid-template-columns: 32px 1fr 70px 105px 72px 72px 105px 65px;
+  gap: 8px;
   align-items: center;
+}
+
+.pos-tax-col-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.pos-item-tax-input {
+  text-align: center;
+  padding: 6px 18px 6px 6px;
+  font-weight: 600;
+  height: 32px;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.pos-tax-pct-symbol {
+  position: absolute;
+  right: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #8C7B72;
+  pointer-events: none;
 }
 
 @media (max-width: 768px) {
@@ -476,7 +503,7 @@
   .pos-item-row-main {
     display: grid;
     grid-template-columns: 32px 1fr 1fr;
-    gap: 10px 8px;
+    gap: 8px;
     align-items: center;
   }
   .pos-col-idx {
@@ -496,9 +523,17 @@
     grid-column: 3;
     grid-row: 2;
   }
+  .pos-col-gst {
+    grid-column: 1 / span 2;
+    grid-row: 3;
+  }
+  .pos-col-igst {
+    grid-column: 3;
+    grid-row: 3;
+  }
   .pos-col-total {
     grid-column: 1 / -1;
-    grid-row: 3;
+    grid-row: 4;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -510,7 +545,7 @@
   }
   .pos-col-actions {
     grid-column: 1 / -1;
-    grid-row: 4;
+    grid-row: 5;
     display: flex;
     justify-content: flex-end;
     gap: 8px;
@@ -1023,6 +1058,29 @@
   gap: 10px;
 }
 
+.pos-btn-share-whatsapp {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  background-color: #25D366;
+  border: 1px solid #1EBE5D;
+  color: #FFFFFF;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  box-shadow: 0 2px 5px rgba(37, 211, 102, 0.25);
+}
+
+.pos-btn-share-whatsapp:hover {
+  background-color: #128C7E;
+  border-color: #0d655b;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(18, 140, 126, 0.35);
+}
+
 .pos-btn-download-pdf {
   display: inline-flex;
   align-items: center;
@@ -1435,6 +1493,7 @@
     flex-wrap: wrap !important;
     gap: 8px !important;
   }
+  .pos-btn-share-whatsapp,
   .pos-btn-download-pdf,
   .pos-btn-print-now {
     font-size: 11.5px !important;
@@ -2405,6 +2464,20 @@
   background: #F6FFED;
   border-color: #B7EB8F;
   color: #389E0D;
+}
+
+.btn-bill-action.btn-bill-whatsapp {
+  color: #16A34A !important;
+  background-color: #F0FDF4 !important;
+  border: 1px solid #BBF7D0 !important;
+}
+
+.btn-bill-action.btn-bill-whatsapp:hover {
+  background-color: #25D366 !important;
+  color: #FFFFFF !important;
+  border-color: #1EBE5D !important;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(37, 211, 102, 0.35);
 }
 
 .btn-bill-delete:hover {

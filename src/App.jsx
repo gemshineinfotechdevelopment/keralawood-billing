@@ -264,7 +264,7 @@ function App() {
         <div className="header-meta">
           <div className="node-pill">
             <span className="status-dot-green"></span>
-            <span>{settings.depotLocation || settings.yardLocation || settings.depotName || 'Main Depot'}</span>
+            <span>{settings.depotLocation || settings.yardLocation || 'Sivakasi'}</span>
           </div>
           <div className="erp-secure">
             <svg

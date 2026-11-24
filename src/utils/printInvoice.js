@@ -273,19 +273,31 @@ export function getInvoicePrintHtml(modalBillData, settings = {}, defaultLogo = 
 
   let totalGst = modalBillData.totalGst !== undefined 
     ? Number(modalBillData.totalGst) 
-    : (modalBillData.taxAmount !== undefined ? Number(modalBillData.taxAmount) : NaN)
+    : (modalBillData.taxAmount !== undefined && !modalBillData.totalIgst ? Number(modalBillData.taxAmount) : NaN)
   if (isNaN(totalGst)) {
     totalGst = rawItems.reduce((sum, it) => {
       const q = Number(it.quantity) || 1
       const p = Number(it.price) || 0
-      const r = it.gstRate !== undefined ? Number(it.gstRate) : 18
+      const r = it.gstRate !== undefined ? Number(it.gstRate) : 0
       return sum + (q * p * r) / 100
     }, 0)
   }
 
-  const cgstAmount = modalBillData.cgstAmount !== undefined ? Number(modalBillData.cgstAmount) : (!isInter ? totalGst / 2 : 0)
-  const sgstAmount = modalBillData.sgstAmount !== undefined ? Number(modalBillData.sgstAmount) : (!isInter ? totalGst / 2 : 0)
-  const igstAmount = modalBillData.igstAmount !== undefined ? Number(modalBillData.igstAmount) : (isInter ? totalGst : 0)
+  let totalIgst = modalBillData.totalIgst !== undefined
+    ? Number(modalBillData.totalIgst)
+    : NaN
+  if (isNaN(totalIgst)) {
+    totalIgst = rawItems.reduce((sum, it) => {
+      const q = Number(it.quantity) || 1
+      const p = Number(it.price) || 0
+      const r = it.igstRate !== undefined ? Number(it.igstRate) : 0
+      return sum + (q * p * r) / 100
+    }, 0)
+  }
+
+  const cgstAmount = modalBillData.cgstAmount !== undefined ? Number(modalBillData.cgstAmount) : (totalGst / 2)
+  const sgstAmount = modalBillData.sgstAmount !== undefined ? Number(modalBillData.sgstAmount) : (totalGst / 2)
+  const igstAmount = modalBillData.igstAmount !== undefined ? Number(modalBillData.igstAmount) : totalIgst
   const paymentStatus = modalBillData.paymentStatus || modalBillData.status || 'Paid'
   const balanceDue = Number(modalBillData.balanceDue) || 0
   const notes = modalBillData.notes || ''
@@ -398,21 +410,22 @@ export function getInvoicePrintHtml(modalBillData, settings = {}, defaultLogo = 
               <span>-₹${discount.toLocaleString('en-IN')}</span>
             </div>
           ` : ''}
-          ${isInter ? `
+          ${totalGst > 0 ? `
             <div class="summary-line">
-              <span>IGST (${igstRate}%):</span>
-              <span>+₹${(igstAmount || totalGst).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-            </div>
-          ` : `
-            <div class="summary-line">
-              <span>CGST (${cgstRate}%):</span>
+              <span>CGST:</span>
               <span>+₹${cgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
             <div class="summary-line">
-              <span>SGST (${sgstRate}%):</span>
+              <span>SGST:</span>
               <span>+₹${sgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
-          `}
+          ` : ''}
+          ${totalIgst > 0 ? `
+            <div class="summary-line">
+              <span>IGST:</span>
+              <span>+₹${igstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            </div>
+          ` : ''}
           <div class="grand-line">
             <span>Grand Total:</span>
             <span>₹${grandTotal.toLocaleString('en-IN')}</span>
@@ -555,6 +568,182 @@ export async function downloadInvoicePDF(modalBillData, settings = {}, defaultLo
     if (container.parentNode) container.parentNode.removeChild(container)
   } catch (err) {
     console.error('[downloadInvoicePDF] Error downloading PDF:', err)
+  }
+}
+
+/**
+ * Format Customer Invoice text for WhatsApp matching the requested template
+ */
+export function formatWhatsAppInvoiceText(modalBillData, settings = {}) {
+  if (!modalBillData) return ''
+
+  const invNumber = modalBillData.invoiceNumber || modalBillData.invoice || modalBillData.id || '100'
+  const invDate = modalBillData.invoiceDate || modalBillData.date || new Date().toISOString().split('T')[0]
+
+  const rawCust = modalBillData.customer
+  const custName = typeof rawCust === 'object' && rawCust !== null ? (rawCust.name || 'Valued Customer') : (String(rawCust || '').trim() || 'Valued Customer')
+  const custPhone = (typeof rawCust === 'object' && rawCust !== null ? rawCust.phone : null) || modalBillData.customerPhone || modalBillData.phone || ''
+
+  const paymentStatus = modalBillData.paymentStatus || modalBillData.status || 'Paid'
+  const paymentMode = modalBillData.paymentMode || 'UPI'
+
+  const rawItems = Array.isArray(modalBillData.items) && modalBillData.items.length > 0 && typeof modalBillData.items[0] === 'object'
+    ? modalBillData.items
+    : Array.isArray(modalBillData.itemDetails) && modalBillData.itemDetails.length > 0
+    ? modalBillData.itemDetails
+    : [
+        {
+          description: typeof modalBillData.items === 'string' && modalBillData.items.trim()
+            ? modalBillData.items
+            : (typeof modalBillData.item === 'string' && modalBillData.item.trim() ? modalBillData.item : 'Timber Furniture Order'),
+          quantity: 1,
+          price: modalBillData.rawAmount || Number(String(modalBillData.amount || 0).replace(/[^0-9.]/g, '')) || 0,
+        }
+      ]
+
+  const grandTotal = modalBillData.rawAmount !== undefined
+    ? Number(modalBillData.rawAmount)
+    : (Number(String(modalBillData.amount || modalBillData.grandTotal || 0).replace(/[^0-9.]/g, '')) || 0)
+  const subtotal = modalBillData.itemsSubtotal !== undefined
+    ? Number(modalBillData.itemsSubtotal)
+    : (modalBillData.subtotal !== undefined ? Number(modalBillData.subtotal) : grandTotal)
+  const discount = Number(modalBillData.discount) || 0
+  const deliveryCharge = Number(modalBillData.deliveryCharge) || 0
+
+  let totalGst = Number(modalBillData.totalGst) || 0
+  let totalIgst = Number(modalBillData.totalIgst) || 0
+  if (!totalGst && !totalIgst && modalBillData.taxAmount) {
+    totalGst = Number(modalBillData.taxAmount)
+  }
+  const taxAmount = totalGst + totalIgst
+
+  const itemsLines = rawItems.map((it, idx) => {
+    const desc = (it.description || it.name || it.item || 'Timber Item').toUpperCase()
+    const qty = Number(it.quantity) || 1
+    const unit = it.unit || 'Nos'
+    const price = Number(it.price || it.rate || 0)
+    const gstRate = Number(it.gstRate || 0)
+    const igstRate = Number(it.igstRate || 0)
+    const lineSub = qty * price
+    const lineGst = (lineSub * (gstRate + igstRate)) / 100
+    const lineTot = lineSub + lineGst
+
+    let rateDetail = `@ ₹${price.toLocaleString('en-IN')}`
+    if (gstRate > 0) rateDetail += ` (GST ${gstRate}%)`
+    else if (igstRate > 0) rateDetail += ` (IGST ${igstRate}%)`
+
+    return `${idx + 1}. *${desc}* - ${qty} ${unit} ${rateDetail} = *₹${lineTot.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}*`
+  }).join('\n')
+
+  const depotTitle = (settings.depotName || 'Kerala Wood Furniture - Sivakasi').toUpperCase()
+
+  const lines = [
+    `*${depotTitle} - INVOICE BILL 🧾*`,
+    `--------------------------------`,
+    `*Bill No:* #${invNumber}`,
+    `*Customer:* ${custName}`,
+    ...(custPhone ? [`*Phone:* ${custPhone}`] : []),
+    `*Date:* ${invDate}`,
+    `*Status:* ${paymentStatus} (${paymentMode})`,
+    `--------------------------------`,
+    `*ITEMS:*`,
+    itemsLines,
+    `--------------------------------`,
+    `*Subtotal:* ₹${subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+    ...(discount > 0 ? [`*Discount:* ₹${discount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`] : []),
+    ...(deliveryCharge > 0 ? [`*Transport / Delivery:* ₹${deliveryCharge.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`] : []),
+    ...(taxAmount > 0 ? [`*Tax / GST:* ₹${taxAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`] : []),
+    `*NET TOTAL: ₹${grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}*`,
+    `--------------------------------`,
+    `_Thank you for your business!_`,
+    `*${settings.depotName || 'Kerala Wood Furniture - Sivakasi'}*`,
+  ]
+
+  return lines.join('\n')
+}
+
+/**
+ * Share Customer Invoice & PDF via WhatsApp
+ */
+export async function shareInvoiceOnWhatsApp(modalBillData, settings = {}, defaultLogo = '') {
+  if (!modalBillData) return { success: false, error: 'No bill data provided' }
+
+  const invNumber = modalBillData.invoiceNumber || modalBillData.invoice || modalBillData.id || '100'
+  const rawCust = modalBillData.customer
+  const custName = typeof rawCust === 'object' && rawCust !== null ? (rawCust.name || 'Customer') : (String(rawCust || '').trim() || 'Customer')
+  const custPhone = (typeof rawCust === 'object' && rawCust !== null ? rawCust.phone : null) || modalBillData.customerPhone || modalBillData.phone || ''
+
+  const safeCustName = custName.replace(/[^a-zA-Z0-9]/g, '_').slice(0, 30)
+  const pdfFileName = `Bill-${invNumber}-${safeCustName}.pdf`
+  const messageText = formatWhatsAppInvoiceText(modalBillData, settings)
+
+  let cleanPhone = String(custPhone || '').replace(/\D/g, '')
+  if (cleanPhone.length === 10) {
+    cleanPhone = '91' + cleanPhone
+  }
+
+  try {
+    const html2pdfModule = await import('html2pdf.js')
+    const html2pdf = html2pdfModule.default || html2pdfModule
+
+    const html = getInvoicePrintHtml(modalBillData, settings, defaultLogo)
+
+    const container = document.createElement('div')
+    container.style.position = 'fixed'
+    container.style.left = '-10000px'
+    container.style.top = '0'
+    container.style.width = '794px'
+    container.innerHTML = html
+    document.body.appendChild(container)
+
+    const opt = {
+      margin: [8, 8, 8, 8],
+      filename: pdfFileName,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, logging: false },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    }
+
+    const pdfBlob = await html2pdf().set(opt).from(container).outputPdf('blob')
+    if (container.parentNode) container.parentNode.removeChild(container)
+
+    const pdfFile = new File([pdfBlob], pdfFileName, { type: 'application/pdf' })
+
+    // Check Web Share API (mobile phones / tablets)
+    if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+      await navigator.share({
+        files: [pdfFile],
+        title: `Bill #${invNumber} - ${custName}`,
+        text: messageText,
+      })
+      return { success: true, method: 'native-share' }
+    }
+
+    // Fallback for Desktop (WhatsApp Web + automatic PDF download)
+    const blobUrl = URL.createObjectURL(pdfBlob)
+    const downloadAnchor = document.createElement('a')
+    downloadAnchor.href = blobUrl
+    downloadAnchor.download = pdfFileName
+    document.body.appendChild(downloadAnchor)
+    downloadAnchor.click()
+    document.body.removeChild(downloadAnchor)
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 10000)
+
+    const waUrl = cleanPhone
+      ? `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(messageText)}`
+      : `https://api.whatsapp.com/send?text=${encodeURIComponent(messageText)}`
+    window.open(waUrl, '_blank')
+
+    return { success: true, method: 'whatsapp-web-download', downloadedFile: pdfFileName }
+  } catch (err) {
+    console.error('[shareInvoiceOnWhatsApp] Error:', err)
+    if (err.name !== 'AbortError') {
+      const waUrl = cleanPhone
+        ? `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(messageText)}`
+        : `https://api.whatsapp.com/send?text=${encodeURIComponent(messageText)}`
+      window.open(waUrl, '_blank')
+    }
+    return { success: false, error: err.message }
   }
 }
 

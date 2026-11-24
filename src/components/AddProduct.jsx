@@ -282,17 +282,6 @@ export default function AddProduct({ onProductSaved, onCancel, editProduct = nul
         _id: editProduct._id,
       }
       DataStore.updateProduct(updatedPayload)
-      try {
-        const apiUrl = import.meta.env.VITE_API_URL || ''
-        const idToSync = editProduct._id || editProduct.id || editProduct.sku
-        await fetch(`${apiUrl}/api/products/${encodeURIComponent(idToSync)}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(updatedPayload),
-        })
-      } catch (err) {
-        console.warn('[AddProduct] Error updating product in backend API:', err.message)
-      }
       setSavedSuccess(true)
       setTimeout(() => {
         setSavedSuccess(false)
@@ -300,16 +289,6 @@ export default function AddProduct({ onProductSaved, onCancel, editProduct = nul
       }, 700)
     } else {
       DataStore.addProduct(productPayload)
-      try {
-        const apiUrl = import.meta.env.VITE_API_URL || ''
-        await fetch(`${apiUrl}/api/products`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(productPayload),
-        })
-      } catch (err) {
-        console.warn('[AddProduct] Error saving product to backend API:', err.message)
-      }
       setSavedSuccess(true)
       localStorage.removeItem('kwf_product_draft')
       handleAddNewProductForm()

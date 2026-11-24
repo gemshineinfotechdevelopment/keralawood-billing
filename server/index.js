@@ -165,6 +165,9 @@ app.delete('/api/categories/:nameOrId', async (req, res) => {
   }
 });
 
+// Helper to escape regex special characters
+const escapeRegex = (str) => String(str || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 // -------------------------------------------------------------
 // PRODUCTS API
 // -------------------------------------------------------------
@@ -174,11 +177,11 @@ app.get('/api/products', async (req, res) => {
     const query = {};
 
     if (category && category !== 'All') {
-      query.category = new RegExp(`^${category}$`, 'i');
+      query.category = new RegExp(`^${escapeRegex(category)}$`, 'i');
     }
 
     if (search && search.trim()) {
-      const searchRegex = new RegExp(search.trim(), 'i');
+      const searchRegex = new RegExp(escapeRegex(search.trim()), 'i');
       query.$or = [{ name: searchRegex }, { sku: searchRegex }, { woodSpecies: searchRegex }];
     }
 
@@ -351,8 +354,8 @@ app.delete('/api/products/:id', async (req, res) => {
 });
 
 app.post('/api/products', async (req, res) => {
+  const data = req.body;
   try {
-    const data = req.body;
     const parseNum = (val, defaultVal = 0) => {
       if (typeof val === 'number') return val;
       if (!val) return defaultVal;
@@ -374,12 +377,21 @@ app.post('/api/products', async (req, res) => {
       sku = String(Math.max(100, max + 1));
     }
 
-    const newProduct = new Product({
-      name: data.name || '',
+    // Check if product with this SKU or Name already exists to avoid duplicate key error
+    let existing = null;
+    if (sku) {
+      existing = await Product.findOne({ sku });
+    }
+    if (!existing && data.name) {
+      existing = await Product.findOne({ name: new RegExp(`^${escapeRegex(data.name.trim())}$`, 'i') });
+    }
+
+    const productPayload = {
+      name: data.name || (existing ? existing.name : ''),
       sku,
-      category: data.category || '',
-      woodSpecies: data.woodSpecies || '',
-      description: data.description || '',
+      category: data.category !== undefined ? data.category : (existing ? existing.category : ''),
+      woodSpecies: data.woodSpecies !== undefined ? data.woodSpecies : (existing ? existing.woodSpecies : ''),
+      description: data.description !== undefined ? data.description : (existing ? existing.description : ''),
       collectionSeries: data.collectionSeries || '',
       originZone: data.originZone || '',
       searchTags: data.searchTags || '',
@@ -407,12 +419,35 @@ app.post('/api/products', async (req, res) => {
       gstSlab: data.gstSlab || '',
       tradeDiscount: data.tradeDiscount || '',
       transitPass: data.transitPass !== undefined ? Boolean(data.transitPass) : false,
-    });
+      imageUrl: data.imageUrl || (existing ? existing.imageUrl : ''),
+      imagePublicId: data.imagePublicId || (existing ? existing.imagePublicId : ''),
+    };
 
+    if (existing) {
+      Object.assign(existing, productPayload);
+      const updated = await existing.save();
+      console.log('[API] Updated existing product in MongoDB:', updated.name, updated.sku);
+      return res.status(200).json({ success: true, product: updated });
+    }
+
+    const newProduct = new Product(productPayload);
     const saved = await newProduct.save();
     console.log('[API] Created new product in MongoDB:', saved.name, saved.sku);
     res.status(201).json({ success: true, product: saved });
   } catch (err) {
+    if (err.code === 11000 && data?.sku) {
+      try {
+        const existing = await Product.findOne({ sku: data.sku });
+        if (existing) {
+          if (data.name) existing.name = data.name;
+          if (data.sellingPrice || data.unitPrice) existing.sellingPrice = Number(data.sellingPrice || data.unitPrice) || existing.sellingPrice;
+          const recovered = await existing.save();
+          return res.status(200).json({ success: true, product: recovered });
+        }
+      } catch (recoveryErr) {
+        console.error('[API] Recovery error:', recoveryErr);
+      }
+    }
     console.error('[API] /api/products POST error:', err);
     res.status(500).json({ success: false, message: 'Failed to create product', error: err.message });
   }
