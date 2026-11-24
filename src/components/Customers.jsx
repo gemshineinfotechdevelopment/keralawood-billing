@@ -564,11 +564,11 @@ export default function Customers({ onNavigateToBilling }) {
             <table className="patron-table">
               <thead>
                 <tr>
-                  <th>CUSTOMER NAME</th>
-                  <th>CONTACT INFO</th>
-                  <th>TOTAL ORDERS</th>
-                  <th>TOTAL BILLED</th>
-                  <th>ACTIONS</th>
+                  <th style={{ width: '28%' }}>CUSTOMER NAME</th>
+                  <th style={{ width: '26%' }}>CONTACT INFO</th>
+                  <th style={{ width: '14%', textAlign: 'center' }}>TOTAL ORDERS</th>
+                  <th style={{ width: '16%' }}>TOTAL BILLED</th>
+                  <th style={{ width: '16%', textAlign: 'center' }}>ACTIONS</th>
                 </tr>
               </thead>
               <tbody>
@@ -600,7 +600,7 @@ export default function Customers({ onNavigateToBilling }) {
                       </td>
 
                       {/* Total Orders */}
-                      <td>
+                      <td style={{ textAlign: 'center' }}>
                         <span className="total-orders-num">{patron.totalOrders}</span>
                       </td>
 
@@ -613,7 +613,7 @@ export default function Customers({ onNavigateToBilling }) {
                       </td>
 
                       {/* Action Icons: Edit, Preview, Delete */}
-                      <td>
+                      <td style={{ textAlign: 'center' }}>
                         <div className="patron-actions-cell">
                           <button
                             type="button"

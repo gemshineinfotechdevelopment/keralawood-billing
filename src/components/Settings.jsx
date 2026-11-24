@@ -34,6 +34,12 @@ export default function Settings() {
   )
   const [systemDate, setSystemDate] = useState(initial.systemDate || '')
 
+  // Access Roles & Login Credentials
+  const [superAdminUserId, setSuperAdminUserId] = useState(() => DataStore.getAuthCredentials().superAdmin?.userId || 'superadmin')
+  const [superAdminPassword, setSuperAdminPassword] = useState(() => DataStore.getAuthCredentials().superAdmin?.password || 'superadmin@2026')
+  const [adminUserId, setAdminUserId] = useState(() => DataStore.getAuthCredentials().admin?.userId || 'admin')
+  const [adminPassword, setAdminPassword] = useState(() => DataStore.getAuthCredentials().admin?.password || 'admin@wood2026')
+
   const [savedSuccess, setSavedSuccess] = useState(false)
   const [logoUploadMsg, setLogoUploadMsg] = useState('')
   const [toastMessage, setToastMessage] = useState('')
@@ -149,6 +155,16 @@ export default function Settings() {
       systemDate,
     }
     DataStore.saveSettings(updated)
+    DataStore.saveAuthCredentials({
+      superAdmin: {
+        userId: superAdminUserId.trim() || 'superadmin',
+        password: superAdminPassword.trim() || 'superadmin@2026',
+      },
+      admin: {
+        userId: adminUserId.trim() || 'admin',
+        password: adminPassword.trim() || 'admin@wood2026',
+      },
+    })
     fetch('/api/settings', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -577,6 +593,103 @@ export default function Settings() {
                     })}{' '}
                 • {liveClock} • Live System Time
               </strong>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Card: Access Roles & Login Credentials */}
+      <section className="settings-card">
+        <div className="settings-card-header">
+          <div className="settings-header-icon-wrap">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#C88D58"
+              strokeWidth="2.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+          </div>
+          <div>
+            <h2 className="settings-card-title">Access Roles & Login Credentials</h2>
+            <p className="settings-card-subtitle">
+              Manage dedicated credentials: Super Admin and Admin both use distinct User IDs & Passwords.
+            </p>
+          </div>
+        </div>
+
+        <div className="settings-card-body">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+            {/* Super Admin Box */}
+            <div style={{ background: '#FAF7F4', border: '1.5px solid #EADBCC', borderRadius: '10px', padding: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '18px' }}>👑</span>
+                  <strong style={{ fontSize: '14px', color: '#31190B' }}>Super Admin Credentials</strong>
+                </div>
+                <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '4px', background: '#31190B', color: '#FFFFFF' }}>
+                  Full Access
+                </span>
+              </div>
+              <div className="settings-field-group" style={{ marginBottom: '12px' }}>
+                <label className="settings-field-label">Super Admin User ID *</label>
+                <input
+                  type="text"
+                  className="settings-input"
+                  value={superAdminUserId}
+                  onChange={(e) => setSuperAdminUserId(e.target.value)}
+                  placeholder="superadmin"
+                />
+              </div>
+              <div className="settings-field-group">
+                <label className="settings-field-label">Super Admin Password *</label>
+                <input
+                  type="text"
+                  className="settings-input"
+                  value={superAdminPassword}
+                  onChange={(e) => setSuperAdminPassword(e.target.value)}
+                  placeholder="superadmin@2026"
+                />
+              </div>
+            </div>
+
+            {/* Admin Box */}
+            <div style={{ background: '#FAF7F4', border: '1.5px solid #EADBCC', borderRadius: '10px', padding: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '18px' }}>👤</span>
+                  <strong style={{ fontSize: '14px', color: '#31190B' }}>Admin Credentials</strong>
+                </div>
+                <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '4px', background: '#C88D58', color: '#FFFFFF' }}>
+                  Restricted
+                </span>
+              </div>
+              <div className="settings-field-group" style={{ marginBottom: '12px' }}>
+                <label className="settings-field-label">Admin User ID *</label>
+                <input
+                  type="text"
+                  className="settings-input"
+                  value={adminUserId}
+                  onChange={(e) => setAdminUserId(e.target.value)}
+                  placeholder="admin"
+                />
+              </div>
+              <div className="settings-field-group">
+                <label className="settings-field-label">Admin Password *</label>
+                <input
+                  type="text"
+                  className="settings-input"
+                  value={adminPassword}
+                  onChange={(e) => setAdminPassword(e.target.value)}
+                  placeholder="admin@wood2026"
+                />
+              </div>
             </div>
           </div>
         </div>

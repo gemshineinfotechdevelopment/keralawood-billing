@@ -29,23 +29,43 @@ export default function ReportsAnalytics() {
       .then((res) => res.json())
       .then((data) => {
         if (data?.success && Array.isArray(data.sales) && data.sales.length > 0) {
-          const formatted = data.sales.map((s) => ({
-            id: s.invoice,
-            invoice: s.invoice,
-            date: s.date ? new Date(s.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Nov 17, 2026',
-            rawDate: s.date ? new Date(s.date).toISOString().split('T')[0] : '',
-            year: s.year || (s.date ? new Date(s.date).getFullYear().toString() : '2026'),
-            monthYear: s.monthYear || 'November 2026',
-            customer: s.customer,
-            project: s.location || 'Sivakasi Yard Sale',
-            wood: s.wood || 'Artisan Timber',
-            item: s.items,
-            amount: Number(s.amount || 0).toLocaleString('en-IN'),
-            rawAmount: Number(s.amount || 0),
-            paymentMode: s.paymentMode || 'UPI',
-            status: s.paymentStatus || s.status || 'Paid',
-            createdAt: s.createdAt || s.date,
-          }))
+          const formatted = data.sales.map((s) => {
+            let woodSpecies = ''
+            if (Array.isArray(s.itemDetails) && s.itemDetails.length > 0) {
+              const list = s.itemDetails.map((it) => it.woodSpecies || it.wood).filter(Boolean)
+              if (list.length > 0) woodSpecies = [...new Set(list)].join(', ')
+            }
+            if (!woodSpecies && s.wood && s.wood !== 'Artisan Timber') {
+              woodSpecies = s.wood
+            }
+            if (!woodSpecies) {
+              const str = String(s.items || s.item || '').toLowerCase()
+              if (str.includes('rosewood')) woodSpecies = 'Rosewood'
+              else if (str.includes('teak')) woodSpecies = 'Teak'
+              else if (str.includes('mahogany')) woodSpecies = 'Mahogany'
+              else if (str.includes('anjili') || str.includes('ayani')) woodSpecies = 'Anjili'
+              else woodSpecies = s.wood || 'Teak'
+            }
+
+            return {
+              id: s.invoice,
+              invoice: s.invoice,
+              date: s.date ? new Date(s.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Nov 17, 2026',
+              rawDate: s.date ? new Date(s.date).toISOString().split('T')[0] : '',
+              year: s.year || (s.date ? new Date(s.date).getFullYear().toString() : '2026'),
+              monthYear: s.monthYear || 'November 2026',
+              customer: s.customer,
+              project: s.location || 'Sivakasi Yard Sale',
+              wood: woodSpecies,
+              item: s.items,
+              itemDetails: s.itemDetails || [],
+              amount: Number(s.amount || 0).toLocaleString('en-IN'),
+              rawAmount: Number(s.amount || 0),
+              paymentMode: s.paymentMode || 'UPI',
+              status: s.paymentStatus || s.status || 'Paid',
+              createdAt: s.createdAt || s.date,
+            }
+          })
           setTransactions(formatted)
           DataStore.saveTransactions(formatted)
         }

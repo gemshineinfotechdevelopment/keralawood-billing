@@ -778,7 +778,6 @@ export function getProductsPrintHtml(products = [], settings = {}, defaultLogo =
   const productRows = products.map((p, idx) => {
     const code = p.code || p.productCode || (100 + idx)
     const price = Number(String(p.sellingPrice || p.unitPrice || p.price || 0).replace(/[^0-9.]/g, '')) || 0
-    const stock = p.stockQuantity !== undefined ? p.stockQuantity : (p.stock !== undefined ? p.stock : '-')
     return `
       <tr>
         <td style="text-align: center; font-weight: 600;">${idx + 1}</td>
@@ -787,7 +786,6 @@ export function getProductsPrintHtml(products = [], settings = {}, defaultLogo =
         <td>${p.category || '-'}</td>
         <td>${p.woodSpecies || '-'}</td>
         <td style="text-align: right; font-weight: 600;">₹${price.toLocaleString('en-IN')}</td>
-        <td style="text-align: center; font-weight: 700;">${stock}</td>
       </tr>
     `
   }).join('')
@@ -827,7 +825,7 @@ export function getProductsPrintHtml(products = [], settings = {}, defaultLogo =
           <p class="brand-sub">Phone: ${settings.contactPhone || 'N/A'} • GSTIN: ${settings.gstin || 'N/A'}</p>
         </td>
         <td style="vertical-align: top; text-align: right; width: 260px;">
-          <div class="badge">PRODUCT CATALOG & INVENTORY</div>
+          <div class="badge">PRODUCT CATALOG</div>
           <p style="margin: 3px 0; font-size: 12px;"><strong>Total Products:</strong> ${products.length} Items</p>
           <p style="margin: 3px 0; font-size: 12px;"><strong>Printed On:</strong> ${printDate} ${printTime}</p>
         </td>
@@ -837,24 +835,23 @@ export function getProductsPrintHtml(products = [], settings = {}, defaultLogo =
     <table class="items-table products-table">
       <thead>
         <tr>
-          <th style="width: 38px; text-align: center;">#</th>
-          <th style="width: 75px; text-align: center;">Code</th>
+          <th style="width: 42px; text-align: center;">#</th>
+          <th style="width: 80px; text-align: center;">Code</th>
           <th style="text-align: left;">Product Name / Description</th>
-          <th style="width: 125px; text-align: left;">Category</th>
-          <th style="width: 115px; text-align: left;">Wood Species</th>
-          <th style="width: 110px; text-align: right;">Price (₹)</th>
-          <th style="width: 65px; text-align: center;">Stock</th>
+          <th style="width: 140px; text-align: left;">Category</th>
+          <th style="width: 130px; text-align: left;">Wood Species</th>
+          <th style="width: 120px; text-align: right;">Price (₹)</th>
         </tr>
       </thead>
       <tbody>
-        ${productRows.length > 0 ? productRows : `<tr><td colspan="7" style="text-align: center; padding: 20px;">No products in catalog.</td></tr>`}
+        ${productRows.length > 0 ? productRows : `<tr><td colspan="6" style="text-align: center; padding: 20px;">No products in catalog.</td></tr>`}
       </tbody>
     </table>
 
     <table class="footer-table" style="margin-top: 20px; border-top: 1px solid #D3C4B8; padding-top: 10px;">
       <tr>
         <td style="font-size: 11px; color: #7D6C63;">
-          Official Kerala Wood Furniture Inventory Record • Confidential internal depot catalog
+          Official ${depotName} Product Catalog Record • Confidential internal catalog
         </td>
         <td style="text-align: right; font-size: 11px; color: #31190B; font-weight: 600;">
           Authorized Store Manager

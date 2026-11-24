@@ -23,31 +23,53 @@ function App() {
   const [productsInitialMode, setProductsInitialMode] = useState('list')
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
-  const [email, setEmail] = useState('superadmin@keralawood.in')
-  const [password, setPassword] = useState('password123')
+  const [authCreds, setAuthCreds] = useState(() => DataStore.getAuthCredentials())
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [loginError, setLoginError] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(true)
   const [settings, setSettings] = useState(() => DataStore.getSettings())
 
   useEffect(() => {
-    const handleUpdate = () => setSettings(DataStore.getSettings())
+    const handleUpdate = () => {
+      setSettings(DataStore.getSettings())
+      setAuthCreds(DataStore.getAuthCredentials())
+    }
     window.addEventListener('timber_store_updated', handleUpdate)
     return () => window.removeEventListener('timber_store_updated', handleUpdate)
   }, [])
 
+  const handleSelectLoginRole = (role) => {
+    setLoginRole(role)
+    setLoginError('')
+    setEmail('')
+    setPassword('')
+  }
+
   const handleToggleRole = () => {
-    const nextRole = userRole === 'super_admin' ? 'admin' : 'super_admin'
-    setUserRole(nextRole)
-    setLoginRole(nextRole)
-    sessionStorage.setItem('kwf_role', nextRole)
-    if (nextRole === 'admin' && ['Purchases', 'Reports & Analytics', 'Settings'].includes(activeNav)) {
-      setActiveNav('Billing & POS')
+    // Only super_admin can switch to admin view; Admin cannot switch to super_admin
+    if (userRole === 'super_admin') {
+      setUserRole('admin')
+      setLoginRole('admin')
+      sessionStorage.setItem('kwf_role', 'admin')
+      if (['Purchases', 'Reports & Analytics', 'Settings'].includes(activeNav)) {
+        setActiveNav('Billing & POS')
+      }
     }
   }
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    const effectiveRole = loginRole || (email.toLowerCase().includes('admin') && !email.toLowerCase().includes('super') ? 'admin' : 'super_admin')
+    setLoginError('')
+
+    const authResult = DataStore.validateLogin(email, password, loginRole)
+    if (!authResult.success) {
+      setLoginError(authResult.message)
+      return
+    }
+
+    const effectiveRole = authResult.role
     sessionStorage.setItem('kwf_auth', 'true')
     sessionStorage.setItem('kwf_role', effectiveRole)
     setUserRole(effectiveRole)
@@ -117,9 +139,9 @@ function App() {
             </div>
             <div
               className="mobile-header-tag"
-              onClick={handleToggleRole}
-              style={{ cursor: 'pointer' }}
-              title="Click to toggle Super Admin / Admin role"
+              onClick={userRole === 'super_admin' ? handleToggleRole : undefined}
+              style={{ cursor: userRole === 'super_admin' ? 'pointer' : 'default' }}
+              title={userRole === 'super_admin' ? 'Click to switch to Admin' : 'Signed in as Admin'}
             >
               <span>{userRole === 'super_admin' ? '👑 Super Admin' : '👤 Admin'}</span>
             </div>
@@ -141,17 +163,21 @@ function App() {
                     <button
                       type="button"
                       className="btn-back-dash"
-                      style={{ backgroundColor: '#31190B', color: '#FFF' }}
-                      onClick={handleToggleRole}
+                      onClick={() => setActiveNav('Billing & POS')}
                     >
-                      👑 Switch to Super Admin
+                      ← Return to Billing & POS
                     </button>
                     <button
                       type="button"
                       className="btn-back-dash"
-                      onClick={() => setActiveNav('Billing & POS')}
+                      style={{ backgroundColor: '#31190B', color: '#FFF' }}
+                      onClick={() => {
+                        sessionStorage.removeItem('kwf_auth')
+                        setView('login')
+                        handleSelectLoginRole('super_admin')
+                      }}
                     >
-                      ← Return to Billing & POS
+                      🔑 Login as Super Admin
                     </button>
                   </div>
                 </div>
@@ -274,41 +300,47 @@ function App() {
             {/* Account Role Selector */}
             <div className="login-role-selector">
               <label className="input-label" style={{ textAlign: 'left', display: 'block', marginBottom: '6px' }}>
-                ACCESS ROLE
+                SELECT LOGIN ROLE
               </label>
               <div className="login-role-chips">
                 <button
                   type="button"
                   className={`login-role-chip ${loginRole === 'super_admin' ? 'active' : ''}`}
-                  onClick={() => {
-                    setLoginRole('super_admin')
-                    setEmail('superadmin@keralawood.in')
-                  }}
+                  onClick={() => handleSelectLoginRole('super_admin')}
                 >
                   👑 Super Admin
                 </button>
                 <button
                   type="button"
                   className={`login-role-chip ${loginRole === 'admin' ? 'active' : ''}`}
-                  onClick={() => {
-                    setLoginRole('admin')
-                    setEmail('admin@keralawood.in')
-                  }}
+                  onClick={() => handleSelectLoginRole('admin')}
                 >
                   👤 Admin
                 </button>
               </div>
               <p className="login-role-hint">
                 {loginRole === 'super_admin'
-                  ? '✓ Super Admin: Unrestricted access to all modules including Purchases, Reports & Settings'
-                  : '⚠️ Admin: Restricted — Purchases, Reports & Settings are hidden'}
+                  ? '✓ Super Admin: Full unrestricted access to all modules and system settings'
+                  : '⚠️ Admin: Operational store access (Purchases, Reports & Settings are restricted)'}
               </p>
             </div>
 
-            {/* Email / Staff ID Field */}
+            {/* Error Alert */}
+            {loginError && (
+              <div className="login-error-alert" role="alert">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+                <span>{loginError}</span>
+              </div>
+            )}
+
+            {/* User ID Field */}
             <div className="form-group">
               <label htmlFor="email" className="input-label">
-                EMAIL OR STAFF ID
+                {loginRole === 'super_admin' ? 'SUPER ADMIN USER ID' : 'ADMIN USER ID'}
               </label>
               <div className="input-container">
                 <span className="input-icon">
@@ -322,39 +354,31 @@ function App() {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   >
-                    <rect width="18" height="14" x="3" y="5" rx="2" />
-                    <circle cx="8" cy="11" r="2" />
-                    <path d="M14 9h4" />
-                    <path d="M14 13h3" />
+                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
                   </svg>
                 </span>
                 <input
                   id="email"
                   type="text"
-                  className="login-input"
+                  className={`login-input ${loginError ? 'login-input-error' : ''}`}
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@keralawood.in"
+                  onChange={(e) => {
+                    setEmail(e.target.value)
+                    if (loginError) setLoginError('')
+                  }}
+                  placeholder={loginRole === 'super_admin' ? 'superadmin' : 'admin'}
                   autoComplete="username"
                   required
                 />
               </div>
             </div>
 
-            {/* Password Field (Pre-filled) */}
+            {/* Password Field */}
             <div className="form-group">
-              <div className="label-row">
-                <label htmlFor="password" className="input-label">
-                  PASSWORD
-                </label>
-                <a
-                  href="#forgot"
-                  className="forgot-password-link"
-                  onClick={(e) => e.preventDefault()}
-                >
-                  Forgot password?
-                </a>
-              </div>
+              <label htmlFor="password" className="input-label">
+                {loginRole === 'super_admin' ? 'SUPER ADMIN PASSWORD' : 'ADMIN PASSWORD'}
+              </label>
               <div className="input-container">
                 <span className="input-icon">
                   <svg
@@ -374,9 +398,12 @@ function App() {
                 <input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
-                  className="login-input"
+                  className={`login-input ${loginError ? 'login-input-error' : ''}`}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value)
+                    if (loginError) setLoginError('')
+                  }}
                   placeholder="••••••••••••"
                   autoComplete="current-password"
                   required

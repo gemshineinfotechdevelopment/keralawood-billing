@@ -523,6 +523,28 @@ app.put('/api/settings', async (req, res) => {
       settings = new Settings(updates);
     } else {
       Object.assign(settings, updates);
+      if (updates.authCredentials) {
+        settings.authCredentials = updates.authCredentials;
+      }
+    }
+    // Clean Sivakasi Depot / Sivakasi Branch to single word Sivakasi
+    if (settings.depotName) {
+      settings.depotName = settings.depotName
+        .replace(/[-–—]\s*Sivakasi\s*(Depot|Branch)/gi, ' - Sivakasi')
+        .replace(/\bSivakasi\s+(Depot|Branch)\b/gi, 'Sivakasi')
+        .trim();
+    }
+    if (settings.bankName) {
+      settings.bankName = settings.bankName
+        .replace(/[-–—]\s*Sivakasi\s*(Depot|Branch)/gi, ' - Sivakasi')
+        .replace(/\bSivakasi\s+(Depot|Branch)\b/gi, 'Sivakasi')
+        .trim();
+    }
+    if (settings.address) {
+      settings.address = settings.address
+        .replace(/\bSivakasi\s+Central\s+Depot\b/gi, 'Sivakasi Central')
+        .replace(/\bSivakasi\s+(Depot|Branch)\b/gi, 'Sivakasi')
+        .trim();
     }
     const saved = await settings.save();
     console.log('[API] Saved settings to MongoDB successfully');
@@ -709,7 +731,19 @@ app.post('/api/sales', async (req, res) => {
       customerGstin: data.customerGstin || '',
       location: data.location || data.project || 'Sivakasi Yard Sale',
       project: data.project || 'Timber Order',
-      wood: data.wood || 'Artisan Timber',
+      wood: (() => {
+        if (data.wood && data.wood !== 'Artisan Timber') return data.wood;
+        if (lineItems.length > 0) {
+          const species = lineItems.map((it) => it.woodSpecies || it.wood).filter(Boolean);
+          if (species.length > 0) return [...new Set(species)].join(', ');
+        }
+        const txt = String(data.items || data.itemSummary || '').toLowerCase();
+        if (txt.includes('rosewood')) return 'Rosewood';
+        if (txt.includes('teak')) return 'Teak';
+        if (txt.includes('mahogany')) return 'Mahogany';
+        if (txt.includes('anjili') || txt.includes('ayani')) return 'Anjili';
+        return 'Teak';
+      })(),
       items: typeof data.items === 'string' ? data.items : (data.itemSummary || `${lineItems.length} Furniture Items`),
       itemDetails: lineItems,
       subtotal: Number(data.subtotal) || rawAmt,
@@ -1014,7 +1048,22 @@ app.get('/api/sales-persons', async (req, res) => {
     }
 
     const salesPersons = await SalesPerson.find(query).sort({ createdAt: -1 });
-    res.json({ success: true, count: salesPersons.length, salesPersons });
+    const allSales = await Sale.find({}, 'billedBy salesPerson');
+    const dynamicSalesPersons = salesPersons.map((sp) => {
+      const spObj = sp.toObject ? sp.toObject() : sp;
+      const spName = (spObj.name || '').trim().toLowerCase();
+      const spCode = (spObj.code || '').trim().toLowerCase();
+      const orderCount = allSales.filter((s) => {
+        const b = (s.billedBy || '').trim().toLowerCase();
+        const sl = (s.salesPerson || '').trim().toLowerCase();
+        return (spName && (b === spName || sl === spName)) || (spCode && (b === spCode || sl === spCode));
+      }).length;
+      return {
+        ...spObj,
+        ordersClosed: orderCount,
+      };
+    });
+    res.json({ success: true, count: dynamicSalesPersons.length, salesPersons: dynamicSalesPersons });
   } catch (err) {
     console.error('[API] /api/sales-persons GET error:', err);
     res.status(500).json({ success: false, message: 'Failed to fetch sales persons', error: err.message });

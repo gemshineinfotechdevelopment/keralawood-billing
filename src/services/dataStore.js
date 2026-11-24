@@ -11,16 +11,29 @@ const STORAGE_KEYS = {
   SETTINGS: 'sivakasi_wood_settings',
   PURCHASES: 'sivakasi_wood_purchases',
   SALES_PERSONS: 'sivakasi_wood_sales_persons',
+  AUTH_CREDENTIALS: 'sivakasi_wood_credentials',
+}
+
+// Dedicated Role Authentication Credentials (User ID & Password)
+const INITIAL_CREDENTIALS = {
+  superAdmin: {
+    userId: 'superadmin',
+    password: 'superadmin@2026',
+  },
+  admin: {
+    userId: 'admin',
+    password: 'admin@wood2026',
+  },
 }
 
 const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) || ''
 
 // System Settings (Company: Kerala Wood Furniture, Location: Sivakasi)
 const INITIAL_SETTINGS = {
-  depotName: 'Kerala Wood Furniture - Sivakasi Depot',
+  depotName: 'Kerala Wood Furniture - Sivakasi',
   contactPhone: '+91 484 289 1204',
   contactEmail: 'depot@keralawood.in',
-  address: 'Sivakasi Central Depot & Mill Yard, Sivakasi',
+  address: 'Sivakasi Central Mill Yard, Sivakasi',
   dealerLicense: 'SFD/SVK/TMR/2023-884',
   operatingHours: 'Mon - Sat: 08:30 AM - 06:30 PM (Sun: Closed)',
   gstin: '32AABCP9821K1ZK',
@@ -28,7 +41,7 @@ const INITIAL_SETTINGS = {
   taxRate: '18% (Standard GST)',
   cgstRate: 9,
   sgstRate: 9,
-  bankName: 'State Bank of India - Sivakasi Branch',
+  bankName: 'State Bank of India - Sivakasi',
   accountNumber: '4092817290192',
   ifscCode: 'SBIN0008839',
   upiId: 'keralawood.depot@sbi',
@@ -122,6 +135,9 @@ export const DataStore = {
         const data = await resSettings.json()
         if (data.settings) {
           saveToStorage(STORAGE_KEYS.SETTINGS, data.settings)
+          if (data.settings.authCredentials) {
+            saveToStorage(STORAGE_KEYS.AUTH_CREDENTIALS, data.settings.authCredentials)
+          }
         }
       }
 
@@ -201,7 +217,19 @@ export const DataStore = {
             salesPerson: s.salesPerson || s.billedBy || '',
             location: s.location || s.project || 'Sivakasi Yard Sale',
             project: s.location || s.project || 'Sivakasi Yard Sale',
-            wood: s.wood || 'Artisan Timber',
+            wood: (() => {
+              if (Array.isArray(s.itemDetails) && s.itemDetails.length > 0) {
+                const list = s.itemDetails.map((it) => it.woodSpecies || it.wood).filter(Boolean)
+                if (list.length > 0) return [...new Set(list)].join(', ')
+              }
+              if (s.wood && s.wood !== 'Artisan Timber') return s.wood
+              const str = String(s.items || s.item || '').toLowerCase()
+              if (str.includes('rosewood')) return 'Rosewood'
+              if (str.includes('teak')) return 'Teak'
+              if (str.includes('mahogany')) return 'Mahogany'
+              if (str.includes('anjili') || str.includes('ayani')) return 'Anjili'
+              return s.wood || 'Teak'
+            })(),
             item: s.items,
             items: s.items,
             itemDetails: s.itemDetails || [],
@@ -298,16 +326,41 @@ export const DataStore = {
   // SETTINGS
   getSettings() {
     const s = loadFromStorage(STORAGE_KEYS.SETTINGS, INITIAL_SETTINGS)
+    let changed = false
     if (!s.logoUrl || s.logoUrl.includes('cloudinary')) {
       s.logoUrl = kwfLogo
-      saveToStorage(STORAGE_KEYS.SETTINGS, s)
+      changed = true
     }
     if (!s.disclaimer || s.disclaimer.includes('Natural variations in teak')) {
       s.disclaimer = 'We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct'
-      saveToStorage(STORAGE_KEYS.SETTINGS, s)
+      changed = true
     }
     if (!s.signatoryName || s.signatoryName === 'Rajesh Sivan') {
       s.signatoryName = 'Super Admin'
+      changed = true
+    }
+    if (s.depotName && (s.depotName.includes('Sivakasi Depot') || s.depotName.includes('Sivakasi Branch'))) {
+      s.depotName = s.depotName
+        .replace(/[-–—]\s*Sivakasi\s*(Depot|Branch)/gi, ' - Sivakasi')
+        .replace(/\bSivakasi\s+(Depot|Branch)\b/gi, 'Sivakasi')
+        .trim()
+      changed = true
+    }
+    if (s.bankName && (s.bankName.includes('Sivakasi Depot') || s.bankName.includes('Sivakasi Branch'))) {
+      s.bankName = s.bankName
+        .replace(/[-–—]\s*Sivakasi\s*(Depot|Branch)/gi, ' - Sivakasi')
+        .replace(/\bSivakasi\s+(Depot|Branch)\b/gi, 'Sivakasi')
+        .trim()
+      changed = true
+    }
+    if (s.address && (s.address.includes('Sivakasi Central Depot') || s.address.includes('Sivakasi Depot') || s.address.includes('Sivakasi Branch'))) {
+      s.address = s.address
+        .replace(/\bSivakasi\s+Central\s+Depot\b/gi, 'Sivakasi Central')
+        .replace(/\bSivakasi\s+(Depot|Branch)\b/gi, 'Sivakasi')
+        .trim()
+      changed = true
+    }
+    if (changed) {
       saveToStorage(STORAGE_KEYS.SETTINGS, s)
     }
     return s
@@ -316,12 +369,109 @@ export const DataStore = {
     saveToStorage(STORAGE_KEYS.SETTINGS, settings)
     notifyStoreUpdate()
 
-    // Sync to backend MongoDB
+    // Sync to backend MongoDB with current credentials
+    const payload = {
+      ...settings,
+      authCredentials: this.getAuthCredentials(),
+    }
     fetch(`${API_BASE}/api/settings`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(settings),
+      body: JSON.stringify(payload),
     }).catch(() => {})
+  },
+
+  // AUTHENTICATION & ROLE CREDENTIALS
+  getAuthCredentials() {
+    const creds = loadFromStorage(STORAGE_KEYS.AUTH_CREDENTIALS, INITIAL_CREDENTIALS)
+    let needsSave = false
+    if (!creds || !creds.superAdmin || !creds.admin) {
+      const merged = {
+        superAdmin: { ...INITIAL_CREDENTIALS.superAdmin, ...(creds?.superAdmin || {}) },
+        admin: { ...INITIAL_CREDENTIALS.admin, ...(creds?.admin || {}) },
+      }
+      if (!merged.superAdmin.userId) merged.superAdmin.userId = 'superadmin'
+      saveToStorage(STORAGE_KEYS.AUTH_CREDENTIALS, merged)
+      return merged
+    }
+    // Ensure Super Admin has userId & password defaults only if empty
+    if (!creds.superAdmin.userId) {
+      creds.superAdmin.userId = 'superadmin'
+      needsSave = true
+    }
+    if (!creds.superAdmin.password) {
+      creds.superAdmin.password = 'superadmin@2026'
+      needsSave = true
+    }
+    if (!creds.admin.userId) {
+      creds.admin.userId = 'admin'
+      needsSave = true
+    }
+    if (!creds.admin.password) {
+      creds.admin.password = 'admin@wood2026'
+      needsSave = true
+    }
+    if (needsSave) {
+      saveToStorage(STORAGE_KEYS.AUTH_CREDENTIALS, creds)
+    }
+    return creds
+  },
+  saveAuthCredentials(creds) {
+    saveToStorage(STORAGE_KEYS.AUTH_CREDENTIALS, creds)
+    notifyStoreUpdate()
+
+    // Sync credentials to backend MongoDB
+    fetch(`${API_BASE}/api/settings`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ authCredentials: creds }),
+    }).catch(() => {})
+  },
+  validateLogin(identifier, password, selectedRole) {
+    const creds = this.getAuthCredentials()
+    const cleanId = String(identifier || '').trim().toLowerCase()
+    const cleanPass = String(password || '').trim()
+
+    // STRICT: Only the currently saved credentials in Settings are valid!
+    const currentSuperId = String(creds.superAdmin?.userId || 'superadmin').trim().toLowerCase()
+    const currentSuperPass = String(creds.superAdmin?.password || 'superadmin@2026').trim()
+
+    const currentAdminId = String(creds.admin?.userId || 'admin').trim().toLowerCase()
+    const currentAdminPass = String(creds.admin?.password || 'admin@wood2026').trim()
+
+    const isSuperAdminValid = cleanId === currentSuperId && cleanPass === currentSuperPass
+    const isAdminValid = cleanId === currentAdminId && cleanPass === currentAdminPass
+
+    if (selectedRole === 'super_admin') {
+      if (isSuperAdminValid) {
+        return { success: true, role: 'super_admin' }
+      }
+      if (cleanId === currentSuperId && cleanPass !== currentSuperPass) {
+        return { success: false, message: 'Incorrect Super Admin password. Please check and try again.' }
+      }
+      if (isAdminValid) {
+        // Valid Admin credentials entered
+        return { success: true, role: 'admin' }
+      }
+      return { success: false, message: 'Invalid Super Admin User ID or Password.' }
+    } else if (selectedRole === 'admin') {
+      if (isAdminValid) {
+        return { success: true, role: 'admin' }
+      }
+      if (cleanId === currentAdminId && cleanPass !== currentAdminPass) {
+        return { success: false, message: 'Incorrect Admin password. Please check and try again.' }
+      }
+      if (isSuperAdminValid) {
+        // Valid Super Admin credentials entered
+        return { success: true, role: 'super_admin' }
+      }
+      return { success: false, message: 'Invalid Admin User ID or Password.' }
+    } else {
+      if (isSuperAdminValid) return { success: true, role: 'super_admin' }
+      if (isAdminValid) return { success: true, role: 'admin' }
+      return { success: false, message: 'Invalid User ID or Password.' }
+    }
+  },
   },
 
   // PURCHASES
@@ -397,23 +547,29 @@ export const DataStore = {
   getSalesPersons() {
     const raw = loadFromStorage(STORAGE_KEYS.SALES_PERSONS, INITIAL_SALES_PERSONS)
     const txs = this.getTransactions()
-    const bills = this.getBills()
+    const seenInvoices = new Set()
+    const uniqueSales = []
+    ;[...txs, ...this.getBills()].forEach((t) => {
+      if (!t) return
+      const inv = t.invoice || t.id
+      if (inv && seenInvoices.has(inv)) return
+      if (inv) seenInvoices.add(inv)
+      uniqueSales.push(t)
+    })
+
     return (Array.isArray(raw) ? raw : []).map((sp) => {
       const spName = (sp.name || '').trim().toLowerCase()
       const spCode = (sp.code || '').trim().toLowerCase()
-      const realOrderCount = [...txs, ...bills].filter((t) => {
+      const realOrderCount = uniqueSales.filter((t) => {
         if (!t) return false
         const b = (t.billedBy || '').trim().toLowerCase()
         const s = (t.salesPerson || '').trim().toLowerCase()
         return (spName && (b === spName || s === spName)) || (spCode && (b === spCode || s === spCode))
       }).length
 
-      const baseOrders = sp.ordersClosed !== undefined && sp.ordersClosed !== null ? Number(sp.ordersClosed) : 0
-      const finalOrders = Math.max(baseOrders, realOrderCount)
-
       return {
         ...sp,
-        ordersClosed: finalOrders,
+        ordersClosed: realOrderCount,
       }
     })
   },
@@ -1053,7 +1209,25 @@ export const DataStore = {
       const key = t.invoice || t.id
       if (key && !seen.has(key)) {
         seen.add(key)
-        unique.push(t)
+        let woodSpecies = t.wood
+        if (!woodSpecies || woodSpecies === 'Artisan Timber') {
+          if (Array.isArray(t.itemDetails) && t.itemDetails.length > 0) {
+            const list = t.itemDetails.map((it) => it.woodSpecies || it.wood).filter(Boolean)
+            if (list.length > 0) woodSpecies = [...new Set(list)].join(', ')
+          }
+          if (!woodSpecies || woodSpecies === 'Artisan Timber') {
+            const str = String(t.items || t.item || '').toLowerCase()
+            if (str.includes('rosewood')) woodSpecies = 'Rosewood'
+            else if (str.includes('teak')) woodSpecies = 'Teak'
+            else if (str.includes('mahogany')) woodSpecies = 'Mahogany'
+            else if (str.includes('anjili') || str.includes('ayani')) woodSpecies = 'Anjili'
+            else woodSpecies = 'Teak'
+          }
+        }
+        unique.push({
+          ...t,
+          wood: woodSpecies,
+        })
       }
     }
     return unique
@@ -1217,7 +1391,16 @@ export const DataStore = {
       customerGstin: bill.customer?.gstin || '',
       project: bill.customer?.location || bill.customer?.address || 'Sivakasi Yard Sale',
       location: bill.customer?.location || bill.customer?.address || 'Sivakasi Yard Sale',
-      wood: items[0]?.woodSpecies || 'Teak Wood',
+      wood: (() => {
+        const speciesList = items.map((i) => i.woodSpecies || i.wood).filter(Boolean)
+        if (speciesList.length > 0) return [...new Set(speciesList)].join(', ')
+        const str = String(itemNames).toLowerCase()
+        if (str.includes('rosewood')) return 'Rosewood'
+        if (str.includes('teak')) return 'Teak'
+        if (str.includes('mahogany')) return 'Mahogany'
+        if (str.includes('anjili') || str.includes('ayani')) return 'Anjili'
+        return 'Teak'
+      })(),
       item: itemNames || 'Artisan Furniture Order',
       items: itemNames || 'Artisan Furniture Order',
       itemDetails: items,
@@ -1329,6 +1512,7 @@ export const DataStore = {
         customerAddress: newTx.customerAddress,
         customerGstin: newTx.customerGstin,
         location: newTx.project,
+        wood: newTx.wood,
         items: newTx.item,
         itemsList: items,
         subtotal,

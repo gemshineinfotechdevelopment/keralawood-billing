@@ -340,14 +340,14 @@ export default function Sidebar({
                     {userRole === 'super_admin' ? 'Super Admin (Full)' : 'Admin (Restricted)'}
                   </span>
                 </div>
-                {onToggleRole && (
+                {onToggleRole && userRole === 'super_admin' && (
                   <button
                     type="button"
                     className="btn-sidebar-role-toggle"
                     onClick={onToggleRole}
-                    title="Switch between Super Admin & Admin"
+                    title="Switch to Admin view"
                   >
-                    Switch to {userRole === 'super_admin' ? 'Admin' : 'Super Admin'}
+                    Switch to Admin
                   </button>
                 )}
               </div>

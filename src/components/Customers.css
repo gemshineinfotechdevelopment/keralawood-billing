@@ -499,8 +499,9 @@
 .patron-actions-cell {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
   gap: 8px;
+  margin: 0 auto;
 }
 
 .btn-patron-action {
