@@ -472,7 +472,6 @@ export const DataStore = {
       return { success: false, message: 'Invalid User ID or Password.' }
     }
   },
-  },
 
   // PURCHASES
   getPurchases() {

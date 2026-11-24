@@ -11,11 +11,11 @@ export default function Settings() {
   const [formErrors, setFormErrors] = useState({})
 
   // General Depot Profile
-  const [depotName, setDepotName] = useState(initial.depotName || 'Kerala Wood Furniture - Sivakasi Depot')
+  const [depotName, setDepotName] = useState(initial.depotName || 'Kerala Wood Furniture - Sivakasi')
   const [logoUrl, setLogoUrl] = useState(initial.logoUrl || '')
   const [contactPhone, setContactPhone] = useState(initial.contactPhone || '+91 484 289 1204')
   const [contactEmail, setContactEmail] = useState(initial.contactEmail || 'depot@keralawood.in')
-  const [address, setAddress] = useState(initial.address || 'Sivakasi Central Depot & Mill Yard, Sivakasi')
+  const [address, setAddress] = useState(initial.address || 'Sivakasi Central Mill Yard, Sivakasi')
   const [dealerLicense, setDealerLicense] = useState(initial.dealerLicense || 'SFD/SVK/TMR/2023-884')
   const [operatingHours, setOperatingHours] = useState(initial.operatingHours || 'Mon - Sat: 08:30 AM - 06:30 PM (Sun: Closed)')
 
@@ -80,6 +80,10 @@ export default function Settings() {
           if (s.ifscCode) setIfscCode(s.ifscCode)
           if (s.upiId) setUpiId(s.upiId)
           if (s.systemDate !== undefined) setSystemDate(s.systemDate)
+          if (s.authCredentials?.superAdmin?.userId) setSuperAdminUserId(s.authCredentials.superAdmin.userId)
+          if (s.authCredentials?.superAdmin?.password) setSuperAdminPassword(s.authCredentials.superAdmin.password)
+          if (s.authCredentials?.admin?.userId) setAdminUserId(s.authCredentials.admin.userId)
+          if (s.authCredentials?.admin?.password) setAdminPassword(s.authCredentials.admin.password)
         }
       })
       .catch(() => {})
@@ -154,8 +158,7 @@ export default function Settings() {
       systemTime: liveClock,
       systemDate,
     }
-    DataStore.saveSettings(updated)
-    DataStore.saveAuthCredentials({
+    const updatedCreds = {
       superAdmin: {
         userId: superAdminUserId.trim() || 'superadmin',
         password: superAdminPassword.trim() || 'superadmin@2026',
@@ -164,11 +167,19 @@ export default function Settings() {
         userId: adminUserId.trim() || 'admin',
         password: adminPassword.trim() || 'admin@wood2026',
       },
+    }
+    DataStore.saveAuthCredentials(updatedCreds)
+    DataStore.saveSettings({
+      ...updated,
+      authCredentials: updatedCreds,
     })
     fetch('/api/settings', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updated),
+      body: JSON.stringify({
+        ...updated,
+        authCredentials: updatedCreds,
+      }),
     }).catch(() => {})
 
     setSavedSuccess(true)
@@ -371,25 +382,14 @@ export default function Settings() {
             />
           </div>
 
-          <div className="settings-form-row-2col">
-            <div className="settings-field-group">
-              <label className="settings-field-label">Timber Dealer License & Forest Dept Reg</label>
-              <input
-                type="text"
-                className="settings-input"
-                value={dealerLicense}
-                onChange={(e) => setDealerLicense(e.target.value)}
-              />
-            </div>
-            <div className="settings-field-group">
-              <label className="settings-field-label">Depot Operating Hours & Working Days</label>
-              <input
-                type="text"
-                className="settings-input"
-                value={operatingHours}
-                onChange={(e) => setOperatingHours(e.target.value)}
-              />
-            </div>
+          <div className="settings-field-group">
+            <label className="settings-field-label">Depot Operating Hours & Working Days</label>
+            <input
+              type="text"
+              className="settings-input"
+              value={operatingHours}
+              onChange={(e) => setOperatingHours(e.target.value)}
+            />
           </div>
         </div>
       </section>

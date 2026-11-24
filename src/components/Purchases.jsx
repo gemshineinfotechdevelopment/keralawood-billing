@@ -128,7 +128,7 @@ export default function Purchases() {
       supplierPhone: '',
       // Right TO (Buyer)
       companyName: settings.depotName || 'Kerala Wood Furniture',
-      companyAddress: settings.address || 'Sivakasi Central Depot & Mill Yard, Sivakasi',
+      companyAddress: settings.address || 'Sivakasi Central Mill Yard, Sivakasi',
       companyGstin: settings.gstin || '',
       companyPhone: settings.contactPhone || '',
       // Items
@@ -185,7 +185,7 @@ export default function Purchases() {
       supplierPhone: p.supplierPhone || '',
       // TO (Company)
       companyName: p.companyName || settings.depotName || 'Kerala Wood Furniture',
-      companyAddress: p.companyAddress || settings.address || 'Sivakasi Central Depot & Mill Yard, Sivakasi',
+      companyAddress: p.companyAddress || settings.address || 'Sivakasi Central Mill Yard, Sivakasi',
       companyGstin: p.companyGstin || settings.gstin || '',
       companyPhone: p.companyPhone || settings.contactPhone || '',
       // Items
@@ -722,7 +722,7 @@ export default function Purchases() {
                     className="purchases-input"
                     value={formData.companyName}
                     onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-                    placeholder="Kerala Wood Furniture - Sivakasi Depot"
+                    placeholder="Kerala Wood Furniture - Sivakasi"
                     required
                   />
                 </div>
@@ -734,7 +734,7 @@ export default function Purchases() {
                     className="purchases-textarea party-textarea"
                     value={formData.companyAddress}
                     onChange={(e) => setFormData({ ...formData, companyAddress: e.target.value })}
-                    placeholder="Sivakasi Central Depot & Mill Yard, Sivakasi"
+                    placeholder="Sivakasi Central Mill Yard, Sivakasi"
                   />
                 </div>
 

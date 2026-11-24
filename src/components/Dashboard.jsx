@@ -5,7 +5,7 @@ import './Dashboard.css'
 const normalizeSaleItem = (sale, idx) => {
   const invoice = sale.invoice || sale.invoiceNumber || sale.id || `INV-${1000 + idx}`
   const customer = sale.customer?.name || (typeof sale.customer === 'string' && sale.customer.trim() ? sale.customer : 'Walk-in Customer')
-  const location = sale.location || sale.project || sale.customerAddress || sale.customer?.address || sale.customer?.location || 'Sivakasi Depot'
+  const location = sale.location || sale.project || sale.customerAddress || sale.customer?.address || sale.customer?.location || 'Sivakasi'
 
   let items = ''
   if (typeof sale.items === 'string' && sale.items.trim()) {

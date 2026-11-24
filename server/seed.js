@@ -9,10 +9,10 @@ export async function seedInitialData() {
     if (settingsCount === 0) {
       console.log('[Seed] Seeding initial settings in MongoDB...');
       await Settings.create({
-        depotName: 'Kerala Wood Furniture - Sivakasi Depot',
+        depotName: 'Kerala Wood Furniture - Sivakasi',
         contactPhone: '+91 484 289 1204',
         contactEmail: 'depot@keralawood.in',
-        address: 'Sivakasi Central Depot & Mill Yard, Sivakasi',
+        address: 'Sivakasi Central Mill Yard, Sivakasi',
         dealerLicense: 'SFD/SVK/TMR/2023-884',
         operatingHours: 'Mon - Sat: 08:30 AM - 06:30 PM (Sun: Closed)',
         gstin: '32AABCP9821K1ZK',
@@ -20,7 +20,7 @@ export async function seedInitialData() {
         taxRate: '18% (Standard GST)',
         cgstRate: 9,
         sgstRate: 9,
-        bankName: 'State Bank of India - Sivakasi Branch',
+        bankName: 'State Bank of India - Sivakasi',
         accountNumber: '4092817290192',
         ifscCode: 'SBIN0008839',
         upiId: 'keralawood.depot@sbi',

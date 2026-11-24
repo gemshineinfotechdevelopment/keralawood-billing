@@ -289,7 +289,7 @@ export function getInvoicePrintHtml(modalBillData, settings = {}, defaultLogo = 
   const balanceDue = Number(modalBillData.balanceDue) || 0
   const notes = modalBillData.notes || ''
 
-  const depotName = (settings.depotName || 'Kerala Wood Furniture').replace(/[-–—]\s*sivakasi\s*depot/gi, '').trim() || 'Kerala Wood Furniture'
+  const depotName = (settings.depotName || 'Kerala Wood Furniture').replace(/[-–—]\s*sivakasi\s*(depot|branch)/gi, '').trim() || 'Kerala Wood Furniture'
   const address = (settings.address || 'Sivakasi Central Mill Yard, Sivakasi').replace(/Depot & /gi, '').replace(/Central Depot/gi, 'Central Yard')
   const logoSrc = settings.logoUrl || defaultLogo || '/kwf.jpg'
 
@@ -571,7 +571,7 @@ export function getPurchaseBillPrintHtml(purchase, settings = {}) {
   const supplierAddress = purchase.supplierAddress || 'Mill Yard Depot'
   const supplierGstin = purchase.supplierGstin || 'Unregistered'
 
-  const depotName = (settings.depotName || 'Kerala Wood Furniture').replace(/[-–—]\s*sivakasi\s*depot/gi, '').trim() || 'Kerala Wood Furniture'
+  const depotName = (settings.depotName || 'Kerala Wood Furniture').replace(/[-–—]\s*sivakasi\s*(depot|branch)/gi, '').trim() || 'Kerala Wood Furniture'
   const companyName = purchase.companyName || depotName
   const address = (settings.address || 'Sivakasi Central Mill Yard, Sivakasi').replace(/Depot & /gi, '').replace(/Central Depot/gi, 'Central Yard')
   const companyAddress = purchase.companyAddress || address
@@ -769,7 +769,7 @@ export async function downloadPurchaseBillPDF(purchase, settings = {}) {
  * Generate Clean Printable HTML for Products Catalog & Inventory
  */
 export function getProductsPrintHtml(products = [], settings = {}, defaultLogo = '') {
-  const depotName = (settings.depotName || 'Kerala Wood Furniture').replace(/[-–—]\s*sivakasi\s*depot/gi, '').trim() || 'Kerala Wood Furniture'
+  const depotName = (settings.depotName || 'Kerala Wood Furniture').replace(/[-–—]\s*sivakasi\s*(depot|branch)/gi, '').trim() || 'Kerala Wood Furniture'
   const address = (settings.address || 'Sivakasi Central Mill Yard, Sivakasi').replace(/Depot & /gi, '').replace(/Central Depot/gi, 'Central Yard')
   const printDate = new Date().toLocaleDateString('en-GB')
   const printTime = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })

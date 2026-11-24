@@ -210,7 +210,7 @@ export default function Sidebar({
             <img src={settings.logoUrl || kwfLogo} alt="Kerala Wood Furniture Logo" className="sidebar-custom-logo" />
             <div className="sidebar-brand-text-col">
               <span className="sidebar-brand-title">{settings.depotName ? settings.depotName.split('-')[0].trim() : 'Kerala Wood Furniture'}</span>
-              <span className="sidebar-brand-subtitle">Sivakasi Branch</span>
+              <span className="sidebar-brand-subtitle">Sivakasi</span>
             </div>
           </div>
         ) : (
