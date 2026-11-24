@@ -2035,7 +2035,9 @@
     align-items: stretch;
     gap: 12px;
   }
-  .pos-checkout-actions-inline {
+}
+
+.pos-checkout-actions-inline {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -2067,8 +2069,19 @@
   transform: translateY(0);
 }
 
-.pos-btn-open-dossier-prominent {
+@media (max-width: 640px) {
+  .pos-checkout-actions-inline {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .pos-btn-direct-save,
+  .pos-btn-open-dossier-prominent {
+    width: 100%;
     justify-content: center;
+    padding: 10px 8px;
+    font-size: 12px;
   }
 }
 

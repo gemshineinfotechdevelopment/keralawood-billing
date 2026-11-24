@@ -129,8 +129,8 @@ export default function Purchases() {
       // Right TO (Buyer)
       companyName: settings.depotName || 'Kerala Wood Furniture',
       companyAddress: settings.address || 'Sivakasi Central Depot & Mill Yard, Sivakasi',
-      companyGstin: settings.gstin || '32AABCP9821K1ZK',
-      companyPhone: settings.contactPhone || '+91 484 289 1204',
+      companyGstin: settings.gstin || '',
+      companyPhone: settings.contactPhone || '',
       // Items
       itemsList: [createEmptyItem()],
       notes: '',
@@ -186,8 +186,8 @@ export default function Purchases() {
       // TO (Company)
       companyName: p.companyName || settings.depotName || 'Kerala Wood Furniture',
       companyAddress: p.companyAddress || settings.address || 'Sivakasi Central Depot & Mill Yard, Sivakasi',
-      companyGstin: p.companyGstin || settings.gstin || '32AABCP9821K1ZK',
-      companyPhone: p.companyPhone || settings.contactPhone || '+91 484 289 1204',
+      companyGstin: p.companyGstin || settings.gstin || '',
+      companyPhone: p.companyPhone || settings.contactPhone || '',
       // Items
       itemsList: loadedItems,
       notes: p.notes || '',
@@ -375,8 +375,8 @@ export default function Purchases() {
     const supplierGstin = bill.supplierGstin || 'Unregistered'
     const companyName = bill.companyName || settings.depotName || 'Kerala Wood Furniture'
     const companyAddress = bill.companyAddress || settings.address || 'Sivakasi Central Mill Yard, Sivakasi'
-    const companyGstin = bill.companyGstin || settings.gstin || '32AABCP9821K1ZK'
-    const companyPhone = bill.companyPhone || settings.contactPhone || '+91 484 289 1204'
+    const companyGstin = bill.companyGstin || settings.gstin || ''
+    const companyPhone = bill.companyPhone || settings.contactPhone || ''
 
     const rawItems = Array.isArray(bill.itemsList) && bill.itemsList.length > 0
       ? bill.itemsList

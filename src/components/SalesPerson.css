@@ -655,7 +655,51 @@
 /* Responsive */
 @media (max-width: 768px) {
   .sales-person-page {
-    padding: 16px;
+    padding: 10px 12px 36px;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+  .sp-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .sp-header-actions {
+    width: 100%;
+  }
+  .btn-sp-primary {
+    width: 100%;
+    justify-content: center;
+    min-height: 42px;
+  }
+  .sp-kpi-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .sp-filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .sp-search-box {
+    width: 100%;
+    min-width: 0;
+  }
+  .sp-search-input {
+    width: 100%;
+  }
+  .sp-modal-content {
+    width: 95%;
+    max-height: 92vh;
+    border-radius: 10px;
+  }
+  .sp-modal-header,
+  .sp-modal-body,
+  .sp-modal-footer {
+    padding: 14px 16px;
   }
   .sp-form-grid {
     grid-template-columns: 1fr;
@@ -668,5 +712,7 @@
   }
   .sp-table-wrapper {
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
   }
 }

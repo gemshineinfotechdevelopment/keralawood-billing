@@ -575,8 +575,8 @@ export function getPurchaseBillPrintHtml(purchase, settings = {}) {
   const companyName = purchase.companyName || depotName
   const address = (settings.address || 'Sivakasi Central Mill Yard, Sivakasi').replace(/Depot & /gi, '').replace(/Central Depot/gi, 'Central Yard')
   const companyAddress = purchase.companyAddress || address
-  const companyGstin = purchase.companyGstin || settings.gstin || '32AABCP9821K1ZK'
-  const companyPhone = purchase.companyPhone || settings.contactPhone || '+91 484 289 1204'
+  const companyGstin = purchase.companyGstin || settings.gstin || ''
+  const companyPhone = purchase.companyPhone || settings.contactPhone || ''
 
   const rawItems = Array.isArray(purchase.itemsList) && purchase.itemsList.length > 0
     ? purchase.itemsList

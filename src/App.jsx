@@ -16,12 +16,14 @@ import './App.css'
 
 function App() {
   const [view, setView] = useState(() => (sessionStorage.getItem('kwf_auth') === 'true' ? 'billing' : 'login'))
+  const [userRole, setUserRole] = useState(() => sessionStorage.getItem('kwf_role') || 'super_admin') // 'super_admin' | 'admin'
+  const [loginRole, setLoginRole] = useState(() => sessionStorage.getItem('kwf_role') || 'super_admin')
   const [activeNav, setActiveNav] = useState('Billing & POS')
   const [billingInitialMode, setBillingInitialMode] = useState('list')
   const [productsInitialMode, setProductsInitialMode] = useState('list')
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
-  const [email, setEmail] = useState('rajesh.s@keralawood.in')
+  const [email, setEmail] = useState('superadmin@keralawood.in')
   const [password, setPassword] = useState('password123')
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(true)
@@ -33,12 +35,28 @@ function App() {
     return () => window.removeEventListener('timber_store_updated', handleUpdate)
   }, [])
 
+  const handleToggleRole = () => {
+    const nextRole = userRole === 'super_admin' ? 'admin' : 'super_admin'
+    setUserRole(nextRole)
+    setLoginRole(nextRole)
+    sessionStorage.setItem('kwf_role', nextRole)
+    if (nextRole === 'admin' && ['Purchases', 'Reports & Analytics', 'Settings'].includes(activeNav)) {
+      setActiveNav('Billing & POS')
+    }
+  }
+
   const handleSubmit = (e) => {
     e.preventDefault()
-    // Persist session and open Billing & POS interface immediately
+    const effectiveRole = loginRole || (email.toLowerCase().includes('admin') && !email.toLowerCase().includes('super') ? 'admin' : 'super_admin')
     sessionStorage.setItem('kwf_auth', 'true')
+    sessionStorage.setItem('kwf_role', effectiveRole)
+    setUserRole(effectiveRole)
     setView('billing')
-    setActiveNav('Billing & POS')
+    if (effectiveRole === 'admin' && ['Purchases', 'Reports & Analytics', 'Settings'].includes(activeNav)) {
+      setActiveNav('Billing & POS')
+    } else {
+      setActiveNav('Billing & POS')
+    }
   }
 
   // Dashboard / Billing Workspace View
@@ -55,6 +73,8 @@ function App() {
 
         <Sidebar
           activeItem={activeNav}
+          userRole={userRole}
+          onToggleRole={handleToggleRole}
           onItemSelect={(name) => {
             if (name === 'Billing & POS') {
               setBillingInitialMode('list')
@@ -78,7 +98,7 @@ function App() {
         />
 
         <main className="billing-main-area">
-          {/* Mobile Navigation Header Bar with Hamburger Menu (Requirement 1) */}
+          {/* Mobile Navigation Header Bar with Hamburger Menu */}
           <div className="mobile-app-header">
             <button
               type="button"
@@ -93,15 +113,50 @@ function App() {
               </svg>
             </button>
             <div className="mobile-header-brand">
-              <span className="mobile-header-title">Kerala Wood Furniture</span>
+              <span className="mobile-header-title">{settings.depotName || 'Kerala Wood Furniture'}</span>
             </div>
-            <div className="mobile-header-tag">
-              <span>Sivakasi</span>
+            <div
+              className="mobile-header-tag"
+              onClick={handleToggleRole}
+              style={{ cursor: 'pointer' }}
+              title="Click to toggle Super Admin / Admin role"
+            >
+              <span>{userRole === 'super_admin' ? '👑 Super Admin' : '👤 Admin'}</span>
             </div>
           </div>
 
           <ErrorBoundary>
-            {activeNav === 'Products' ? (
+            {userRole === 'admin' && ['Purchases', 'Reports & Analytics', 'Settings'].includes(activeNav) ? (
+              <div className="module-placeholder access-denied-wrapper">
+                <div className="placeholder-card access-denied-card">
+                  <div style={{ fontSize: '38px', marginBottom: '10px' }}>🔒</div>
+                  <span className="access-denied-badge">RESTRICTED TO SUPER ADMIN</span>
+                  <h2 style={{ color: '#31190B', marginTop: '12px', fontSize: '22px' }}>
+                    Access Restricted: {activeNav}
+                  </h2>
+                  <p style={{ color: '#6A564A', maxWidth: '480px', margin: '10px auto 20px', lineHeight: '1.5', fontSize: '13px' }}>
+                    You are currently signed in as <strong>Admin</strong>. The <strong>{activeNav}</strong> module contains confidential inward procurement, company reports, or depot settings and requires <strong>Super Admin</strong> authorization.
+                  </p>
+                  <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      className="btn-back-dash"
+                      style={{ backgroundColor: '#31190B', color: '#FFF' }}
+                      onClick={handleToggleRole}
+                    >
+                      👑 Switch to Super Admin
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-back-dash"
+                      onClick={() => setActiveNav('Billing & POS')}
+                    >
+                      ← Return to Billing & POS
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : activeNav === 'Products' ? (
               <Products initialViewMode={productsInitialMode} />
             ) : activeNav === 'Stock Management' ? (
               <StockManagement
@@ -172,17 +227,17 @@ function App() {
       {/* Top Header */}
       <header className="login-header">
         <div className="brand-section">
-          <img src={settings.logoUrl || kwfLogo} alt="Kerala Wood Furniture" className="header-logo" />
+          <img src={settings.logoUrl || kwfLogo} alt={settings.depotName || 'Brand Logo'} className="header-logo" />
           <div className="brand-text">
-            <span className="brand-title">Kerala Wood Furniture</span>
-            <span className="brand-subtitle">Sivakasi</span>
+            <span className="brand-title">{settings.depotName || 'Kerala Wood Furniture'}</span>
+            <span className="brand-subtitle">{settings.yardLocation || settings.depotLocation || 'Central Depot'}</span>
           </div>
         </div>
 
         <div className="header-meta">
           <div className="node-pill">
             <span className="status-dot-green"></span>
-            <span>Sivakasi Branch</span>
+            <span>{settings.depotLocation || settings.yardLocation || settings.depotName || 'Main Depot'}</span>
           </div>
           <div className="erp-secure">
             <svg
@@ -206,8 +261,8 @@ function App() {
       {/* Main Login Card */}
       <main className="login-main">
         <div className="login-card">
-          <img src={settings.logoUrl || kwfLogo} alt="Kerala Wood Furniture" className="card-logo" />
-          <h2 className="card-brand-title">Kerala Wood Furniture</h2>
+          <img src={settings.logoUrl || kwfLogo} alt={settings.depotName || 'Brand Logo'} className="card-logo" />
+          <h2 className="card-brand-title">{settings.depotName || 'Kerala Wood Furniture'}</h2>
           <div className="card-brand-subtitle">Billing & Inventory</div>
 
           <h1 className="card-welcome-title">Welcome back</h1>
@@ -216,7 +271,41 @@ function App() {
           </p>
 
           <form className="login-form" onSubmit={handleSubmit}>
-            {/* Email / Staff ID Field (Pre-filled) */}
+            {/* Account Role Selector */}
+            <div className="login-role-selector">
+              <label className="input-label" style={{ textAlign: 'left', display: 'block', marginBottom: '6px' }}>
+                ACCESS ROLE
+              </label>
+              <div className="login-role-chips">
+                <button
+                  type="button"
+                  className={`login-role-chip ${loginRole === 'super_admin' ? 'active' : ''}`}
+                  onClick={() => {
+                    setLoginRole('super_admin')
+                    setEmail('superadmin@keralawood.in')
+                  }}
+                >
+                  👑 Super Admin
+                </button>
+                <button
+                  type="button"
+                  className={`login-role-chip ${loginRole === 'admin' ? 'active' : ''}`}
+                  onClick={() => {
+                    setLoginRole('admin')
+                    setEmail('admin@keralawood.in')
+                  }}
+                >
+                  👤 Admin
+                </button>
+              </div>
+              <p className="login-role-hint">
+                {loginRole === 'super_admin'
+                  ? '✓ Super Admin: Unrestricted access to all modules including Purchases, Reports & Settings'
+                  : '⚠️ Admin: Restricted — Purchases, Reports & Settings are hidden'}
+              </p>
+            </div>
+
+            {/* Email / Staff ID Field */}
             <div className="form-group">
               <label htmlFor="email" className="input-label">
                 EMAIL OR STAFF ID
@@ -401,7 +490,7 @@ function App() {
       {/* Footer */}
       <footer className="login-footer">
         <span className="footer-copyright">
-          © {new Date().getFullYear()} Kerala Wood Furniture. All rights reserved.
+          © {new Date().getFullYear()} {settings.depotName || 'Kerala Wood Furniture'}. All rights reserved.
         </span>
         <div className="footer-links">
           <a href="#privacy" className="footer-link" onClick={(e) => e.preventDefault()}>

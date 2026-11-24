@@ -38,7 +38,7 @@ const INITIAL_SETTINGS = {
   smsNotifications: true,
   printFormat: 'A4 Ledger', // 'A4 Ledger' | 'Thermal Slip'
   paymentTerms: 'Immediate / POS',
-  signatoryName: 'Rajesh Sivan',
+  signatoryName: 'Super Admin',
   signatoryDesignation: 'Depot Lead & Store Manager',
   disclaimer: 'We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct',
   logoUrl: kwfLogo,
@@ -304,6 +304,10 @@ export const DataStore = {
     }
     if (!s.disclaimer || s.disclaimer.includes('Natural variations in teak')) {
       s.disclaimer = 'We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct'
+      saveToStorage(STORAGE_KEYS.SETTINGS, s)
+    }
+    if (!s.signatoryName || s.signatoryName === 'Rajesh Sivan') {
+      s.signatoryName = 'Super Admin'
       saveToStorage(STORAGE_KEYS.SETTINGS, s)
     }
     return s

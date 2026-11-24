@@ -260,6 +260,60 @@
   padding: 0 2px;
 }
 
+.sidebar-role-switch-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0 2px;
+}
+
+.sidebar-role-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.role-pill-badge {
+  display: inline-block;
+  padding: 2.5px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.role-pill-badge.role-super {
+  background-color: #2D241E;
+  color: #E2A36B;
+  border: 1px solid #6E4A2E;
+}
+
+.role-pill-badge.role-admin {
+  background-color: #1F2833;
+  color: #8EB4DE;
+  border: 1px solid #36506C;
+}
+
+.btn-sidebar-role-toggle {
+  background: transparent;
+  border: 1px dashed #4A4038;
+  color: #B5A89F;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 5px 8px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: center;
+}
+
+.btn-sidebar-role-toggle:hover {
+  background-color: #26211E;
+  border-color: #C88D58;
+  color: #FFFFFF;
+}
+
 .depot-ext-text {
   font-family: inherit;
   font-size: 11px;

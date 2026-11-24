@@ -105,7 +105,7 @@ export default function AddProduct({ onProductSaved, onCancel, editProduct = nul
     setWarranty('')
     setStockQuantity('')
     setLowStockThreshold('')
-    setDepotLocation('Sivakasi Central Depot')
+    setDepotLocation(settings.depotLocation || settings.yardLocation || '')
     setPackagingType('')
     setCostPrice('')
     setSellingPrice('')

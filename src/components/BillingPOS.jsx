@@ -2342,8 +2342,8 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
                   style={{ width: '38px', height: '38px', objectFit: 'contain', borderRadius: '4px', background: '#fff', padding: '2px' }}
                 />
                 <div className="pos-modal-header-info">
-                  <h3>Kerala Wood Furniture — Tax Invoice</h3>
-                  <p>Official Sivakasi Central Depot Tax Document</p>
+                  <h3>{settings.depotName || 'Timber & Wood'} — Tax Invoice</h3>
+                  <p>{settings.address || 'Central Depot & Mill Yard'}</p>
                 </div>
               </div>
               <div className="pos-modal-header-actions">

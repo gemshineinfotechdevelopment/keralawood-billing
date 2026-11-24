@@ -227,6 +227,76 @@
   color: #A6978F;
 }
 
+/* Role Selector on Login */
+.login-role-selector {
+  margin-bottom: 14px;
+  text-align: left;
+}
+
+.login-role-chips {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.login-role-chip {
+  padding: 8px 6px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 6px;
+  border: 1.5px solid #EAE0D8;
+  background-color: #FAF5F1;
+  color: #5C3A21;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  text-align: center;
+  box-sizing: border-box;
+  white-space: nowrap;
+}
+
+.login-role-chip:hover {
+  background-color: #F4E8DF;
+  border-color: #C88D58;
+}
+
+.login-role-chip.active {
+  background-color: #31190B;
+  border-color: #31190B;
+  color: #FFFFFF;
+  box-shadow: 0 2px 8px rgba(49, 25, 11, 0.2);
+}
+
+.login-role-hint {
+  font-size: 10px;
+  margin-top: 6px;
+  margin-bottom: 0;
+  color: #7D6C63;
+  line-height: 1.35;
+}
+
+/* Access Denied styles */
+.access-denied-wrapper {
+  max-width: 620px;
+  margin: 40px auto;
+}
+
+.access-denied-card {
+  padding: 36px 28px !important;
+}
+
+.access-denied-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  background-color: #FEF2F2;
+  border: 1px solid #FECACA;
+  color: #DC2626;
+  text-transform: uppercase;
+}
+
 .password-toggle-btn {
   background: transparent;
   border: none;

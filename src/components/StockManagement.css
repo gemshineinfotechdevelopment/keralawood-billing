@@ -1322,3 +1322,20 @@
 .btn-drawer-save.btn-dispatch-save:hover {
   background-color: #991B1B;
 }
+
+@media (max-width: 640px) {
+  .quick-modal-panel {
+    width: 95vw;
+    max-height: 92vh;
+    border-radius: 12px;
+  }
+  .quick-modal-header,
+  .quick-modal-body,
+  .quick-modal-footer {
+    padding: 14px 16px;
+  }
+  .stock-drawer-panel {
+    width: 100vw;
+    max-width: 100vw;
+  }
+}

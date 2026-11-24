@@ -12,6 +12,8 @@ export default function Sidebar({
   onCloseMobile,
   onClose,
   onLogout,
+  userRole = 'super_admin',
+  onToggleRole,
 }) {
   const [localActive, setLocalActive] = useState(activeItem)
   const [settings, setSettings] = useState(() => DataStore.getSettings())
@@ -270,25 +272,34 @@ export default function Sidebar({
       {/* Navigation Items */}
       <div className="sidebar-nav-section">
         {!isCollapsed && (
-          <span className="sidebar-section-label">MENU</span>
+          <span className="sidebar-section-label">
+            MENU {userRole === 'admin' ? '(ADMIN ACCESS)' : '(SUPER ADMIN)'}
+          </span>
         )}
         <ul className="sidebar-menu">
-          {navItems.map((item) => {
-            const isActive = current === item.name
-            return (
-              <li key={item.name} className="sidebar-menu-item">
-                <button
-                  type="button"
-                  className={`sidebar-menu-btn ${isActive ? 'active' : ''}`}
-                  onClick={() => handleSelect(item.name)}
-                  title={isCollapsed ? item.name : undefined}
-                >
-                  <span className="sidebar-menu-icon">{item.icon}</span>
-                  {!isCollapsed && <span>{item.name}</span>}
-                </button>
-              </li>
-            )
-          })}
+          {navItems
+            .filter((item) => {
+              if (userRole === 'admin') {
+                return !['Purchases', 'Reports & Analytics', 'Settings'].includes(item.name)
+              }
+              return true
+            })
+            .map((item) => {
+              const isActive = current === item.name
+              return (
+                <li key={item.name} className="sidebar-menu-item">
+                  <button
+                    type="button"
+                    className={`sidebar-menu-btn ${isActive ? 'active' : ''}`}
+                    onClick={() => handleSelect(item.name)}
+                    title={isCollapsed ? item.name : undefined}
+                  >
+                    <span className="sidebar-menu-icon">{item.icon}</span>
+                    {!isCollapsed && <span>{item.name}</span>}
+                  </button>
+                </li>
+              )
+            })}
         </ul>
       </div>
 
@@ -296,7 +307,7 @@ export default function Sidebar({
       <div className="sidebar-footer">
         <div className={`sidebar-user-card ${isCollapsed ? 'compact' : ''}`}>
           <div className="sidebar-user-top">
-            <div className="sidebar-user-avatar" title={`${settings.signatoryName || 'Rajesh Sivan'} • ${settings.signatoryDesignation || 'Store Manager'}`}>
+            <div className="sidebar-user-avatar" title={userRole === 'super_admin' ? 'Super Admin' : 'Admin'}>
               <svg
                 width="16"
                 height="16"
@@ -313,16 +324,32 @@ export default function Sidebar({
             </div>
             {!isCollapsed && (
               <div className="sidebar-user-info">
-                <span className="sidebar-user-name">{settings.signatoryName || 'Rajesh Sivan'}</span>
-                <span className="sidebar-user-role">{settings.signatoryDesignation || 'Store Manager'}</span>
+                <span className="sidebar-user-name">{userRole === 'super_admin' ? 'Super Admin' : 'Admin'}</span>
+                <span className="sidebar-user-role">
+                  {userRole === 'super_admin' ? '👑 Super Admin' : '👤 Admin'}
+                </span>
               </div>
             )}
           </div>
           {!isCollapsed && (
             <>
               <div className="depot-divider"></div>
-              <div className="depot-status-row">
-                <span className="depot-ext-text">{settings.depotName ? (settings.depotName.split('-')[1]?.trim() || settings.depotName) : 'Sivakasi Branch'}</span>
+              <div className="sidebar-role-switch-container">
+                <div className="sidebar-role-indicator">
+                  <span className={`role-pill-badge ${userRole === 'super_admin' ? 'role-super' : 'role-admin'}`}>
+                    {userRole === 'super_admin' ? 'Super Admin (Full)' : 'Admin (Restricted)'}
+                  </span>
+                </div>
+                {onToggleRole && (
+                  <button
+                    type="button"
+                    className="btn-sidebar-role-toggle"
+                    onClick={onToggleRole}
+                    title="Switch between Super Admin & Admin"
+                  >
+                    Switch to {userRole === 'super_admin' ? 'Admin' : 'Super Admin'}
+                  </button>
+                )}
               </div>
             </>
           )}
