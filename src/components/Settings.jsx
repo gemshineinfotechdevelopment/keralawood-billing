@@ -628,12 +628,12 @@ export default function Settings() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
             {/* Super Admin Box */}
             <div style={{ background: '#FAF7F4', border: '1.5px solid #EADBCC', borderRadius: '10px', padding: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontSize: '18px' }}>👑</span>
+                  <span style={{ fontSize: '18px', lineHeight: 1 }}>👑</span>
                   <strong style={{ fontSize: '14px', color: '#31190B' }}>Super Admin Credentials</strong>
                 </div>
-                <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '4px', background: '#31190B', color: '#FFFFFF' }}>
+                <span style={{ fontSize: '10px', fontWeight: 700, padding: '3px 8px', borderRadius: '4px', background: '#31190B', color: '#FFFFFF', display: 'inline-flex', alignItems: 'center', lineHeight: 1 }}>
                   Full Access
                 </span>
               </div>

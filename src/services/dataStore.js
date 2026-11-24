@@ -12,6 +12,7 @@ const STORAGE_KEYS = {
   PURCHASES: 'sivakasi_wood_purchases',
   SALES_PERSONS: 'sivakasi_wood_sales_persons',
   AUTH_CREDENTIALS: 'sivakasi_wood_credentials',
+  CATEGORIES: 'sivakasi_wood_categories',
 }
 
 // Dedicated Role Authentication Credentials (User ID & Password)
@@ -471,6 +472,44 @@ export const DataStore = {
       if (isAdminValid) return { success: true, role: 'admin' }
       return { success: false, message: 'Invalid User ID or Password.' }
     }
+  },
+
+  // CATEGORIES
+  getCategories() {
+    const defaultCats = [
+      'Dining Sets & Tables',
+      'Beds & Bedroom',
+      'Armchairs & Seating',
+      'Storage & Bookcases',
+      'Executive Desks & Tables',
+    ]
+    const saved = loadFromStorage(STORAGE_KEYS.CATEGORIES, defaultCats)
+    return Array.isArray(saved) && saved.length > 0 ? saved : defaultCats
+  },
+  saveCategories(cats) {
+    saveToStorage(STORAGE_KEYS.CATEGORIES, cats)
+    notifyStoreUpdate()
+  },
+  addCategory(name) {
+    const trimmed = String(name || '').trim()
+    if (!trimmed) return this.getCategories()
+    const list = this.getCategories()
+    if (!list.includes(trimmed)) {
+      list.push(trimmed)
+      this.saveCategories(list)
+    }
+    return list
+  },
+  deleteCategory(catName) {
+    const trimmed = String(catName || '').trim().toLowerCase()
+    const list = this.getCategories()
+    const filtered = list.filter((c) => String(c).trim().toLowerCase() !== trimmed)
+    this.saveCategories(filtered)
+
+    fetch(`${API_BASE}/api/categories/${encodeURIComponent(catName)}`, {
+      method: 'DELETE',
+    }).catch(() => {})
+    return filtered
   },
 
   // PURCHASES

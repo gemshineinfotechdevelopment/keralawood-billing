@@ -148,6 +148,23 @@ app.post('/api/categories', async (req, res) => {
   }
 });
 
+app.delete('/api/categories/:nameOrId', async (req, res) => {
+  try {
+    const { nameOrId } = req.params;
+    const decoded = decodeURIComponent(nameOrId).trim();
+    if (mongoose.Types.ObjectId.isValid(decoded)) {
+      await Category.findByIdAndDelete(decoded);
+    } else {
+      await Category.deleteMany({ name: new RegExp(`^${decoded}$`, 'i') });
+    }
+    console.log('[API] Deleted product category from MongoDB:', decoded);
+    res.json({ success: true, message: 'Category deleted successfully' });
+  } catch (err) {
+    console.error('[API] /api/categories DELETE error:', err);
+    res.status(500).json({ success: false, message: 'Failed to delete category', error: err.message });
+  }
+});
+
 // -------------------------------------------------------------
 // PRODUCTS API
 // -------------------------------------------------------------

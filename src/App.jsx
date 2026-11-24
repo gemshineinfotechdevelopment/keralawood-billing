@@ -143,7 +143,8 @@ function App() {
               style={{ cursor: userRole === 'super_admin' ? 'pointer' : 'default' }}
               title={userRole === 'super_admin' ? 'Click to switch to Admin' : 'Signed in as Admin'}
             >
-              <span>{userRole === 'super_admin' ? '👑 Super Admin' : '👤 Admin'}</span>
+              <span className="mobile-header-tag-icon">{userRole === 'super_admin' ? '👑' : '👤'}</span>
+              <span className="mobile-header-tag-text">{userRole === 'super_admin' ? 'Super Admin' : 'Admin'}</span>
             </div>
           </div>
 

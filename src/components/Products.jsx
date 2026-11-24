@@ -126,9 +126,9 @@ export default function Products({ initialViewMode = 'list' }) {
     )
   }
 
-  // Dynamic Categories from live products
+  // Dynamic Categories from live products and dataStore
   const dynamicCategories = Array.from(
-    new Set(products.map((p) => p.category).filter(Boolean))
+    new Set([...DataStore.getCategories(), ...products.map((p) => p.category).filter(Boolean)])
   )
 
   // Filter products by category and search

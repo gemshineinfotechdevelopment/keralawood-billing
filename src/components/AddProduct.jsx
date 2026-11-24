@@ -23,13 +23,17 @@ export default function AddProduct({ onProductSaved, onCancel, editProduct = nul
   // General Info states (Numeric SKU is auto-generated on mount or loaded from editProduct)
   const [productName, setProductName] = useState(editProduct?.name || '')
   const [categories, setCategories] = useState(() => {
+    const fromStore = DataStore.getCategories()
     const fromProds = Array.from(new Set(DataStore.getProducts().map((p) => p.category).filter(Boolean)))
-    return fromProds.length > 0 ? fromProds : DEFAULT_CATEGORIES
+    const combined = Array.from(new Set([...fromStore, ...fromProds]))
+    return combined.length > 0 ? combined : DEFAULT_CATEGORIES
   })
   const [category, setCategory] = useState(() => {
     if (editProduct?.category) return editProduct.category
+    const fromStore = DataStore.getCategories()
     const fromProds = Array.from(new Set(DataStore.getProducts().map((p) => p.category).filter(Boolean)))
-    return fromProds[0] || DEFAULT_CATEGORIES[0] || ''
+    const combined = Array.from(new Set([...fromStore, ...fromProds]))
+    return combined[0] || DEFAULT_CATEGORIES[0] || ''
   })
   const [skuCode, setSkuCode] = useState(() => {
     if (editProduct?.sku) {
@@ -49,6 +53,7 @@ export default function AddProduct({ onProductSaved, onCancel, editProduct = nul
   const [newCatDescription, setNewCatDescription] = useState('')
   const [isSavingCat, setIsSavingCat] = useState(false)
   const [catError, setCatError] = useState('')
+  const [catModalMsg, setCatModalMsg] = useState('')
 
   // Craft Specs states
   const [length, setLength] = useState(editProduct?.dimensions?.length ?? '')
@@ -159,6 +164,7 @@ export default function AddProduct({ onProductSaved, onCancel, editProduct = nul
     // Instantly add to state and select
     setCategories((prev) => (prev.includes(targetName) ? prev : [...prev, targetName]))
     setCategory(targetName)
+    DataStore.addCategory(targetName)
 
     try {
       const apiUrl = import.meta.env.VITE_API_URL || ''
@@ -177,7 +183,25 @@ export default function AddProduct({ onProductSaved, onCancel, editProduct = nul
       setNewCatName('')
       setNewCatDescription('')
       setIsCategoryModalOpen(false)
+      setToastMsg(`✓ Category "${targetName}" added successfully!`)
+      setTimeout(() => setToastMsg(''), 2200)
     }
+  }
+
+  const handleDeleteCategory = async (catToDelete) => {
+    if (!catToDelete) return
+    const updated = categories.filter((c) => c !== catToDelete)
+    setCategories(updated)
+    DataStore.deleteCategory(catToDelete)
+
+    if (category === catToDelete) {
+      setCategory(updated[0] || '')
+    }
+
+    setCatModalMsg(`✓ Category "${catToDelete}" deleted!`)
+    setTimeout(() => setCatModalMsg(''), 2500)
+    setToastMsg(`✓ Category "${catToDelete}" deleted successfully!`)
+    setTimeout(() => setToastMsg(''), 2200)
   }
 
   const handleAutoGenerateSku = () => {
@@ -452,7 +476,7 @@ export default function AddProduct({ onProductSaved, onCancel, editProduct = nul
                   className="field-action-link"
                   onClick={() => setIsCategoryModalOpen(true)}
                 >
-                  + New Category
+                  + New / Delete Category
                 </button>
               </div>
               <select
@@ -658,10 +682,10 @@ export default function AddProduct({ onProductSaved, onCancel, editProduct = nul
           >
             <div className="quick-modal-header">
               <div className="quick-header-left">
-                <span className="drawer-badge-tag">CATEGORY SETUP</span>
-                <h3 className="quick-modal-title">Add New Product Category</h3>
+                <span className="drawer-badge-tag">CATEGORY SETUP & MANAGEMENT</span>
+                <h3 className="quick-modal-title">Product Categories</h3>
                 <p className="quick-modal-subtitle">
-                  Define a new product category
+                  Create new product categories or delete unneeded ones
                 </p>
               </div>
               <button
@@ -727,6 +751,71 @@ export default function AddProduct({ onProductSaved, onCancel, editProduct = nul
                   value={newCatDescription}
                   onChange={(e) => setNewCatDescription(e.target.value)}
                 />
+              </div>
+
+              {catModalMsg && (
+                <div style={{
+                  padding: '8px 12px',
+                  background: '#F0FDF4',
+                  border: '1px solid #BBF7D0',
+                  color: '#166534',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  marginTop: '12px',
+                  textAlign: 'center',
+                }}>
+                  {catModalMsg}
+                </div>
+              )}
+
+              {/* Existing Categories with Delete Option */}
+              <div className="drawer-form-group" style={{ marginTop: '16px', borderTop: '1px solid #EADCCF', paddingTop: '12px' }}>
+                <label className="drawer-field-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <span>Existing Categories ({categories.length})</span>
+                  <span style={{ fontSize: '11px', color: '#8C7B72', fontWeight: 'normal' }}>Click 🗑️ to delete</span>
+                </label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '160px', overflowY: 'auto', paddingRight: '4px' }}>
+                  {categories.map((catItem) => (
+                    <div
+                      key={catItem}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '6px 10px',
+                        borderRadius: '6px',
+                        background: '#FAF6F0',
+                        border: '1px solid #EADCCF',
+                      }}
+                    >
+                      <span style={{ fontSize: '12px', fontWeight: 600, color: '#31190B' }}>
+                        {catItem}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteCategory(catItem)}
+                        title={`Delete category "${catItem}"`}
+                        aria-label={`Delete category ${catItem}`}
+                        style={{
+                          background: '#FEE2E2',
+                          color: '#DC2626',
+                          border: '1px solid #FECACA',
+                          borderRadius: '4px',
+                          padding: '3px 8px',
+                          fontSize: '11px',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                        }}
+                      >
+                        🗑️ Delete
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
 

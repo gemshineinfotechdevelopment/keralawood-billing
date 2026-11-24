@@ -1004,7 +1004,13 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
           <p className="pos-print-cust-name">{typeof modalBillData.customer === 'object' && modalBillData.customer !== null ? (modalBillData.customer.name || 'Walk-in Customer') : (modalBillData.customer || 'Walk-in Customer')}</p>
           <p>{typeof modalBillData.customer === 'object' && modalBillData.customer !== null ? (modalBillData.customer.address || 'Local Destination') : 'Local Destination'}</p>
           <p>Phone: {(typeof modalBillData.customer === 'object' && modalBillData.customer !== null ? modalBillData.customer.phone : null) || modalBillData.customerPhone || 'N/A'}</p>
-          <p>GSTIN: {(typeof modalBillData.customer === 'object' && modalBillData.customer !== null ? modalBillData.customer.gstin : null) || modalBillData.customerGstin || 'Unregistered / Personal'}</p>
+          {(() => {
+            const rawG = (typeof modalBillData.customer === 'object' && modalBillData.customer !== null ? modalBillData.customer.gstin : null) || modalBillData.customerGstin
+            if (rawG && !String(rawG).toLowerCase().includes('unregistered') && !String(rawG).toLowerCase().includes('personal') && String(rawG).trim().length > 0) {
+              return <p>GSTIN: {rawG}</p>
+            }
+            return null
+          })()}
         </div>
         <div className="pos-print-col">
           <h4>Ship To:</h4>

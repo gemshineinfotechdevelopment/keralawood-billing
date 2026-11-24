@@ -202,7 +202,8 @@ export default function SalesPerson() {
 
       {/* Table Container - Only Staff ID, Name, Orders Closed, Phone Number, Actions */}
       <div className="sp-table-wrapper">
-        <table className="sp-table">
+        <div className="sp-table-scroll-wrap">
+          <table className="sp-table">
           <thead>
             <tr>
               <th style={{ width: '180px' }}>STAFF ID</th>
@@ -309,6 +310,7 @@ export default function SalesPerson() {
             )}
           </tbody>
         </table>
+        </div>
 
         {/* Table Footer with Pagination */}
         <div className="patron-table-footer">

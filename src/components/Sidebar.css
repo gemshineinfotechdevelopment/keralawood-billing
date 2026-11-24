@@ -218,11 +218,28 @@
 
 .sidebar-user-role {
   color: #9A8B83;
-  font-size: 10px;
-  line-height: 1.3;
+  font-size: 11px;
+  line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.sidebar-role-icon {
+  font-size: 12px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+}
+
+.sidebar-role-text {
+  font-size: 11px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
 }
 
 .depot-card-header {
@@ -274,13 +291,16 @@
 }
 
 .role-pill-badge {
-  display: inline-block;
-  padding: 2.5px 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3.5px 8px;
   border-radius: 4px;
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+  line-height: 1;
 }
 
 .role-pill-badge.role-super {

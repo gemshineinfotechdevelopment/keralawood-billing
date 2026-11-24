@@ -1060,10 +1060,12 @@
   .products-table-wrapper {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(200, 141, 88, 0.4) transparent;
   }
 
   .products-main-table {
-    min-width: 520px;
+    min-width: 620px;
   }
 
   .products-main-table thead th {

@@ -198,6 +198,37 @@ a {
   padding: 0 4px !important;
 }
 
+@media (max-width: 768px) {
+  .patron-table-footer {
+    padding: 10px 12px !important;
+    gap: 10px !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .patron-footer-left {
+    gap: 8px !important;
+    width: 100% !important;
+    justify-content: space-between !important;
+  }
+
+  .showing-records-text {
+    font-size: 11px !important;
+    white-space: nowrap !important;
+  }
+
+  .patron-per-page-wrap {
+    margin-left: auto !important;
+  }
+
+  .patron-pagination {
+    width: 100% !important;
+    justify-content: center !important;
+    margin-top: 2px !important;
+  }
+}
+
 /* ===================================================
    Global Form Validation Controls & Error Styling
    =================================================== */

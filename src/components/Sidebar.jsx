@@ -326,7 +326,8 @@ export default function Sidebar({
               <div className="sidebar-user-info">
                 <span className="sidebar-user-name">{userRole === 'super_admin' ? 'Super Admin' : 'Admin'}</span>
                 <span className="sidebar-user-role">
-                  {userRole === 'super_admin' ? '👑 Super Admin' : '👤 Admin'}
+                  <span className="sidebar-role-icon">{userRole === 'super_admin' ? '👑' : '👤'}</span>
+                  <span className="sidebar-role-text">{userRole === 'super_admin' ? 'Super Admin' : 'Admin'}</span>
                 </span>
               </div>
             )}

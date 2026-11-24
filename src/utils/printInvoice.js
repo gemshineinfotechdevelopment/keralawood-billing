@@ -232,7 +232,8 @@ export function getInvoicePrintHtml(modalBillData, settings = {}, defaultLogo = 
   const custName = typeof rawCust === 'object' && rawCust !== null ? (rawCust.name || 'Walk-in Customer') : (String(rawCust || '').trim() || 'Walk-in Customer')
   const custPhone = (typeof rawCust === 'object' && rawCust !== null ? rawCust.phone : null) || modalBillData.customerPhone || modalBillData.phone || 'N/A'
   const custAddress = (typeof rawCust === 'object' && rawCust !== null ? rawCust.address : null) || modalBillData.customerAddress || modalBillData.address || 'Local Destination'
-  const custGstin = (typeof rawCust === 'object' && rawCust !== null ? rawCust.gstin : null) || modalBillData.customerGstin || modalBillData.gstin || 'Unregistered / Personal'
+  const rawCustGstin = (typeof rawCust === 'object' && rawCust !== null ? rawCust.gstin : null) || modalBillData.customerGstin || modalBillData.gstin || ''
+  const isCustGstinValid = rawCustGstin && !String(rawCustGstin).toLowerCase().includes('unregistered') && !String(rawCustGstin).toLowerCase().includes('personal') && String(rawCustGstin).trim().length > 0
 
   const rawShp = modalBillData.shipping
   const shpName = (typeof rawShp === 'object' && rawShp !== null ? rawShp.name : null) || modalBillData.shippingName || custName
@@ -344,7 +345,7 @@ export function getInvoicePrintHtml(modalBillData, settings = {}, defaultLogo = 
           <div class="cust-name">${custName}</div>
           <div class="cust-sub">${custAddress}</div>
           <div class="cust-sub">Phone: ${custPhone}</div>
-          <div class="cust-sub">GSTIN: ${custGstin}</div>
+          ${isCustGstinValid ? `<div class="cust-sub">GSTIN: ${rawCustGstin}</div>` : ''}
         </td>
         <td class="cust-col">
           <div class="cust-label">Ship To:</div>
