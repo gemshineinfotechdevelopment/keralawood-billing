@@ -537,38 +537,146 @@ export function printInvoiceDocument(modalBillData, settings = {}, defaultLogo =
 }
 
 /**
+ * Direct High-Fidelity PDF Generation using html2canvas & jsPDF
+ * Completely bypasses html2pdf.js 0.14.0 opacity:0 overlay bug which caused blank PDFs.
+ */
+async function generatePdfFromHtml(html, fileName, isSaveOnly = false) {
+  if (typeof document === 'undefined') return { success: false, error: 'No document' }
+
+  const existingModalSheet = document.getElementById('pos-printable-invoice')
+  let targetElement = null
+  let isTemp = false
+  let overlayEl = null
+
+  if (existingModalSheet && existingModalSheet.offsetHeight > 100) {
+    targetElement = existingModalSheet
+  } else {
+    isTemp = true
+    overlayEl = document.createElement('div')
+    overlayEl.id = 'kwf-pdf-progress-overlay'
+    overlayEl.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(49,25,11,0.45);z-index:999999999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(2px);'
+    overlayEl.innerHTML = `
+      <div style="background:#fff;padding:18px 28px;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,0.25);display:flex;align-items:center;gap:12px;font-family:'Inter',sans-serif;color:#31190B;font-weight:700;font-size:14px;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="animation:kwfSpin 1s linear infinite;"><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/></svg>
+        <span>Generating Invoice PDF...</span>
+      </div>
+      <style>@keyframes kwfSpin { 100% { transform: rotate(360deg); } }</style>
+    `
+    document.body.appendChild(overlayEl)
+
+    const parser = new DOMParser()
+    const doc = parser.parseFromString(html, 'text/html')
+    const styles = Array.from(doc.querySelectorAll('style')).map(s => s.innerHTML).join('\n')
+    const sheet = doc.querySelector('.sheet') || doc.body
+
+    targetElement = document.createElement('div')
+    targetElement.id = 'kwf-pdf-export-host-' + Date.now()
+    targetElement.style.cssText = 'position:fixed;top:0;left:0;width:794px;background:#FFFFFF;color:#31190B;z-index:99999999;box-sizing:border-box;margin:0;padding:12px 16px;pointer-events:none;'
+    targetElement.innerHTML = `
+      <style>
+        ${styles}
+        *, *::before, *::after {
+          box-sizing: border-box !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+        .sheet {
+          width: 100% !important;
+          max-width: 100% !important;
+          margin: 0 !important;
+          padding: 0 !important;
+        }
+      </style>
+      <div style="background:#FFFFFF;color:#31190B;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:12px;line-height:1.4;">
+        ${sheet ? sheet.outerHTML : html}
+      </div>
+    `
+    document.body.appendChild(targetElement)
+  }
+
+  const imgs = Array.from(targetElement.querySelectorAll('img'))
+  if (imgs.length > 0) {
+    await Promise.all(
+      imgs.map(img => {
+        if (img.complete && img.naturalHeight !== 0) return Promise.resolve()
+        return new Promise(res => {
+          img.onload = res
+          img.onerror = res
+          setTimeout(res, 600)
+        })
+      })
+    )
+  }
+  await new Promise(res => setTimeout(res, 120))
+
+  try {
+    const html2canvasModule = await import('html2canvas')
+    const html2canvas = html2canvasModule.default || html2canvasModule
+    const { jsPDF } = await import('jspdf')
+
+    const canvas = await html2canvas(targetElement, {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      backgroundColor: '#FFFFFF',
+      scrollX: 0,
+      scrollY: 0,
+      windowWidth: 794,
+    })
+
+    const imgData = canvas.toDataURL('image/jpeg', 0.98)
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4',
+    })
+
+    const pdfWidth = 210
+    const pageHeight = 297
+    const imgWidth = pdfWidth
+    const imgHeight = (canvas.height * imgWidth) / canvas.width
+
+    let heightLeft = imgHeight
+    let position = 0
+
+    pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight)
+    heightLeft -= pageHeight
+
+    while (heightLeft > 0) {
+      position = heightLeft - imgHeight
+      pdf.addPage()
+      pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight)
+      heightLeft -= pageHeight
+    }
+
+    if (isSaveOnly) {
+      pdf.save(fileName)
+      return { success: true }
+    } else {
+      const blob = pdf.output('blob')
+      return { success: true, blob, pdf }
+    }
+  } catch (err) {
+    console.error('[generatePdfFromHtml] Error:', err)
+    return { success: false, error: err.message }
+  } finally {
+    if (isTemp && targetElement && targetElement.parentNode) {
+      targetElement.parentNode.removeChild(targetElement)
+    }
+    if (overlayEl && overlayEl.parentNode) {
+      overlayEl.parentNode.removeChild(overlayEl)
+    }
+  }
+}
+
+/**
  * Download Customer Tax Invoice as PDF
  */
 export async function downloadInvoicePDF(modalBillData, settings = {}, defaultLogo = '') {
   if (!modalBillData) return
-  try {
-    const html2pdfModule = await import('html2pdf.js')
-    const html2pdf = html2pdfModule.default || html2pdfModule
-
-    const invNumber = modalBillData.invoiceNumber || modalBillData.invoice || modalBillData.id || '100'
-    const html = getInvoicePrintHtml(modalBillData, settings, defaultLogo)
-
-    const container = document.createElement('div')
-    container.style.position = 'fixed'
-    container.style.left = '-10000px'
-    container.style.top = '0'
-    container.style.width = '794px'
-    container.innerHTML = html
-    document.body.appendChild(container)
-
-    const opt = {
-      margin: [8, 8, 8, 8],
-      filename: `Tax_Invoice_${invNumber}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, logging: false },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    }
-
-    await html2pdf().set(opt).from(container).save()
-    if (container.parentNode) container.parentNode.removeChild(container)
-  } catch (err) {
-    console.error('[downloadInvoicePDF] Error downloading PDF:', err)
-  }
+  const invNumber = modalBillData.invoiceNumber || modalBillData.invoice || modalBillData.id || '100'
+  const html = getInvoicePrintHtml(modalBillData, settings, defaultLogo)
+  await generatePdfFromHtml(html, `Tax_Invoice_${invNumber}.pdf`, true)
 }
 
 /**
@@ -683,51 +791,36 @@ export async function shareInvoiceOnWhatsApp(modalBillData, settings = {}, defau
   }
 
   try {
-    const html2pdfModule = await import('html2pdf.js')
-    const html2pdf = html2pdfModule.default || html2pdfModule
-
     const html = getInvoicePrintHtml(modalBillData, settings, defaultLogo)
+    const result = await generatePdfFromHtml(html, pdfFileName, false)
 
-    const container = document.createElement('div')
-    container.style.position = 'fixed'
-    container.style.left = '-10000px'
-    container.style.top = '0'
-    container.style.width = '794px'
-    container.innerHTML = html
-    document.body.appendChild(container)
+    if (result.success && result.blob) {
+      const pdfFile = new File([result.blob], pdfFileName, { type: 'application/pdf' })
 
-    const opt = {
-      margin: [8, 8, 8, 8],
-      filename: pdfFileName,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, logging: false },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      // Check Web Share API (mobile phones / tablets)
+      if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+        await navigator.share({
+          files: [pdfFile],
+          title: `Bill #${invNumber} - ${custName}`,
+          text: messageText,
+        })
+        return { success: true, method: 'native-share' }
+      }
+
+      // Native reliable PDF download
+      if (result.pdf && typeof result.pdf.save === 'function') {
+        result.pdf.save(pdfFileName)
+      } else {
+        const blobUrl = URL.createObjectURL(result.blob)
+        const downloadAnchor = document.createElement('a')
+        downloadAnchor.href = blobUrl
+        downloadAnchor.download = pdfFileName
+        document.body.appendChild(downloadAnchor)
+        downloadAnchor.click()
+        document.body.removeChild(downloadAnchor)
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 10000)
+      }
     }
-
-    const pdfBlob = await html2pdf().set(opt).from(container).outputPdf('blob')
-    if (container.parentNode) container.parentNode.removeChild(container)
-
-    const pdfFile = new File([pdfBlob], pdfFileName, { type: 'application/pdf' })
-
-    // Check Web Share API (mobile phones / tablets)
-    if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
-      await navigator.share({
-        files: [pdfFile],
-        title: `Bill #${invNumber} - ${custName}`,
-        text: messageText,
-      })
-      return { success: true, method: 'native-share' }
-    }
-
-    // Fallback for Desktop (WhatsApp Web + automatic PDF download)
-    const blobUrl = URL.createObjectURL(pdfBlob)
-    const downloadAnchor = document.createElement('a')
-    downloadAnchor.href = blobUrl
-    downloadAnchor.download = pdfFileName
-    document.body.appendChild(downloadAnchor)
-    downloadAnchor.click()
-    document.body.removeChild(downloadAnchor)
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 10000)
 
     const waUrl = cleanPhone
       ? `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(messageText)}`
@@ -925,33 +1018,145 @@ export function printPurchaseBillDocument(purchase, settings = {}) {
  */
 export async function downloadPurchaseBillPDF(purchase, settings = {}) {
   if (!purchase) return
+  const invNumber = purchase.invoiceNumber || purchase.id || '100'
+  const html = getPurchaseBillPrintHtml(purchase, settings)
+  await generatePdfFromHtml(html, `Purchase_Bill_${invNumber}.pdf`, true)
+}
+
+/**
+ * Format Purchase Bill text for WhatsApp
+ */
+export function formatWhatsAppPurchaseBillText(purchase, settings = {}) {
+  if (!purchase) return ''
+
+  const invNumber = purchase.invoiceNumber || purchase.id || '100'
+  const invDate = purchase.date || new Date().toISOString().split('T')[0]
+
+  const supplierName = purchase.supplier || 'Forest Timber Mill'
+  const supplierPhone = purchase.supplierPhone || ''
+  const companyName = purchase.companyName || settings.depotName || 'Kerala Wood Furniture - Sivakasi'
+
+  const rawItems = Array.isArray(purchase.itemsList) && purchase.itemsList.length > 0
+    ? purchase.itemsList
+    : Array.isArray(purchase.items) && purchase.items.length > 0
+    ? purchase.items
+    : [
+        {
+          name: purchase.item || 'Timber Material',
+          quantity: purchase.quantity || 1,
+          rate: purchase.amount || 0,
+          gstRate: purchase.gstRate || 18,
+          total: purchase.total || purchase.amount || 0,
+        }
+      ]
+
+  const grandTotal = purchase.total !== undefined
+    ? Number(purchase.total)
+    : Number(String(purchase.amount || 0).replace(/[^0-9.]/g, ''))
+  const subtotal = Number(purchase.amount || purchase.subtotal || 0)
+  const gstAmount = Number(purchase.gstAmount || 0)
+
+  const itemsLines = rawItems.map((it, idx) => {
+    const desc = (it.name || it.item || 'Timber Material').toUpperCase()
+    const qty = Number(it.quantity) || 1
+    const rate = Number(it.rate || it.amount || 0)
+    const gstPct = Number(it.gstRate || it.gstPercent || 18)
+    const lineGst = Number(it.gstAmount || 0)
+    const lineTotal = Number(it.total || ((qty * rate) + lineGst))
+
+    return `${idx + 1}. *${desc}* - ${qty} Nos @ ₹${rate.toLocaleString('en-IN')} (GST ${gstPct}%) = *₹${lineTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}*`
+  }).join('\n')
+
+  const depotTitle = companyName.toUpperCase()
+
+  const lines = [
+    `*${depotTitle} - PURCHASE BILL 🪵*`,
+    `--------------------------------`,
+    `*Purchase Bill No:* #${invNumber}`,
+    `*Supplier:* ${supplierName}`,
+    ...(supplierPhone ? [`*Phone:* ${supplierPhone}`] : []),
+    `*Date:* ${invDate}`,
+    `--------------------------------`,
+    `*ITEMS (PROCUREMENT):*`,
+    itemsLines,
+    `--------------------------------`,
+    `*Subtotal (Taxable):* ₹${subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+    ...(gstAmount > 0 ? [`*GST / Tax:* ₹${gstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`] : []),
+    `*NET TOTAL: ₹${grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}*`,
+    `--------------------------------`,
+    `_Official Purchase & Procurement Record_`,
+    `*${companyName}*`,
+  ]
+
+  return lines.join('\n')
+}
+
+/**
+ * Share Purchase Bill & PDF via WhatsApp
+ */
+export async function sharePurchaseBillOnWhatsApp(purchase, settings = {}) {
+  if (!purchase) return { success: false, error: 'No purchase bill data' }
+
+  const invNumber = purchase.invoiceNumber || purchase.id || '100'
+  const supplierName = purchase.supplier || 'Supplier'
+  const supplierPhone = purchase.supplierPhone || ''
+
+  const safeSupplierName = supplierName.replace(/[^a-zA-Z0-9]/g, '_').slice(0, 30)
+  const pdfFileName = `Purchase_Bill_${invNumber}_${safeSupplierName}.pdf`
+  const messageText = formatWhatsAppPurchaseBillText(purchase, settings)
+
+  let cleanPhone = String(supplierPhone || '').replace(/\D/g, '')
+  if (cleanPhone.length === 10) {
+    cleanPhone = '91' + cleanPhone
+  }
+
   try {
-    const html2pdfModule = await import('html2pdf.js')
-    const html2pdf = html2pdfModule.default || html2pdfModule
-
-    const invNumber = purchase.invoiceNumber || purchase.id || '100'
     const html = getPurchaseBillPrintHtml(purchase, settings)
+    const result = await generatePdfFromHtml(html, pdfFileName, false)
 
-    const container = document.createElement('div')
-    container.style.position = 'fixed'
-    container.style.left = '-10000px'
-    container.style.top = '0'
-    container.style.width = '794px'
-    container.innerHTML = html
-    document.body.appendChild(container)
+    if (result.success && result.blob) {
+      const pdfFile = new File([result.blob], pdfFileName, { type: 'application/pdf' })
 
-    const opt = {
-      margin: [8, 8, 8, 8],
-      filename: `Purchase_Bill_${invNumber}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, logging: false },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      // Check Web Share API (mobile phones / tablets)
+      if (navigator.canShare && navigator.canShare({ files: [pdfFile] })) {
+        await navigator.share({
+          files: [pdfFile],
+          title: `Purchase Bill #${invNumber} - ${supplierName}`,
+          text: messageText,
+        })
+        return { success: true, method: 'native-share' }
+      }
+
+      // Native reliable PDF download
+      if (result.pdf && typeof result.pdf.save === 'function') {
+        result.pdf.save(pdfFileName)
+      } else {
+        const blobUrl = URL.createObjectURL(result.blob)
+        const downloadAnchor = document.createElement('a')
+        downloadAnchor.href = blobUrl
+        downloadAnchor.download = pdfFileName
+        document.body.appendChild(downloadAnchor)
+        downloadAnchor.click()
+        document.body.removeChild(downloadAnchor)
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 10000)
+      }
     }
 
-    await html2pdf().set(opt).from(container).save()
-    if (container.parentNode) container.parentNode.removeChild(container)
+    const waUrl = cleanPhone
+      ? `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(messageText)}`
+      : `https://api.whatsapp.com/send?text=${encodeURIComponent(messageText)}`
+    window.open(waUrl, '_blank')
+
+    return { success: true, method: 'whatsapp-web-download', downloadedFile: pdfFileName }
   } catch (err) {
-    console.error('[downloadPurchaseBillPDF] Error downloading PDF:', err)
+    console.error('[sharePurchaseBillOnWhatsApp] Error:', err)
+    if (err.name !== 'AbortError') {
+      const waUrl = cleanPhone
+        ? `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(messageText)}`
+        : `https://api.whatsapp.com/send?text=${encodeURIComponent(messageText)}`
+      window.open(waUrl, '_blank')
+    }
+    return { success: false, error: err.message }
   }
 }
 
@@ -1065,31 +1270,6 @@ export function printProductsDocument(products = [], settings = {}, defaultLogo 
  * Download Products Catalog as PDF
  */
 export async function downloadProductsPDF(products = [], settings = {}, defaultLogo = '') {
-  try {
-    const html2pdfModule = await import('html2pdf.js')
-    const html2pdf = html2pdfModule.default || html2pdfModule
-
-    const html = getProductsPrintHtml(products, settings, defaultLogo)
-
-    const container = document.createElement('div')
-    container.style.position = 'fixed'
-    container.style.left = '-10000px'
-    container.style.top = '0'
-    container.style.width = '794px'
-    container.innerHTML = html
-    document.body.appendChild(container)
-
-    const opt = {
-      margin: [8, 8, 8, 8],
-      filename: `Products_Catalog_${new Date().toISOString().split('T')[0]}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, logging: false },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    }
-
-    await html2pdf().set(opt).from(container).save()
-    if (container.parentNode) container.parentNode.removeChild(container)
-  } catch (err) {
-    console.error('[downloadProductsPDF] Error downloading PDF:', err)
-  }
+  const html = getProductsPrintHtml(products, settings, defaultLogo)
+  await generatePdfFromHtml(html, `Products_Catalog_${new Date().toISOString().split('T')[0]}.pdf`, true)
 }

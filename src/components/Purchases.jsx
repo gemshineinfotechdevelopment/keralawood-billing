@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { DataStore } from '../services/dataStore'
 import { validateRequired, validatePhone } from '../utils/validators'
-import { printPurchaseBillDocument, downloadPurchaseBillPDF, numberToWordsINR } from '../utils/printInvoice'
+import { printPurchaseBillDocument, downloadPurchaseBillPDF, numberToWordsINR, sharePurchaseBillOnWhatsApp } from '../utils/printInvoice'
 import './Purchases.css'
 
 const createEmptyItem = () => ({
@@ -202,6 +202,21 @@ export default function Purchases() {
     await downloadPurchaseBillPDF(p, settings)
     printPurchaseBillDocument(p, settings)
     showToast(`✓ PDF downloaded & opening print for bill #${p.invoiceNumber}`)
+  }
+
+  const handleSharePurchaseWhatsApp = async (p) => {
+    if (!p) return
+    showToast('📱 Preparing WhatsApp Purchase Bill & PDF...')
+    try {
+      const res = await sharePurchaseBillOnWhatsApp(p, DataStore.getSettings())
+      if (res?.success) {
+        showToast('✓ WhatsApp opened with purchase bill & PDF!')
+      } else {
+        showToast('✓ WhatsApp opened with purchase bill!')
+      }
+    } catch {
+      showToast('✓ WhatsApp opened!')
+    }
   }
 
   const handleViewAndPrintPurchase = (p) => {
@@ -1174,6 +1189,20 @@ export default function Purchases() {
                           </svg>
                         </button>
 
+                        {/* WhatsApp Share Button */}
+                        <button
+                          type="button"
+                          className="btn-purchase-action btn-purchase-whatsapp"
+                          onClick={() => handleSharePurchaseWhatsApp(p)}
+                          title="Share on WhatsApp (Purchase Bill Details + PDF)"
+                          aria-label="Share on WhatsApp"
+                        >
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766 0-3.18-2.586-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.312.045-.698.073-1.107-.061-.252-.082-.578-.198-1.002-.382-1.782-.77-2.939-2.583-3.028-2.702-.089-.12-0.72-0.96-0.72-1.83 0-.87.458-1.299.621-1.474.163-.175.356-.219.474-.219.12 0 .239.002.344.007.11.005.258-.042.404.308.15.358.513 1.25.558 1.341.045.091.075.197.015.317-.06.12-.09.196-.179.3-.09.105-.189.233-.27.313-.09.088-.184.184-.079.364.105.18.468.772 1.004 1.25 0.69 0.614 1.272 0.804 1.452 0.894.18.09.285.075.39-.045.105-.12.45-0.525.57-.705.12-.18.24-.15.405-.09.165.06 1.05.495 1.23.585.18.09.3.135.345.21.045.075.045.435-.099.84z"/>
+                            <path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.18L2 22l4.982-1.39A9.957 9.957 0 0 0 12 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18.05c-1.68 0-3.24-.48-4.56-1.31l-.33-.21-2.96.83.84-2.88-.23-.37A8.04 8.04 0 1 1 12 20.05z"/>
+                          </svg>
+                        </button>
+
                         {/* 3. Delete Button */}
                         <button
                           type="button"
@@ -1277,6 +1306,18 @@ export default function Purchases() {
                 </h3>
               </div>
               <div className="pos-modal-header-actions">
+                <button
+                  type="button"
+                  className="pos-btn-share-whatsapp"
+                  onClick={() => handleSharePurchaseWhatsApp(previewPurchase)}
+                  title="Share Purchase Bill & PDF on WhatsApp"
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766 0-3.18-2.586-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.312.045-.698.073-1.107-.061-.252-.082-.578-.198-1.002-.382-1.782-.77-2.939-2.583-3.028-2.702-.089-.12-0.72-0.96-0.72-1.83 0-.87.458-1.299.621-1.474.163-.175.356-.219.474-.219.12 0 .239.002.344.007.11.005.258-.042.404.308.15.358.513 1.25.558 1.341.045.091.075.197.015.317-.06.12-.09.196-.179.3-.09.105-.189.233-.27.313-.09.088-.184.184-.079.364.105.18.468.772 1.004 1.25 0.69 0.614 1.272 0.804 1.452 0.894.18.09.285.075.39-.045.105-.12.45-0.525.57-.705.12-.18.24-.15.405-.09.165.06 1.05.495 1.23.585.18.09.3.135.345.21.045.075.045.435-.099.84z"/>
+                    <path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.18L2 22l4.982-1.39A9.957 9.957 0 0 0 12 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18.05c-1.68 0-3.24-.48-4.56-1.31l-.33-.21-2.96.83.84-2.88-.23-.37A8.04 8.04 0 1 1 12 20.05z"/>
+                  </svg>
+                  <span>Share on WhatsApp</span>
+                </button>
                 <button
                   type="button"
                   className="pos-btn-download-pdf"

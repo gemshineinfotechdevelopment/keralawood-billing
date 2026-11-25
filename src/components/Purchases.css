@@ -400,6 +400,20 @@
   color: #1D39C4;
 }
 
+.btn-purchase-action.btn-purchase-whatsapp {
+  color: #16A34A !important;
+  background-color: #F0FDF4 !important;
+  border: 1px solid #BBF7D0 !important;
+}
+
+.btn-purchase-action.btn-purchase-whatsapp:hover {
+  background-color: #25D366 !important;
+  color: #FFFFFF !important;
+  border-color: #1EBE5D !important;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(37, 211, 102, 0.35);
+}
+
 .btn-purchase-delete:hover {
   background: #FFF1F0;
   border-color: #FFA39E;
