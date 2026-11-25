@@ -1314,12 +1314,22 @@ app.use((req, res) => {
   });
 });
 
-// Start Server
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`[Server] Running on port ${PORT}`);
+// Start Server with dual-stack (IPv4 + IPv6) loopback support
+const server = app.listen(PORT, '::', () => {
+  console.log(`[Server] Running on port ${PORT} (dual-stack IPv4/IPv6)`);
   console.log(`[Server] Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`[Server] Allowed CORS origin: ${FRONTEND_URL}`);
   if (MONGODB_URI) {
     console.log(`[Server] MongoDB URI configured`);
+  }
+});
+
+server.on('error', (err) => {
+  if (err.code === 'EADDRNOTAVAIL' || err.code === 'EINVAL') {
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`[Server] Running on port ${PORT} (IPv4 fallback)`);
+    });
+  } else {
+    console.error('[Server] Listen error:', err);
   }
 });
