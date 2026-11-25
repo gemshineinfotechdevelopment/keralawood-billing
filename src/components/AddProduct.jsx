@@ -381,27 +381,6 @@ export default function AddProduct({ onProductSaved, onCancel, editProduct = nul
               <span>+ Clear Form</span>
             </button>
           )}
-
-          <button
-            type="button"
-            className="btn-save-product"
-            onClick={handleSaveProduct}
-            disabled={isSaving}
-          >
-            <svg
-              width="13"
-              height="13"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
-            <span>{savedSuccess ? '✓ Saved!' : isSaving ? 'Saving...' : editProduct ? 'Update Product' : 'Save Product'}</span>
-          </button>
         </div>
       </div>
 
@@ -647,6 +626,40 @@ export default function AddProduct({ onProductSaved, onCancel, editProduct = nul
         </div>
       </div>
 
+      {/* Bottom Action Buttons - Bottom Right Corner */}
+      <div className="add-product-bottom-actions">
+        {onCancel && (
+          <button
+            type="button"
+            className="btn-add-new-product"
+            onClick={onCancel}
+            title="Return to products catalog"
+          >
+            ← Cancel
+          </button>
+        )}
+        <button
+          type="button"
+          className="btn-save-product"
+          onClick={handleSaveProduct}
+          disabled={isSaving}
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          <span>{savedSuccess ? '✓ Saved!' : isSaving ? 'Saving...' : editProduct ? 'Update Product' : 'Save Product'}</span>
+        </button>
+      </div>
+
       {/* Add New Category Modal */}
       {isCategoryModalOpen && (
         <div
@@ -696,40 +709,6 @@ export default function AddProduct({ onProductSaved, onCancel, editProduct = nul
                     {catError}
                   </span>
                 )}
-              </div>
-
-              {/* Quick suggestions */}
-              <div className="drawer-form-group">
-                <label className="drawer-field-label">Quick Suggestions</label>
-                <div className="quick-chip-row">
-                  {[
-                    'Sofas & Lounges',
-                    'Doors & Window Frames',
-                    'Outdoor & Patio',
-                    'Heritage Wall Panels',
-                    'Temple Mandapams & Carvings',
-                  ].map((sug) => (
-                    <button
-                      key={sug}
-                      type="button"
-                      className="quick-chip"
-                      onClick={() => setNewCatName(sug)}
-                    >
-                      + {sug}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="drawer-form-group">
-                <label className="drawer-field-label">Description (Optional)</label>
-                <textarea
-                  className="textarea-styled"
-                  rows={2}
-                  placeholder="Artisan timber craft specifications or collection notes..."
-                  value={newCatDescription}
-                  onChange={(e) => setNewCatDescription(e.target.value)}
-                />
               </div>
 
               {catModalMsg && (

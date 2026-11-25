@@ -13,7 +13,7 @@ export default function Settings() {
   // General Depot Profile
   const [depotName, setDepotName] = useState(initial.depotName || 'Kerala Wood Furniture - Sivakasi')
   const [logoUrl, setLogoUrl] = useState(initial.logoUrl || '')
-  const [contactPhone, setContactPhone] = useState(initial.contactPhone || '+91 484 289 1204')
+  const [contactPhone, setContactPhone] = useState(initial.contactPhone || '+91 98471 28910')
   const [contactEmail, setContactEmail] = useState(initial.contactEmail || 'depot@keralawood.in')
   const [address, setAddress] = useState(initial.address || 'Sivakasi Central Mill Yard, Sivakasi')
   const [dealerLicense, setDealerLicense] = useState(initial.dealerLicense || 'SFD/SVK/TMR/2023-884')
@@ -347,13 +347,16 @@ export default function Settings() {
             <div className="settings-field-group">
               <label className="settings-field-label">Contact Phone *</label>
               <input
-                type="text"
+                type="tel"
+                maxLength={10}
                 className={`settings-input ${formErrors.contactPhone ? 'kwf-input-error' : ''}`}
                 value={contactPhone}
                 onChange={(e) => {
-                  setContactPhone(e.target.value)
+                  const val = e.target.value.replace(/\D/g, '').slice(0, 10)
+                  setContactPhone(val)
                   if (formErrors.contactPhone) setFormErrors({ ...formErrors, contactPhone: '' })
                 }}
+                placeholder="10-digit mobile (starts with 6,7,8,9)"
               />
               {formErrors.contactPhone && <span className="kwf-field-error">{formErrors.contactPhone}</span>}
             </div>

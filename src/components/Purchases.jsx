@@ -114,6 +114,14 @@ export default function Purchases() {
     return Math.round((formSubtotal + formGstTotal) * 100) / 100
   }, [formSubtotal, formGstTotal])
 
+  const formHalfGstPct = useMemo(() => {
+    if (formSubtotal > 0 && formGstTotal > 0) {
+      return Number(((formGstTotal / formSubtotal) * 50).toFixed(2))
+    }
+    const firstRate = (formData.itemsList || []).find((it) => Number(it.gstRate) > 0)?.gstRate
+    return firstRate ? Number((Number(firstRate) / 2).toFixed(2)) : 9
+  }, [formSubtotal, formGstTotal, formData.itemsList])
+
   // Handlers for Add / Edit
   const handleOpenAdd = () => {
     const settings = DataStore.getSettings()
@@ -411,6 +419,10 @@ export default function Purchases() {
     const grandTotal = Number(bill.total || (subtotal + gstAmount))
     const cgstAmount = gstAmount / 2
     const sgstAmount = gstAmount / 2
+    const effectiveGstPct = subtotal > 0 && gstAmount > 0
+      ? Math.round((gstAmount / subtotal) * 100)
+      : (rawItems[0]?.gstRate ? Number(rawItems[0].gstRate) : 18)
+    const halfRate = Number((effectiveGstPct / 2).toFixed(2))
 
     return (
       <div className="pos-invoice-printable-sheet">
@@ -517,11 +529,11 @@ export default function Purchases() {
             {cgstAmount > 0 && (
               <>
                 <div className="pos-print-line">
-                  <span>CGST (50%):</span>
+                  <span>CGST (${halfRate}%):</span>
                   <span>+₹{cgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
                 <div className="pos-print-line">
-                  <span>SGST (50%):</span>
+                  <span>SGST (${halfRate}%):</span>
                   <span>+₹{sgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
               </>
@@ -705,14 +717,16 @@ export default function Purchases() {
                   <div className="purchases-input-group">
                     <label className="purchases-label">Supplier Phone</label>
                     <input
-                      type="text"
+                      type="tel"
+                      maxLength={10}
                       className={`purchases-input ${formErrors.supplierPhone ? 'kwf-input-error' : ''}`}
                       value={formData.supplierPhone}
                       onChange={(e) => {
-                        setFormData({ ...formData, supplierPhone: e.target.value })
+                        const val = e.target.value.replace(/\D/g, '').slice(0, 10)
+                        setFormData({ ...formData, supplierPhone: val })
                         if (formErrors.supplierPhone) setFormErrors({ ...formErrors, supplierPhone: '' })
                       }}
-                      placeholder="94471 28910"
+                      placeholder="10-digit mobile (starts with 6,7,8,9)"
                     />
                     {formErrors.supplierPhone && (
                       <span className="kwf-field-error">{formErrors.supplierPhone}</span>
@@ -945,8 +959,8 @@ export default function Purchases() {
 
               {formGstTotal > 0 && (
                 <div className="purchase-summary-tax-split">
-                  <span>CGST (50%): ₹{(formGstTotal / 2).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                  <span>SGST (50%): ₹{(formGstTotal / 2).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  <span>CGST ({formHalfGstPct}%): ₹{(formGstTotal / 2).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  <span>SGST ({formHalfGstPct}%): ₹{(formGstTotal / 2).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
               )}
 

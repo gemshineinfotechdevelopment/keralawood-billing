@@ -2,7 +2,7 @@
 
 /**
  * Validates Indian Mobile / Phone Number
- * Accepts 10-digit number optionally prefixed with +91 or 0
+ * Exactly 10 digits starting with 6, 7, 8, or 9
  * e.g., 9847123456, +91 9847123456, 09847123456
  */
 export function validatePhone(phone, required = false) {
@@ -10,10 +10,25 @@ export function validatePhone(phone, required = false) {
     if (required) return { isValid: false, error: 'Phone number is required' }
     return { isValid: true, error: '' }
   }
-  const clean = String(phone).replace(/[\s\-()]/g, '')
-  const digitsOnly = clean.replace(/^\+91/, '').replace(/^0/, '')
-  if (!/^[6-9]\d{9}$/.test(digitsOnly) && !/^\d{8,11}$/.test(digitsOnly)) {
-    return { isValid: false, error: 'Enter a valid 10-digit mobile or phone number' }
+  const clean = String(phone).trim().replace(/[\s\-()]/g, '')
+  let digitsOnly = clean
+  if (digitsOnly.startsWith('+91')) {
+    digitsOnly = digitsOnly.slice(3)
+  } else if (digitsOnly.startsWith('91') && digitsOnly.length === 12) {
+    digitsOnly = digitsOnly.slice(2)
+  } else if (digitsOnly.startsWith('0') && digitsOnly.length === 11) {
+    digitsOnly = digitsOnly.slice(1)
+  }
+
+  // Must be strictly 10 digits and start with 6, 7, 8, or 9
+  if (!/^[6-9]\d{9}$/.test(digitsOnly)) {
+    if (!/^\d+$/.test(digitsOnly)) {
+      return { isValid: false, error: 'Phone number must contain digits only' }
+    }
+    if (digitsOnly.length !== 10) {
+      return { isValid: false, error: 'Phone number must be exactly 10 digits' }
+    }
+    return { isValid: false, error: 'Phone number must start with 6, 7, 8, or 9' }
   }
   return { isValid: true, error: '', clean: digitsOnly }
 }

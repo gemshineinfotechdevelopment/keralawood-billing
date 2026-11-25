@@ -51,6 +51,24 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
   const [customerValidationErrors, setCustomerValidationErrors] = useState({})
   const customerSearchRef = useRef(null)
 
+  // Item description live autocomplete dropdown
+  const [activeDropdownIndex, setActiveDropdownIndex] = useState(null)
+  const itemDescDropdownRef = useRef(null)
+
+  useEffect(() => {
+    const handleItemDropdownClickOutside = (e) => {
+      if (itemDescDropdownRef.current && !itemDescDropdownRef.current.contains(e.target)) {
+        setActiveDropdownIndex(null)
+      }
+    }
+    document.addEventListener('mousedown', handleItemDropdownClickOutside)
+    document.addEventListener('touchstart', handleItemDropdownClickOutside)
+    return () => {
+      document.removeEventListener('mousedown', handleItemDropdownClickOutside)
+      document.removeEventListener('touchstart', handleItemDropdownClickOutside)
+    }
+  }, [])
+
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (customerSearchRef.current && !customerSearchRef.current.contains(e.target)) {
@@ -213,7 +231,7 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
       ]
 
   // Payment status & modes
-  const paymentStatus = currentBill.paymentStatus || 'Pending' // 'Pending' | 'Partial' | 'Paid'
+  const paymentStatus = currentBill.paymentStatus || 'Paid' // Default to 'Paid'
   const rawMode = currentBill.paymentMode || 'UPI'
   const paymentMode =
     rawMode === 'Net Banking' || rawMode === 'Bank Wire' ? 'Bank Transfer' : rawMode
@@ -248,6 +266,11 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
   const cgstAmount = totalGst / 2
   const sgstAmount = totalGst / 2
   const igstAmount = totalIgst
+
+  const effectiveGstPct = itemsSubtotal > 0 && totalGst > 0
+    ? Number(((totalGst / itemsSubtotal) * 100).toFixed(2))
+    : (items.find((it) => Number(it.gstRate) > 0)?.gstRate ? Number(items.find((it) => Number(it.gstRate) > 0).gstRate) : 18)
+  const halfGstPct = Number((effectiveGstPct / 2).toFixed(2))
 
   const grandTotal = Math.max(0, Math.round(itemsSubtotal + totalGst + totalIgst - discount))
   const balanceDue = paymentStatus === 'Paid' ? 0 : Math.max(0, grandTotal - amountPaid)
@@ -362,23 +385,38 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
     updateCurrentBill({ items: [...items, newRow] })
   }
 
-  // Pick from Products Catalog Dropdown
-  const handlePickFromCatalog = (e) => {
-    const prodIdOrSku = e.target.value
-    if (!prodIdOrSku) return
+  // Live filter products in alphabetical order matching typed letter
+  const getFilteredProducts = (query) => {
+    if (!query || !query.trim()) return []
+    const q = query.trim().toLowerCase()
 
-    if (prodIdOrSku === '__blank__') {
-      handleAddBlankRow()
-      e.target.value = ''
-      return
-    }
+    const matched = products.filter((p) => {
+      const name = (p.name || '').toLowerCase()
+      const sku = (p.sku || '').toLowerCase()
+      return (
+        name.startsWith(q) ||
+        name.split(/\s+/).some((w) => w.startsWith(q)) ||
+        sku.startsWith(q) ||
+        name.includes(q)
+      )
+    })
 
-    const prod = products.find((p) => p.id === prodIdOrSku || p.sku === prodIdOrSku || p.name === prodIdOrSku)
-    if (!prod) {
-      e.target.value = ''
-      return
-    }
+    // Strict alphabetical order: products starting with typed letter come first
+    return matched.sort((a, b) => {
+      const aName = (a.name || '').toLowerCase()
+      const bName = (b.name || '').toLowerCase()
+      const aStarts = aName.startsWith(q)
+      const bStarts = bName.startsWith(q)
 
+      if (aStarts && !bStarts) return -1
+      if (!aStarts && bStarts) return 1
+
+      return (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })
+    })
+  }
+
+  // Handle selection from custom dropdown
+  const handleSelectProduct = (index, prod) => {
     const stock = Number(
       prod.stockQuantity !== undefined
         ? prod.stockQuantity
@@ -390,41 +428,35 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
     )
 
     if (stock <= 0) {
-      alert(`⚠️ "${prod.name}" is currently Out of Stock (0 units available). Cannot be added to bill.`)
+      alert(`⚠️ "${prod.name}" is currently Out of Stock (0 units available).`)
       setPrintSuccessToast(`⚠️ "${prod.name}" is Out of Stock!`)
       setTimeout(() => setPrintSuccessToast(''), 3000)
-      e.target.value = ''
       return
     }
 
-    const newRow = {
-      id: `item-${Date.now()}-${items.length + 1}`,
-      productId: prod.id || prod._id,
-      sku: prod.sku,
-      name: prod.name,
-      description: prod.name,
-      quantity: 1,
-      unit: 'Pieces (Nos)',
-      price: Number(prod.sellingPrice || prod.unitPrice || prod.rawPrice || 0),
-      gstRate: prod.gstRate !== undefined ? Number(prod.gstRate) : 0,
-      igstRate: prod.igstRate !== undefined ? Number(prod.igstRate) : 0,
-      length: prod.dimensions?.length || '',
-      width: prod.dimensions?.width || '',
-      height: prod.dimensions?.height || '',
-      weight: prod.dimensions?.weight || '',
-      woodSpecies: prod.woodSpecies || 'Teak',
-      finish: prod.surfacePolish || prod.finish || 'Natural Protective Beeswax',
-    }
-
-    // If first row is blank and untouched, replace it; else append
-    if (items.length === 1 && !items[0].description && Number(items[0].price) === 0) {
-      updateCurrentBill({ items: [newRow] })
-    } else {
-      updateCurrentBill({ items: [...items, newRow] })
-    }
-
-    // Reset dropdown selector back to default
-    e.target.value = ''
+    const updated = items.map((it, idx) => {
+      if (idx === index) {
+        return {
+          ...it,
+          productId: prod.id || prod._id,
+          sku: prod.sku,
+          name: prod.name,
+          description: prod.name,
+          price: Number(prod.sellingPrice || prod.unitPrice || prod.rawPrice || 0),
+          gstRate: prod.gstRate !== undefined ? Number(prod.gstRate) : it.gstRate || 0,
+          igstRate: prod.igstRate !== undefined ? Number(prod.igstRate) : it.igstRate || 0,
+          length: prod.dimensions?.length || it.length || '',
+          width: prod.dimensions?.width || it.width || '',
+          height: prod.dimensions?.height || it.height || '',
+          weight: prod.dimensions?.weight || it.weight || '',
+          woodSpecies: prod.woodSpecies || it.woodSpecies || 'Teak',
+          finish: prod.surfacePolish || prod.finish || it.finish || 'Natural Protective Beeswax',
+        }
+      }
+      return it
+    })
+    updateCurrentBill({ items: updated })
+    setActiveDropdownIndex(null)
   }
 
   // Update item field
@@ -558,7 +590,7 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
         address: '',
       },
       items: [],
-      paymentStatus: 'Pending',
+      paymentStatus: 'Paid',
       paymentMode: 'UPI',
       billedBy: defaultBilledBy,
       salesPerson: defaultBilledBy,
@@ -860,6 +892,10 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
       const phoneVal = validatePhone(customer.phone, false)
       if (!phoneVal.isValid) custErrs.phone = phoneVal.error
     }
+    if (shipping.phone && shipping.phone.trim()) {
+      const shipPhoneVal = validatePhone(shipping.phone, false)
+      if (!shipPhoneVal.isValid) custErrs.shippingPhone = shipPhoneVal.error
+    }
     if (customer.gstin && customer.gstin.trim() && customer.gstin !== 'Unregistered / Personal') {
       const gstinVal = validateGSTIN(customer.gstin, false)
       if (!gstinVal.isValid) custErrs.gstin = gstinVal.error
@@ -1109,18 +1145,26 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
               <span>-₹{modalBillData.discount.toLocaleString('en-IN')}</span>
             </div>
           )}
-          {(Number(modalBillData.totalGst) > 0 || Number(modalBillData.cgstAmount) > 0) && (
-            <>
-              <div className="pos-print-line">
-                <span>CGST:</span>
-                <span>+₹{(modalBillData.cgstAmount ?? ((Number(modalBillData.totalGst) || 0) / 2)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-              </div>
-              <div className="pos-print-line">
-                <span>SGST:</span>
-                <span>+₹{(modalBillData.sgstAmount ?? ((Number(modalBillData.totalGst) || 0) / 2)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-              </div>
-            </>
-          )}
+          {(Number(modalBillData.totalGst) > 0 || Number(modalBillData.cgstAmount) > 0) && (() => {
+            const gstVal = Number(modalBillData.totalGst) || ((Number(modalBillData.cgstAmount) || 0) * 2)
+            const subVal = Number(modalBillData.itemsSubtotal) || 1
+            const effectiveGst = Math.round((gstVal / subVal) * 100) || 18
+            const halfPct = effectiveGst / 2
+            const cgst = modalBillData.cgstAmount ?? (gstVal / 2)
+            const sgst = modalBillData.sgstAmount ?? (gstVal / 2)
+            return (
+              <>
+                <div className="pos-print-line">
+                  <span>CGST ({halfPct}%):</span>
+                  <span>+₹{cgst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+                <div className="pos-print-line">
+                  <span>SGST ({halfPct}%):</span>
+                  <span>+₹{sgst.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                </div>
+              </>
+            )
+          })()}
           {(Number(modalBillData.totalIgst) > 0 || Number(modalBillData.igstAmount) > 0) && (
             <div className="pos-print-line">
               <span>IGST:</span>
@@ -1249,13 +1293,6 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
                       const rawAmt = bill.rawAmount !== undefined
                         ? bill.rawAmount
                         : Number(String(bill.amount || 0).replace(/[^0-9.]/g, '')) || 0
-                      const status = bill.status || bill.paymentStatus || 'Paid'
-                      const statusLower = status.toLowerCase()
-                      const statusClass = statusLower.includes('paid')
-                        ? 'status-paid'
-                        : statusLower.includes('partial')
-                        ? 'status-partial'
-                        : 'status-pending'
 
                       return (
                         <tr key={bill.id || bill.invoice || idx} className="pos-bills-table-row">
@@ -1736,14 +1773,16 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
 
               <div className="pos-input-group">
                 <input
-                  type="text"
+                  type="tel"
+                  maxLength={10}
                   className={`pos-input ${customerValidationErrors.phone ? 'kwf-input-error' : ''}`}
                   value={customer.phone || ''}
                   onChange={(e) => {
-                    handleCustomerChange('phone', e.target.value)
+                    const val = e.target.value.replace(/\D/g, '').slice(0, 10)
+                    handleCustomerChange('phone', val)
                     if (customerValidationErrors.phone) setCustomerValidationErrors({ ...customerValidationErrors, phone: '' })
                   }}
-                  placeholder="Phone Number (10 Digits)"
+                  placeholder="Phone (10 Digits starting with 6,7,8,9)"
                 />
                 {customerValidationErrors.phone && <span className="kwf-field-error">{customerValidationErrors.phone}</span>}
               </div>
@@ -1820,11 +1859,15 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
                 </div>
                 <div className="pos-input-group">
                   <input
-                    type="text"
+                    type="tel"
+                    maxLength={10}
                     className="pos-input"
                     value={shipping.phone || ''}
-                    onChange={(e) => handleShippingChange('phone', e.target.value)}
-                    placeholder="Shipping Phone"
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '').slice(0, 10)
+                      handleShippingChange('phone', val)
+                    }}
+                    placeholder="Shipping Phone (10 Digits)"
                   />
                 </div>
                 <div className="pos-input-group pos-full-width">
@@ -1845,39 +1888,18 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
             <div className="pos-card-header">
               <h3 className="pos-card-title">ITEMS ({items.length})</h3>
               <div className="pos-items-header-actions">
-                <select className="pos-select-pick-catalog" onChange={handlePickFromCatalog} defaultValue="">
-                  <option value="" disabled>
-                    + Pick from Products Catalog... ▾
-                  </option>
-                  <option value="__blank__">+ Add Custom / Blank Item</option>
-                  {products.map((p) => {
-                    const stock = Number(
-                      p.stockQuantity !== undefined
-                        ? p.stockQuantity
-                        : p.stock !== undefined
-                        ? p.stock
-                        : p.quantity !== undefined
-                        ? p.quantity
-                        : 0
-                    )
-                    const isOutOfStock = isNaN(stock) || stock <= 0
-                    return (
-                      <option
-                        key={p.id || p.sku}
-                        value={p.sku || p.name}
-                        disabled={isOutOfStock}
-                        style={
-                          isOutOfStock
-                            ? { color: '#9CA3AF', backgroundColor: '#F3F4F6', cursor: 'not-allowed' }
-                            : {}
-                        }
-                      >
-                        {p.name} — ₹{Number(p.sellingPrice || p.unitPrice || 0).toLocaleString('en-IN')}{' '}
-                        {isOutOfStock ? '⚠️ (Out of Stock)' : `(${stock} in stock)`}
-                      </option>
-                    )
-                  })}
-                </select>
+                <button
+                  type="button"
+                  className="btn-pos-add-item"
+                  onClick={handleAddBlankRow}
+                  title="Add new item row"
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
+                  <span>+ Add Item</span>
+                </button>
               </div>
             </div>
 
@@ -1904,7 +1926,11 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
                   const lineTotal = itemSub + (itemSub * (gstPct + igstPct)) / 100
 
                   return (
-                    <div key={item.id || index} className="pos-item-row-block">
+                    <div
+                      key={item.id || index}
+                      className="pos-item-row-block"
+                      style={{ position: 'relative', zIndex: activeDropdownIndex === index ? 90 : 1 }}
+                    >
                       <div className="pos-item-row-main">
                         {/* Number Badge */}
                         <div className="pos-col-idx">
@@ -1912,16 +1938,84 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
                         </div>
 
                         {/* Item Description */}
-                        <div className="pos-col-desc">
+                        <div className="pos-col-desc" style={{ position: 'relative' }}>
                           <input
                             type="text"
                             id={`item-desc-${item.id || index}`}
-                            list="pos-catalog-datalist"
                             className="pos-input pos-item-desc-input"
                             value={item.description || ''}
-                            onChange={(e) => handleItemChange(index, 'description', e.target.value)}
+                            onChange={(e) => {
+                              const val = e.target.value
+                              handleItemChange(index, 'description', val)
+                              if (val.trim()) {
+                                setActiveDropdownIndex(index)
+                              } else {
+                                setActiveDropdownIndex(null)
+                              }
+                            }}
+                            onFocus={() => {
+                              if ((item.description || '').trim()) {
+                                setActiveDropdownIndex(index)
+                              }
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Escape') {
+                                setActiveDropdownIndex(null)
+                              }
+                            }}
                             placeholder="Enter item description or furniture name"
+                            autoComplete="off"
                           />
+
+                          {/* Custom Dropdown: shows only when user types, in A-Z alphabetical order */}
+                          {activeDropdownIndex === index && (item.description || '').trim() && (() => {
+                            const filtered = getFilteredProducts(item.description)
+                            if (filtered.length === 0) return null
+                            return (
+                              <div
+                                ref={itemDescDropdownRef}
+                                className="pos-item-desc-dropdown"
+                              >
+                                {filtered.map((p) => {
+                                  const stock = Number(
+                                    p.stockQuantity !== undefined
+                                      ? p.stockQuantity
+                                      : p.stock !== undefined
+                                      ? p.stock
+                                      : p.quantity !== undefined
+                                      ? p.quantity
+                                      : 0
+                                  )
+                                  const isOutOfStock = !isNaN(stock) && stock <= 0
+                                  return (
+                                    <div
+                                      key={p.id || p.sku}
+                                      className={`pos-item-desc-option ${isOutOfStock ? 'out-of-stock' : ''}`}
+                                      onMouseDown={(e) => {
+                                        e.preventDefault()
+                                        handleSelectProduct(index, p)
+                                      }}
+                                    >
+                                      <div className="pos-option-left">
+                                        <span className="pos-option-name">{p.name}</span>
+                                        <span className="pos-option-sku">
+                                          {p.sku} {p.woodSpecies ? `• ${p.woodSpecies}` : ''}
+                                        </span>
+                                      </div>
+                                      <div className="pos-option-right">
+                                        <span className="pos-option-price">
+                                          ₹{Number(p.sellingPrice || p.unitPrice || 0).toLocaleString('en-IN')}
+                                        </span>
+                                        <span className={`pos-option-stock ${isOutOfStock ? 'stock-empty' : ''}`}>
+                                          {isOutOfStock ? '⚠️ Out of Stock' : `${stock} in stock`}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                            )
+                          })()}
                         </div>
 
                         {/* Quantity */}
@@ -2033,26 +2127,21 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
                 })}
               </div>
             </div>
-            <datalist id="pos-catalog-datalist">
-              {products
-                .filter((p) => {
-                  const stock = Number(
-                    p.stockQuantity !== undefined
-                      ? p.stockQuantity
-                      : p.stock !== undefined
-                      ? p.stock
-                      : p.quantity !== undefined
-                      ? p.quantity
-                      : 0
-                  )
-                  return !isNaN(stock) && stock > 0
-                })
-                .map((p) => (
-                  <option key={p.id || p.sku} value={p.name}>
-                    {p.sku} • ₹{Number(p.sellingPrice || p.unitPrice || 0).toLocaleString('en-IN')}
-                  </option>
-                ))}
-            </datalist>
+
+            {/* Bottom Add Line Item Bar */}
+            <div className="pos-items-bottom-bar">
+              <button
+                type="button"
+                className="btn-pos-add-item-bottom"
+                onClick={handleAddBlankRow}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                <span>+ Add Item</span>
+              </button>
+            </div>
           </div>
 
           {/* Prominent Bill Dossier & Checkout Trigger Bar */}
@@ -2234,13 +2323,13 @@ export default function BillingPOS({ onNavigateToProducts, initialViewMode = 'li
                   {totalGst > 0 && (
                     <>
                       <div className="bill-dossier-calc-line">
-                        <span className="bill-dossier-calc-label">CGST (State):</span>
+                        <span className="bill-dossier-calc-label">CGST ({halfGstPct}%):</span>
                         <span className="bill-dossier-calc-val">
                           +₹{(cgstAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
                       </div>
                       <div className="bill-dossier-calc-line">
-                        <span className="bill-dossier-calc-label">SGST (Central):</span>
+                        <span className="bill-dossier-calc-label">SGST ({halfGstPct}%):</span>
                         <span className="bill-dossier-calc-val">
                           +₹{(sgstAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>

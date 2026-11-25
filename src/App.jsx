@@ -17,7 +17,6 @@ import './App.css'
 function App() {
   const [view, setView] = useState(() => (sessionStorage.getItem('kwf_auth') === 'true' ? 'billing' : 'login'))
   const [userRole, setUserRole] = useState(() => sessionStorage.getItem('kwf_role') || 'super_admin') // 'super_admin' | 'admin'
-  const [loginRole, setLoginRole] = useState(() => sessionStorage.getItem('kwf_role') || 'super_admin')
   const [activeNav, setActiveNav] = useState('Billing & POS')
   const [billingInitialMode, setBillingInitialMode] = useState('list')
   const [productsInitialMode, setProductsInitialMode] = useState('list')
@@ -40,18 +39,10 @@ function App() {
     return () => window.removeEventListener('timber_store_updated', handleUpdate)
   }, [])
 
-  const handleSelectLoginRole = (role) => {
-    setLoginRole(role)
-    setLoginError('')
-    setEmail('')
-    setPassword('')
-  }
-
   const handleToggleRole = () => {
     // Only super_admin can switch to admin view; Admin cannot switch to super_admin
     if (userRole === 'super_admin') {
       setUserRole('admin')
-      setLoginRole('admin')
       sessionStorage.setItem('kwf_role', 'admin')
       if (['Purchases', 'Reports & Analytics', 'Settings'].includes(activeNav)) {
         setActiveNav('Billing & POS')
@@ -63,7 +54,7 @@ function App() {
     e.preventDefault()
     setLoginError('')
 
-    const authResult = DataStore.validateLogin(email, password, loginRole)
+    const authResult = DataStore.validateLogin(email, password)
     if (!authResult.success) {
       setLoginError(authResult.message)
       return
@@ -175,7 +166,6 @@ function App() {
                       onClick={() => {
                         sessionStorage.removeItem('kwf_auth')
                         setView('login')
-                        handleSelectLoginRole('super_admin')
                       }}
                     >
                       🔑 Login as Super Admin
@@ -298,34 +288,6 @@ function App() {
           </p>
 
           <form className="login-form" onSubmit={handleSubmit}>
-            {/* Account Role Selector */}
-            <div className="login-role-selector">
-              <label className="input-label" style={{ textAlign: 'left', display: 'block', marginBottom: '6px' }}>
-                SELECT LOGIN ROLE
-              </label>
-              <div className="login-role-chips">
-                <button
-                  type="button"
-                  className={`login-role-chip ${loginRole === 'super_admin' ? 'active' : ''}`}
-                  onClick={() => handleSelectLoginRole('super_admin')}
-                >
-                  👑 Super Admin
-                </button>
-                <button
-                  type="button"
-                  className={`login-role-chip ${loginRole === 'admin' ? 'active' : ''}`}
-                  onClick={() => handleSelectLoginRole('admin')}
-                >
-                  👤 Admin
-                </button>
-              </div>
-              <p className="login-role-hint">
-                {loginRole === 'super_admin'
-                  ? '✓ Super Admin: Full unrestricted access to all modules and system settings'
-                  : '⚠️ Admin: Operational store access (Purchases, Reports & Settings are restricted)'}
-              </p>
-            </div>
-
             {/* Error Alert */}
             {loginError && (
               <div className="login-error-alert" role="alert">
@@ -341,7 +303,7 @@ function App() {
             {/* User ID Field */}
             <div className="form-group">
               <label htmlFor="email" className="input-label">
-                {loginRole === 'super_admin' ? 'SUPER ADMIN USER ID' : 'ADMIN USER ID'}
+                USER ID
               </label>
               <div className="input-container">
                 <span className="input-icon">
@@ -368,7 +330,7 @@ function App() {
                     setEmail(e.target.value)
                     if (loginError) setLoginError('')
                   }}
-                  placeholder={loginRole === 'super_admin' ? 'superadmin' : 'admin'}
+                  placeholder="Enter your User ID"
                   autoComplete="username"
                   required
                 />
@@ -378,7 +340,7 @@ function App() {
             {/* Password Field */}
             <div className="form-group">
               <label htmlFor="password" className="input-label">
-                {loginRole === 'super_admin' ? 'SUPER ADMIN PASSWORD' : 'ADMIN PASSWORD'}
+                PASSWORD
               </label>
               <div className="input-container">
                 <span className="input-icon">

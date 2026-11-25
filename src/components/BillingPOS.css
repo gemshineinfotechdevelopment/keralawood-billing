@@ -361,6 +361,142 @@
   background-color: #4A2E18;
 }
 
+/* Custom Item Description Dropdown */
+.pos-col-desc {
+  position: relative;
+}
+
+.pos-item-desc-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  width: 100%;
+  min-width: 300px;
+  max-height: 240px;
+  background-color: #FFFFFF;
+  border: 1.5px solid #C88D58;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px -4px rgba(49, 25, 11, 0.2), 0 4px 10px -2px rgba(49, 25, 11, 0.1);
+  overflow-y: auto;
+  z-index: 1000;
+  padding: 4px 0;
+}
+
+.pos-item-desc-option {
+  padding: 8px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  border-bottom: 1px solid #F6EFE9;
+  transition: background-color 0.15s ease;
+}
+
+.pos-item-desc-option:last-child {
+  border-bottom: none;
+}
+
+.pos-item-desc-option:hover {
+  background-color: #FAF2EB;
+}
+
+.pos-item-desc-option.out-of-stock {
+  opacity: 0.6;
+  background-color: #FDF9F7;
+}
+
+.pos-option-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-align: left;
+}
+
+.pos-option-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #31190B;
+}
+
+.pos-option-sku {
+  font-size: 10.5px;
+  color: #8C786E;
+}
+
+.pos-option-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  text-align: right;
+}
+
+.pos-option-price {
+  font-size: 13px;
+  font-weight: 700;
+  color: #166534;
+}
+
+.pos-option-stock {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #7A695E;
+}
+
+.pos-option-stock.stock-empty {
+  color: #DC2626;
+}
+
+/* Header & Bottom Add Item Buttons */
+.btn-pos-add-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background-color: #31190B;
+  color: #FFFFFF;
+  border: 1px solid #31190B;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.btn-pos-add-item:hover {
+  background-color: #C88D58;
+  border-color: #C88D58;
+}
+
+.pos-items-bottom-bar {
+  margin-top: 10px;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.btn-pos-add-item-bottom {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background-color: #FAF5F0;
+  color: #5C3A21;
+  border: 1.5px dashed #D3C4B8;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  width: 100%;
+  justify-content: center;
+  transition: all 0.18s ease;
+}
+
+.btn-pos-add-item-bottom:hover {
+  background-color: #F5EAE0;
+  border-color: #C88D58;
+  color: #31190B;
+}
+
 .pos-plus-icon {
   font-size: 14px;
 }

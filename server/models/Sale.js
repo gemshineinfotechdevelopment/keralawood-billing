@@ -17,13 +17,13 @@ const saleSchema = new mongoose.Schema(
     discount: { type: Number, default: 0 },
     deliveryCharge: { type: Number, default: 0 },
     amount: { type: Number, required: true },
-    paymentStatus: { type: String, default: 'Pending' }, // 'Pending' | 'Partial' | 'Paid'
+    paymentStatus: { type: String, default: 'Paid' }, // Default 'Paid'
     paymentMode: { type: String, default: 'UPI' },
     billedBy: { type: String, default: '' },
     salesPerson: { type: String, default: '' },
     amountPaid: { type: Number, default: 0 },
     balanceDue: { type: Number, default: 0 },
-    status: { type: String, default: 'Dispatched' },
+    status: { type: String, default: 'Paid' },
     date: { type: Date, default: Date.now },
     invoiceDate: { type: String, default: '' },
     dueDate: { type: String, default: '' },

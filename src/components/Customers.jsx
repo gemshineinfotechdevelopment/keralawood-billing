@@ -905,12 +905,14 @@ export default function Customers({ onNavigateToBilling }) {
               <div className="modal-form-group">
                 <label className="modal-label">Phone Number *</label>
                 <input
-                  type="text"
-                  placeholder="98470 00000"
+                  type="tel"
+                  placeholder="10-digit mobile (starts with 6,7,8,9)"
                   className={`modal-input ${formErrors.phone ? 'kwf-input-error' : ''}`}
                   value={newPhone}
+                  maxLength={10}
                   onChange={(e) => {
-                    setNewPhone(e.target.value)
+                    const val = e.target.value.replace(/\D/g, '').slice(0, 10)
+                    setNewPhone(val)
                     if (formErrors.phone) setFormErrors({ ...formErrors, phone: '' })
                   }}
                 />

@@ -32,7 +32,7 @@ const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_AP
 // System Settings (Company: Kerala Wood Furniture, Location: Sivakasi)
 const INITIAL_SETTINGS = {
   depotName: 'Kerala Wood Furniture - Sivakasi',
-  contactPhone: '+91 484 289 1204',
+  contactPhone: '+91 98471 28910',
   contactEmail: 'depot@keralawood.in',
   address: 'Sivakasi Central Mill Yard, Sivakasi',
   dealerLicense: 'SFD/SVK/TMR/2023-884',
@@ -93,7 +93,7 @@ const INITIAL_BILLS = [
     status: 'active',
     customer: EMPTY_INITIAL_CUSTOMER,
     items: [],
-    paymentStatus: 'Pending',
+    paymentStatus: 'Paid',
     paymentMode: 'UPI',
     packagingNote: '',
     deliveryApplied: true,
@@ -1185,7 +1185,7 @@ export const DataStore = {
         address: '',
       },
       items: [], // Completely clean empty items
-      paymentStatus: 'Pending',
+      paymentStatus: 'Paid',
       paymentMode: 'UPI',
       amountPaid: 0,
       discount: 0,
@@ -1558,7 +1558,7 @@ export const DataStore = {
         discount,
         deliveryCharge: delivery,
         amount: grandTotal,
-        paymentStatus: bill.paymentStatus || 'Pending',
+        paymentStatus: bill.paymentStatus || 'Paid',
         paymentMode: bill.paymentMode || 'UPI',
         billedBy: newTx.billedBy,
         salesPerson: newTx.salesPerson,

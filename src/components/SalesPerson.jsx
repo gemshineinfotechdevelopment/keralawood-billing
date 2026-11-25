@@ -431,14 +431,16 @@ export default function SalesPerson() {
                   <div className="sp-form-group">
                     <label className="sp-form-label">PHONE NUMBER *</label>
                     <input
-                      type="text"
+                      type="tel"
+                      maxLength={10}
                       className={`sp-form-input ${formErrors.phone ? 'kwf-input-error' : ''}`}
                       value={formData.phone}
                       onChange={(e) => {
-                        setFormData({ ...formData, phone: e.target.value })
+                        const val = e.target.value.replace(/\D/g, '').slice(0, 10)
+                        setFormData({ ...formData, phone: val })
                         if (formErrors.phone) setFormErrors({ ...formErrors, phone: '' })
                       }}
-                      placeholder="98421 55670"
+                      placeholder="10-digit mobile (starts with 6,7,8,9)"
                       required
                     />
                     {formErrors.phone && <span className="kwf-field-error">{formErrors.phone}</span>}

@@ -295,8 +295,17 @@ export function getInvoicePrintHtml(modalBillData, settings = {}, defaultLogo = 
     }, 0)
   }
 
-  const cgstAmount = modalBillData.cgstAmount !== undefined ? Number(modalBillData.cgstAmount) : (totalGst / 2)
-  const sgstAmount = modalBillData.sgstAmount !== undefined ? Number(modalBillData.sgstAmount) : (totalGst / 2)
+  const effectiveGstPct = subtotal > 0 && totalGst > 0
+    ? Number(((totalGst / subtotal) * 100).toFixed(2))
+    : (rawItems.find((it) => Number(it.gstRate) > 0)?.gstRate ? Number(rawItems.find((it) => Number(it.gstRate) > 0).gstRate) : 18)
+  const halfGstPct = Number((effectiveGstPct / 2).toFixed(2))
+
+  const effectiveIgstPct = subtotal > 0 && totalIgst > 0
+    ? Number(((totalIgst / subtotal) * 100).toFixed(2))
+    : (rawItems.find((it) => Number(it.igstRate) > 0)?.igstRate ? Number(rawItems.find((it) => Number(it.igstRate) > 0).igstRate) : 0)
+
+  const cgstAmount = Number((totalGst / 2).toFixed(2))
+  const sgstAmount = Number((totalGst - cgstAmount).toFixed(2))
   const igstAmount = modalBillData.igstAmount !== undefined ? Number(modalBillData.igstAmount) : totalIgst
   const paymentStatus = modalBillData.paymentStatus || modalBillData.status || 'Paid'
   const balanceDue = Number(modalBillData.balanceDue) || 0
@@ -412,17 +421,17 @@ export function getInvoicePrintHtml(modalBillData, settings = {}, defaultLogo = 
           ` : ''}
           ${totalGst > 0 ? `
             <div class="summary-line">
-              <span>CGST:</span>
+              <span>CGST (${halfGstPct}%):</span>
               <span>+₹${cgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
             <div class="summary-line">
-              <span>SGST:</span>
+              <span>SGST (${halfGstPct}%):</span>
               <span>+₹${sgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
           ` : ''}
           ${totalIgst > 0 ? `
             <div class="summary-line">
-              <span>IGST:</span>
+              <span>IGST (${effectiveIgstPct}%):</span>
               <span>+₹${igstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
           ` : ''}
@@ -752,7 +761,6 @@ export function formatWhatsAppInvoiceText(modalBillData, settings = {}) {
     `*Customer:* ${custName}`,
     ...(custPhone ? [`*Phone:* ${custPhone}`] : []),
     `*Date:* ${invDate}`,
-    `*Status:* ${paymentStatus} (${paymentMode})`,
     `--------------------------------`,
     `*ITEMS:*`,
     itemsLines,
@@ -879,6 +887,10 @@ export function getPurchaseBillPrintHtml(purchase, settings = {}) {
   const grandTotal = Number(purchase.total || (subtotal + gstAmount))
   const cgstAmount = gstAmount / 2
   const sgstAmount = gstAmount / 2
+  const effectiveGstPct = subtotal > 0 && gstAmount > 0
+    ? Number(((gstAmount / subtotal) * 100).toFixed(2))
+    : (rawItems[0]?.gstRate ? Number(rawItems[0].gstRate) : 18)
+  const halfPurchaseGstPct = Number((effectiveGstPct / 2).toFixed(2))
 
   const itemsRows = rawItems.map((it, idx) => {
     const qty = Number(it.quantity) || 1
@@ -979,11 +991,11 @@ export function getPurchaseBillPrintHtml(purchase, settings = {}) {
           </div>
           ${cgstAmount > 0 ? `
             <div class="summary-line">
-              <span>CGST (50%):</span>
+              <span>CGST (${halfPurchaseGstPct}%):</span>
               <span>+₹${cgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
             <div class="summary-line">
-              <span>SGST (50%):</span>
+              <span>SGST (${halfPurchaseGstPct}%):</span>
               <span>+₹${sgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
           ` : ''}

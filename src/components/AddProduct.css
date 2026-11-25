@@ -139,6 +139,15 @@
   background-color: #C89767;
 }
 
+.add-product-bottom-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+  margin-bottom: 24px;
+}
+
 /* Single Unified Form Container Card */
 .add-product-single-card {
   background-color: #FFFFFF;
