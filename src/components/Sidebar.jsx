@@ -269,7 +269,7 @@ export default function Sidebar({
         </div>
       </div>
 
-      {/* Navigation Items */}
+      {/* Navigation Items & Scrollable Section */}
       <div className="sidebar-nav-section">
         {!isCollapsed && (
           <span className="sidebar-section-label">
@@ -301,85 +301,85 @@ export default function Sidebar({
               )
             })}
         </ul>
-      </div>
 
-      {/* Bottom User Card & Logout */}
-      <div className="sidebar-footer">
-        <div className={`sidebar-user-card ${isCollapsed ? 'compact' : ''}`}>
-          <div className="sidebar-user-top">
-            <div className="sidebar-user-avatar" title={userRole === 'super_admin' ? 'Super Admin' : 'Admin'}>
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                <circle cx="12" cy="7" r="4" />
-              </svg>
-            </div>
-            {!isCollapsed && (
-              <div className="sidebar-user-info">
-                <span className="sidebar-user-name">{userRole === 'super_admin' ? 'Super Admin' : 'Admin'}</span>
-                <span className="sidebar-user-role">
-                  <span className="sidebar-role-icon">{userRole === 'super_admin' ? '👑' : '👤'}</span>
-                  <span className="sidebar-role-text">{userRole === 'super_admin' ? 'Super Admin' : 'Admin'}</span>
-                </span>
+        {/* User Card & Logout (now inside scrollable area so it shows when scrolled to bottom) */}
+        <div className="sidebar-footer">
+          <div className={`sidebar-user-card ${isCollapsed ? 'compact' : ''}`}>
+            <div className="sidebar-user-top">
+              <div className="sidebar-user-avatar" title={userRole === 'super_admin' ? 'Super Admin' : 'Admin'}>
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
               </div>
-            )}
-          </div>
-          {!isCollapsed && (
-            <>
-              <div className="depot-divider"></div>
-              <div className="sidebar-role-switch-container">
-                <div className="sidebar-role-indicator">
-                  <span className={`role-pill-badge ${userRole === 'super_admin' ? 'role-super' : 'role-admin'}`}>
-                    {userRole === 'super_admin' ? 'Super Admin (Full)' : 'Admin (Restricted)'}
+              {!isCollapsed && (
+                <div className="sidebar-user-info">
+                  <span className="sidebar-user-name">{userRole === 'super_admin' ? 'Super Admin' : 'Admin'}</span>
+                  <span className="sidebar-user-role">
+                    <span className="sidebar-role-icon">{userRole === 'super_admin' ? '👑' : '👤'}</span>
+                    <span className="sidebar-role-text">{userRole === 'super_admin' ? 'Super Admin' : 'Admin'}</span>
                   </span>
                 </div>
-                {onToggleRole && userRole === 'super_admin' && (
-                  <button
-                    type="button"
-                    className="btn-sidebar-role-toggle"
-                    onClick={onToggleRole}
-                    title="Switch to Admin view"
-                  >
-                    Switch to Admin
-                  </button>
-                )}
-              </div>
-            </>
-          )}
-        </div>
+              )}
+            </div>
+            {!isCollapsed && (
+              <>
+                <div className="depot-divider"></div>
+                <div className="sidebar-role-switch-container">
+                  <div className="sidebar-role-indicator">
+                    <span className={`role-pill-badge ${userRole === 'super_admin' ? 'role-super' : 'role-admin'}`}>
+                      {userRole === 'super_admin' ? 'Super Admin (Full)' : 'Admin (Restricted)'}
+                    </span>
+                  </div>
+                  {onToggleRole && userRole === 'super_admin' && (
+                    <button
+                      type="button"
+                      className="btn-sidebar-role-toggle"
+                      onClick={onToggleRole}
+                      title="Switch to Admin view"
+                    >
+                      Switch to Admin
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
 
-        {/* Logout Button */}
-        <button
-          type="button"
-          className={`sidebar-logout-btn ${isCollapsed ? 'compact' : ''}`}
-          onClick={onLogout}
-          title={isCollapsed ? 'Logout' : undefined}
-          aria-label="Logout"
-        >
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+          {/* Logout Button */}
+          <button
+            type="button"
+            className={`sidebar-logout-btn ${isCollapsed ? 'compact' : ''}`}
+            onClick={onLogout}
+            title={isCollapsed ? 'Logout' : undefined}
+            aria-label="Logout"
           >
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-            <polyline points="16 17 21 12 16 7" />
-            <line x1="21" y1="12" x2="9" y2="12" />
-          </svg>
-          {!isCollapsed && <span>Logout</span>}
-        </button>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            {!isCollapsed && <span>Logout</span>}
+          </button>
+        </div>
       </div>
     </aside>
   )

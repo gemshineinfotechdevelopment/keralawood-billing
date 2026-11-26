@@ -1,7 +1,14 @@
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import dns from 'dns';
 import mongoose from 'mongoose';
+
+try {
+  dns.setServers(['8.8.8.8', '8.8.4.4']);
+} catch (e) {
+  // Ignore if not supported
+}
 import { Product } from './models/Product.js';
 import { Sale } from './models/Sale.js';
 import { Category } from './models/Category.js';

@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import dns from 'dns';
 import mongoose from 'mongoose';
 import { Product } from './models/Product.js';
 import { Sale } from './models/Sale.js';
@@ -18,6 +19,13 @@ import { seedInitialData } from './seed.js';
 // Resolve __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Configure DNS servers to prevent Windows / ISP querySrv ECONNREFUSED with mongodb+srv://
+try {
+  dns.setServers(['8.8.8.8', '8.8.4.4']);
+} catch (e) {
+  // Ignore if not supported in environment
+}
 
 // Explicitly load server/.env regardless of where node was started from
 dotenv.config({ path: path.resolve(__dirname, '.env'), override: true });
@@ -631,6 +639,14 @@ app.get('/api/sales', async (req, res) => {
 
 app.delete('/api/sales/:invoice', async (req, res) => {
   try {
+    const userRole = req.headers['x-user-role'];
+    if (userRole === 'admin') {
+      return res.status(403).json({
+        success: false,
+        error: 'Restricted: Only Super Admin is authorized to delete sales bills.'
+      });
+    }
+
     const { invoice } = req.params;
     const sale = await Sale.findOne({
       $or: [{ invoice: invoice }, { _id: invoice.match(/^[0-9a-fA-F]{24}$/) ? invoice : null }]
@@ -751,6 +767,14 @@ app.post('/api/sales', async (req, res) => {
     // Upsert or create new sale record
     const existing = await Sale.findOne({ invoice: invNo });
     if (existing) {
+      const userRole = req.headers['x-user-role'];
+      if (userRole === 'admin') {
+        return res.status(403).json({
+          success: false,
+          error: 'Restricted: Admin cannot edit or update existing bills. Only Super Admin is authorized.'
+        });
+      }
+
       existing.customer = data.customer || existing.customer;
       existing.customerPhone = data.customerPhone || existing.customerPhone;
       existing.customerAddress = data.customerAddress || existing.customerAddress;
@@ -768,6 +792,7 @@ app.post('/api/sales', async (req, res) => {
       existing.salesPerson = data.salesPerson || data.billedBy || existing.salesPerson;
       existing.amountPaid = Number(data.amountPaid) || existing.amountPaid;
       existing.balanceDue = Number(data.balanceDue) || existing.balanceDue;
+      existing.vehicleNumber = data.vehicleNumber || existing.vehicleNumber || '';
       existing.notes = data.notes || existing.notes;
       const updated = await existing.save();
       console.log('[MongoDB] Updated existing invoice in MongoDB:', invNo);
@@ -813,6 +838,7 @@ app.post('/api/sales', async (req, res) => {
       date: data.date ? new Date(data.date) : new Date(),
       invoiceDate: data.invoiceDate || new Date().toLocaleDateString('en-GB'),
       dueDate: data.dueDate || '',
+      vehicleNumber: data.vehicleNumber || '',
       notes: data.notes || '',
       year: data.year || currentYear,
       monthYear: data.monthYear || new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
@@ -1010,8 +1036,13 @@ app.post('/api/purchases', async (req, res) => {
       subtotal: Number(data.subtotal) || Number(data.amount) || 0,
       amount: Number(data.amount) || 0,
       gstAmount: Number(data.gstAmount) || 0,
-      total: Number(data.total) || (Number(data.amount) || 0) + (Number(data.gstAmount) || 0),
+      taxType: data.taxType || (Number(data.igstAmount) > 0 ? 'inter' : 'intra'),
+      igstAmount: Number(data.igstAmount) || 0,
+      cgstAmount: Number(data.cgstAmount) || 0,
+      sgstAmount: Number(data.sgstAmount) || 0,
+      total: Number(data.total) || (Number(data.amount) || 0) + (Number(data.gstAmount) || 0) + (Number(data.igstAmount) || 0),
       paymentMode: data.paymentMode || 'Bank Wire',
+      vehicleNumber: data.vehicleNumber || '',
       notes: data.notes || '',
     });
 

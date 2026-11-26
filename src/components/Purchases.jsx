@@ -4,13 +4,15 @@ import { validateRequired, validatePhone } from '../utils/validators'
 import { printPurchaseBillDocument, downloadPurchaseBillPDF, numberToWordsINR, sharePurchaseBillOnWhatsApp } from '../utils/printInvoice'
 import './Purchases.css'
 
-const createEmptyItem = () => ({
+const createEmptyItem = (defaultTaxType = 'inter', taxRate = 18) => ({
   id: Date.now() + Math.random(),
   name: '',
   quantity: 1,
   rate: '',
-  gstRate: 18,
+  gstRate: defaultTaxType === 'inter' ? 0 : taxRate,
   gstAmount: 0,
+  igstRate: defaultTaxType === 'inter' ? taxRate : 0,
+  igstAmount: 0,
   total: 0,
 })
 
@@ -30,6 +32,11 @@ export default function Purchases() {
   const [formData, setFormData] = useState({
     invoiceNumber: '',
     date: new Date().toISOString().split('T')[0],
+    taxType: 'inter', // Default IGST matching ERP Amount Info
+    taxRate: 18,
+    cgstRate: 0,
+    sgstRate: 0,
+    igstRate: 18,
     // FROM Side (Supplier)
     supplier: '',
     supplierAddress: '',
@@ -41,7 +48,8 @@ export default function Purchases() {
     companyGstin: '',
     companyPhone: '',
     // Items
-    itemsList: [createEmptyItem()],
+    itemsList: [createEmptyItem('inter')],
+    vehicleNumber: '',
     notes: '',
   })
 
@@ -70,7 +78,8 @@ export default function Purchases() {
       return (
         (p.invoiceNumber && p.invoiceNumber.toLowerCase().includes(q)) ||
         (p.supplier && p.supplier.toLowerCase().includes(q)) ||
-        (p.item && p.item.toLowerCase().includes(q))
+        (p.item && p.item.toLowerCase().includes(q)) ||
+        (p.vehicleNumber && p.vehicleNumber.toLowerCase().includes(q))
       )
     })
   }, [purchases, searchQuery])
@@ -81,7 +90,7 @@ export default function Purchases() {
 
   // KPIs
   const totalSpend = useMemo(() => {
-    return purchases.reduce((acc, p) => acc + (Number(p.amount) || 0) + (Number(p.gstAmount) || 0), 0)
+    return purchases.reduce((acc, p) => acc + (Number(p.amount) || 0) + (Number(p.gstAmount) || 0) + (Number(p.igstAmount) || 0), 0)
   }, [purchases])
 
   const uniqueSuppliers = useMemo(() => {
@@ -92,7 +101,7 @@ export default function Purchases() {
   const totalPurchases = purchases.length
 
   const totalGstSpend = useMemo(() => {
-    return purchases.reduce((acc, p) => acc + (Number(p.gstAmount) || 0), 0)
+    return purchases.reduce((acc, p) => acc + (Number(p.gstAmount) || 0) + (Number(p.igstAmount) || 0), 0)
   }, [purchases])
 
   // Calculation helpers for Form
@@ -105,22 +114,36 @@ export default function Purchases() {
   }, [formData.itemsList])
 
   const formGstTotal = useMemo(() => {
-    return (formData.itemsList || []).reduce((acc, it) => {
-      return acc + (Number(it.gstAmount) || 0)
-    }, 0)
-  }, [formData.itemsList])
+    if (formData.taxType === 'inter') return 0
+    const rate = Number(formData.taxRate) || 0
+    return Math.round(formSubtotal * (rate / 100) * 100) / 100
+  }, [formSubtotal, formData.taxType, formData.taxRate])
+
+  const formIgstTotal = useMemo(() => {
+    if (formData.taxType !== 'inter') return 0
+    const rate = Number(formData.taxRate) || 0
+    return Math.round(formSubtotal * (rate / 100) * 100) / 100
+  }, [formSubtotal, formData.taxType, formData.taxRate])
 
   const formGrandTotal = useMemo(() => {
-    return Math.round((formSubtotal + formGstTotal) * 100) / 100
-  }, [formSubtotal, formGstTotal])
+    return Math.round((formSubtotal + formGstTotal + formIgstTotal) * 100) / 100
+  }, [formSubtotal, formGstTotal, formIgstTotal])
 
   const formHalfGstPct = useMemo(() => {
-    if (formSubtotal > 0 && formGstTotal > 0) {
-      return Number(((formGstTotal / formSubtotal) * 50).toFixed(2))
-    }
-    const firstRate = (formData.itemsList || []).find((it) => Number(it.gstRate) > 0)?.gstRate
-    return firstRate ? Number((Number(firstRate) / 2).toFixed(2)) : 9
-  }, [formSubtotal, formGstTotal, formData.itemsList])
+    const rate = Number(formData.taxRate) || 18
+    return Number((rate / 2).toFixed(2))
+  }, [formData.taxRate])
+
+  const formEffectiveIgstPct = useMemo(() => {
+    return Number(formData.taxRate) || 18
+  }, [formData.taxRate])
+
+  const inWordsText = useMemo(() => {
+    if (!formGrandTotal || formGrandTotal <= 0) return 'Zero Rupees Only.'
+    const raw = numberToWordsINR(formGrandTotal)
+    const cleaned = String(raw || '').replace(/^INR\s*/i, '').replace(/\s*Only\.?$/i, '').trim()
+    return cleaned ? `${cleaned} Rupees Only.` : 'Zero Rupees Only.'
+  }, [formGrandTotal])
 
   // Handlers for Add / Edit
   const handleOpenAdd = () => {
@@ -129,6 +152,11 @@ export default function Purchases() {
     setFormData({
       invoiceNumber: DataStore.getNextPurchaseNumber(),
       date: new Date().toISOString().split('T')[0],
+      taxType: 'inter',
+      taxRate: 18,
+      cgstRate: 0,
+      sgstRate: 0,
+      igstRate: 18,
       // Left FROM (Supplier)
       supplier: '',
       supplierAddress: '',
@@ -140,7 +168,8 @@ export default function Purchases() {
       companyGstin: settings.gstin || '',
       companyPhone: settings.contactPhone || '',
       // Items
-      itemsList: [createEmptyItem()],
+      itemsList: [createEmptyItem('inter')],
+      vehicleNumber: '',
       notes: '',
     })
     setFormErrors({})
@@ -153,23 +182,49 @@ export default function Purchases() {
     const rawInv = String(p.invoiceNumber || p.id || '')
     const digitsOnly = rawInv.replace(/\D/g, '')
 
+    const activeTaxType = p.taxType || (Number(p.igstAmount) > 0 ? 'inter' : 'intra')
+    const initialTaxRate = p.taxRate !== undefined ? Number(p.taxRate) : (
+      activeTaxType === 'inter'
+        ? (p.igstRate !== undefined ? Number(p.igstRate) : 18)
+        : (p.gstRate !== undefined ? Number(p.gstRate) : 18)
+    )
+    const initialCgst = activeTaxType === 'intra' ? (p.cgstRate !== undefined ? Number(p.cgstRate) : Number((initialTaxRate / 2).toFixed(2))) : 0
+    const initialSgst = activeTaxType === 'intra' ? (p.sgstRate !== undefined ? Number(p.sgstRate) : Number((initialTaxRate / 2).toFixed(2))) : 0
+    const initialIgst = activeTaxType === 'inter' ? (p.igstRate !== undefined ? Number(p.igstRate) : initialTaxRate) : 0
+
     let loadedItems
     if (Array.isArray(p.itemsList) && p.itemsList.length > 0) {
-      loadedItems = p.itemsList.map((it, idx) => ({
-        id: it.id || idx + 1,
-        name: it.name || it.item || '',
-        quantity: it.quantity !== undefined ? it.quantity : 1,
-        rate: it.rate !== undefined ? it.rate : (it.amount || 0),
-        gstRate: it.gstRate !== undefined ? it.gstRate : (it.gstPercent || 18),
-        gstAmount: it.gstAmount !== undefined ? it.gstAmount : 0,
-        total: it.total !== undefined ? it.total : 0,
-      }))
+      loadedItems = p.itemsList.map((it, idx) => {
+        const qty = Number(it.quantity) || 1
+        const rate = Number(it.rate !== undefined ? it.rate : (it.amount || 0))
+        const lineBase = qty * rate
+
+        const gRate = it.gstRate !== undefined ? Number(it.gstRate) : (activeTaxType === 'inter' ? 0 : Number(it.gstPercent || 18))
+        const iRate = it.igstRate !== undefined ? Number(it.igstRate) : (activeTaxType === 'inter' ? Number(it.gstPercent || it.gstRate || 18) : 0)
+
+        const gAmt = it.gstAmount !== undefined ? Number(it.gstAmount) : (gRate > 0 ? Math.round(lineBase * (gRate / 100) * 100) / 100 : 0)
+        const iAmt = it.igstAmount !== undefined ? Number(it.igstAmount) : (iRate > 0 ? Math.round(lineBase * (iRate / 100) * 100) / 100 : 0)
+
+        return {
+          id: it.id || idx + 1,
+          name: it.name || it.item || '',
+          quantity: qty,
+          rate: rate,
+          gstRate: gRate,
+          gstAmount: gAmt,
+          igstRate: iRate,
+          igstAmount: iAmt,
+          total: it.total !== undefined ? Number(it.total) : Math.round((lineBase + gAmt + iAmt) * 100) / 100,
+        }
+      })
     } else {
       const qty = Number(p.quantity) || 1
       const amt = Number(p.amount) || 0
       const gst = Number(p.gstAmount) || 0
+      const igst = Number(p.igstAmount) || 0
       const rate = amt && qty ? Math.round((amt / qty) * 100) / 100 : amt
-      const gstPct = amt > 0 ? Math.round((gst / amt) * 100) : 18
+      const gstPct = amt > 0 && gst > 0 ? Math.round((gst / amt) * 100) : (activeTaxType === 'inter' ? 0 : 18)
+      const igstPct = amt > 0 && igst > 0 ? Math.round((igst / amt) * 100) : (activeTaxType === 'inter' ? 18 : 0)
       loadedItems = [
         {
           id: 1,
@@ -178,7 +233,9 @@ export default function Purchases() {
           rate: rate,
           gstRate: gstPct,
           gstAmount: gst,
-          total: amt + gst,
+          igstRate: igstPct,
+          igstAmount: igst,
+          total: amt + gst + igst,
         },
       ]
     }
@@ -186,6 +243,11 @@ export default function Purchases() {
     setFormData({
       invoiceNumber: digitsOnly || rawInv || DataStore.getNextPurchaseNumber(),
       date: p.date || new Date().toISOString().split('T')[0],
+      taxType: activeTaxType,
+      taxRate: initialTaxRate,
+      cgstRate: initialCgst,
+      sgstRate: initialSgst,
+      igstRate: initialIgst,
       // FROM (Supplier)
       supplier: p.supplier || '',
       supplierAddress: p.supplierAddress || '',
@@ -198,6 +260,7 @@ export default function Purchases() {
       companyPhone: p.companyPhone || settings.contactPhone || '',
       // Items
       itemsList: loadedItems,
+      vehicleNumber: p.vehicleNumber || '',
       notes: p.notes || '',
     })
     setFormErrors({})
@@ -241,19 +304,226 @@ export default function Purchases() {
       .join(', ') || 'Timber Purchase'
     const totalQty = formData.itemsList.reduce((acc, it) => acc + (Number(it.quantity) || 0), 0)
 
+    const isInter = (formData.taxType || 'inter') === 'inter'
+    const activeTaxRate = Number(formData.taxRate) || 0
+    const processedItems = formData.itemsList.map((it, idx) => {
+      const qty = Number(it.quantity) || 1
+      const rate = Number(it.rate) || 0
+      const lineBase = Math.round(qty * rate * 100) / 100
+      const gRate = isInter ? 0 : activeTaxRate
+      const iRate = isInter ? activeTaxRate : 0
+      const gAmt = Math.round(lineBase * (gRate / 100) * 100) / 100
+      const iAmt = Math.round(lineBase * (iRate / 100) * 100) / 100
+      return {
+        ...it,
+        id: it.id || idx + 1,
+        quantity: qty,
+        rate: rate,
+        gstRate: gRate,
+        gstAmount: gAmt,
+        igstRate: iRate,
+        igstAmount: iAmt,
+        total: lineBase,
+      }
+    })
+
     const currentBill = {
       ...formData,
+      taxType: formData.taxType || (formIgstTotal > 0 ? 'inter' : 'intra'),
       invoiceNumber: cleanInvoiceNumber,
+      taxRate: formData.taxRate !== undefined ? Number(formData.taxRate) : 18,
+      cgstRate: formData.cgstRate !== undefined ? Number(formData.cgstRate) : 0,
+      sgstRate: formData.sgstRate !== undefined ? Number(formData.sgstRate) : 0,
+      igstRate: formData.igstRate !== undefined ? Number(formData.igstRate) : 18,
       item: itemSummary,
       quantity: String(totalQty),
       subtotal: formSubtotal,
       amount: formSubtotal,
       gstAmount: formGstTotal,
+      igstAmount: formIgstTotal,
+      cgstAmount: Math.round((formGstTotal / 2) * 100) / 100,
+      sgstAmount: Math.round((formGstTotal / 2) * 100) / 100,
       total: formGrandTotal,
-      itemsList: formData.itemsList,
+      vehicleNumber: (formData.vehicleNumber || '').trim(),
+      itemsList: processedItems,
     }
     setPreviewPurchase(currentBill)
     handlePrintPurchase(currentBill)
+  }
+
+  const handleTaxTypeChange = (newTaxType) => {
+    setFormData((prev) => {
+      const currentTaxRate = Number(prev.taxRate) || 18
+      const isInter = newTaxType === 'inter'
+      const newCgst = isInter ? 0 : Number((currentTaxRate / 2).toFixed(2))
+      const newSgst = isInter ? 0 : Number((currentTaxRate / 2).toFixed(2))
+      const newIgst = isInter ? currentTaxRate : 0
+
+      const nextItems = (prev.itemsList || []).map((it) => {
+        const qty = Number(it.quantity) || 0
+        const rate = Number(it.rate) || 0
+        const lineBase = Math.round(qty * rate * 100) / 100
+
+        const gRate = isInter ? 0 : currentTaxRate
+        const iRate = isInter ? currentTaxRate : 0
+
+        const gstAmt = Math.round(lineBase * (gRate / 100) * 100) / 100
+        const igstAmt = Math.round(lineBase * (iRate / 100) * 100) / 100
+        const lineTotal = Math.round((lineBase + gstAmt + igstAmt) * 100) / 100
+
+        return {
+          ...it,
+          gstRate: gRate,
+          gstAmount: gstAmt,
+          igstRate: iRate,
+          igstAmount: igstAmt,
+          total: lineTotal,
+        }
+      })
+
+      return {
+        ...prev,
+        taxType: newTaxType,
+        cgstRate: newCgst,
+        sgstRate: newSgst,
+        igstRate: newIgst,
+        itemsList: nextItems,
+      }
+    })
+  }
+
+  const handleTaxRateChange = (rateVal) => {
+    const numRate = Number(rateVal) >= 0 ? Number(rateVal) : 0
+    setFormData((prev) => {
+      const isInter = prev.taxType === 'inter'
+      const newCgst = isInter ? 0 : Number((numRate / 2).toFixed(2))
+      const newSgst = isInter ? 0 : Number((numRate / 2).toFixed(2))
+      const newIgst = isInter ? numRate : 0
+
+      const nextItems = (prev.itemsList || []).map((it) => {
+        const qty = Number(it.quantity) || 0
+        const rate = Number(it.rate) || 0
+        const lineBase = Math.round(qty * rate * 100) / 100
+
+        const gRate = isInter ? 0 : numRate
+        const iRate = isInter ? numRate : 0
+
+        const gstAmt = Math.round(lineBase * (gRate / 100) * 100) / 100
+        const igstAmt = Math.round(lineBase * (iRate / 100) * 100) / 100
+        const lineTotal = Math.round((lineBase + gstAmt + igstAmt) * 100) / 100
+
+        return {
+          ...it,
+          gstRate: gRate,
+          gstAmount: gstAmt,
+          igstRate: iRate,
+          igstAmount: igstAmt,
+          total: lineTotal,
+        }
+      })
+
+      return {
+        ...prev,
+        taxRate: rateVal,
+        cgstRate: newCgst,
+        sgstRate: newSgst,
+        igstRate: newIgst,
+        itemsList: nextItems,
+      }
+    })
+  }
+
+  const handleCgstRateChange = (cgstVal) => {
+    const numCgst = Number(cgstVal) >= 0 ? Number(cgstVal) : 0
+    setFormData((prev) => {
+      const newSgst = numCgst
+      const totalTax = Number((numCgst + newSgst).toFixed(2))
+
+      const nextItems = (prev.itemsList || []).map((it) => {
+        const qty = Number(it.quantity) || 0
+        const rate = Number(it.rate) || 0
+        const lineBase = Math.round(qty * rate * 100) / 100
+        const gstAmt = Math.round(lineBase * (totalTax / 100) * 100) / 100
+        return {
+          ...it,
+          gstRate: totalTax,
+          gstAmount: gstAmt,
+          igstRate: 0,
+          igstAmount: 0,
+          total: Math.round((lineBase + gstAmt) * 100) / 100,
+        }
+      })
+
+      return {
+        ...prev,
+        taxRate: totalTax,
+        cgstRate: cgstVal,
+        sgstRate: newSgst,
+        igstRate: 0,
+        itemsList: nextItems,
+      }
+    })
+  }
+
+  const handleSgstRateChange = (sgstVal) => {
+    const numSgst = Number(sgstVal) >= 0 ? Number(sgstVal) : 0
+    setFormData((prev) => {
+      const newCgst = numSgst
+      const totalTax = Number((newCgst + numSgst).toFixed(2))
+
+      const nextItems = (prev.itemsList || []).map((it) => {
+        const qty = Number(it.quantity) || 0
+        const rate = Number(it.rate) || 0
+        const lineBase = Math.round(qty * rate * 100) / 100
+        const gstAmt = Math.round(lineBase * (totalTax / 100) * 100) / 100
+        return {
+          ...it,
+          gstRate: totalTax,
+          gstAmount: gstAmt,
+          igstRate: 0,
+          igstAmount: 0,
+          total: Math.round((lineBase + gstAmt) * 100) / 100,
+        }
+      })
+
+      return {
+        ...prev,
+        taxRate: totalTax,
+        cgstRate: newCgst,
+        sgstRate: sgstVal,
+        igstRate: 0,
+        itemsList: nextItems,
+      }
+    })
+  }
+
+  const handleIgstRateChange = (igstVal) => {
+    const numIgst = Number(igstVal) >= 0 ? Number(igstVal) : 0
+    setFormData((prev) => {
+      const nextItems = (prev.itemsList || []).map((it) => {
+        const qty = Number(it.quantity) || 0
+        const rate = Number(it.rate) || 0
+        const lineBase = Math.round(qty * rate * 100) / 100
+        const igstAmt = Math.round(lineBase * (numIgst / 100) * 100) / 100
+        return {
+          ...it,
+          gstRate: 0,
+          gstAmount: 0,
+          igstRate: numIgst,
+          igstAmount: igstAmt,
+          total: Math.round((lineBase + igstAmt) * 100) / 100,
+        }
+      })
+
+      return {
+        ...prev,
+        taxRate: numIgst,
+        cgstRate: 0,
+        sgstRate: 0,
+        igstRate: igstVal,
+        itemsList: nextItems,
+      }
+    })
   }
 
   // Row item actions
@@ -265,22 +535,34 @@ export default function Purchases() {
       const qty = Number(row.quantity) || 0
       const rate = Number(row.rate) || 0
       const lineBase = Math.round(qty * rate * 100) / 100
-      const gstPct = Number(row.gstRate) || 0
-      const gstAmt = Math.round(lineBase * (gstPct / 100) * 100) / 100
-      const lineTotal = Math.round((lineBase + gstAmt) * 100) / 100
 
+      const isInter = prev.taxType === 'inter'
+      const curTaxRate = Number(prev.taxRate) || 0
+
+      const gstPct = isInter ? 0 : curTaxRate
+      const igstPct = isInter ? curTaxRate : 0
+
+      const gstAmt = Math.round(lineBase * (gstPct / 100) * 100) / 100
+      const igstAmt = Math.round(lineBase * (igstPct / 100) * 100) / 100
+
+      row.gstRate = gstPct
+      row.igstRate = igstPct
       row.gstAmount = gstAmt
-      row.total = lineTotal
+      row.igstAmount = igstAmt
+      row.total = lineBase
       nextItems[index] = row
 
-      return { ...prev, itemsList: nextItems }
+      return {
+        ...prev,
+        itemsList: nextItems,
+      }
     })
   }
 
   const handleAddItemRow = () => {
     setFormData((prev) => ({
       ...prev,
-      itemsList: [...prev.itemsList, createEmptyItem()],
+      itemsList: [...prev.itemsList, createEmptyItem(prev.taxType || 'inter', Number(prev.taxRate) || 18)],
     }))
   }
 
@@ -344,8 +626,32 @@ export default function Purchases() {
       .join(', ') || 'Timber Purchase'
     const totalQty = formData.itemsList.reduce((acc, it) => acc + (Number(it.quantity) || 0), 0)
 
+    const isInter = (formData.taxType || 'inter') === 'inter'
+    const activeTaxRate = Number(formData.taxRate) || 0
+    const processedItems = formData.itemsList.map((it, idx) => {
+      const qty = Number(it.quantity) || 1
+      const rate = Number(it.rate) || 0
+      const lineBase = Math.round(qty * rate * 100) / 100
+      const gRate = isInter ? 0 : activeTaxRate
+      const iRate = isInter ? activeTaxRate : 0
+      const gAmt = Math.round(lineBase * (gRate / 100) * 100) / 100
+      const iAmt = Math.round(lineBase * (iRate / 100) * 100) / 100
+      return {
+        ...it,
+        id: it.id || idx + 1,
+        quantity: qty,
+        rate: rate,
+        gstRate: gRate,
+        gstAmount: gAmt,
+        igstRate: iRate,
+        igstAmount: iAmt,
+        total: lineBase,
+      }
+    })
+
     const payload = {
       ...formData,
+      taxType: formData.taxType || (formIgstTotal > 0 ? 'inter' : 'intra'),
       invoiceNumber: cleanInvoiceNumber,
       supplier: formData.supplier.trim(),
       supplierAddress: formData.supplierAddress.trim(),
@@ -357,11 +663,19 @@ export default function Purchases() {
       companyPhone: formData.companyPhone.trim(),
       item: itemSummary,
       quantity: String(totalQty),
+      taxRate: formData.taxRate !== undefined ? Number(formData.taxRate) : 18,
+      cgstRate: formData.cgstRate !== undefined ? Number(formData.cgstRate) : 0,
+      sgstRate: formData.sgstRate !== undefined ? Number(formData.sgstRate) : 0,
+      igstRate: formData.igstRate !== undefined ? Number(formData.igstRate) : 18,
       subtotal: formSubtotal,
       amount: formSubtotal,
       gstAmount: formGstTotal,
+      igstAmount: formIgstTotal,
+      cgstAmount: Math.round((formGstTotal / 2) * 100) / 100,
+      sgstAmount: Math.round((formGstTotal / 2) * 100) / 100,
       total: formGrandTotal,
-      itemsList: formData.itemsList,
+      vehicleNumber: (formData.vehicleNumber || '').trim(),
+      itemsList: processedItems,
     }
 
     if (editingPurchase) {
@@ -416,13 +730,18 @@ export default function Purchases() {
 
     const subtotal = Number(bill.subtotal || bill.amount || 0)
     const gstAmount = Number(bill.gstAmount || 0)
-    const grandTotal = Number(bill.total || (subtotal + gstAmount))
+    const igstAmount = Number(bill.igstAmount || 0)
+    const grandTotal = Number(bill.total || (subtotal + gstAmount + igstAmount))
     const cgstAmount = gstAmount / 2
     const sgstAmount = gstAmount / 2
     const effectiveGstPct = subtotal > 0 && gstAmount > 0
       ? Math.round((gstAmount / subtotal) * 100)
-      : (rawItems[0]?.gstRate ? Number(rawItems[0].gstRate) : 18)
+      : (rawItems.find((it) => Number(it.gstRate) > 0)?.gstRate ? Number(rawItems.find((it) => Number(it.gstRate) > 0).gstRate) : 18)
     const halfRate = Number((effectiveGstPct / 2).toFixed(2))
+
+    const effectiveIgstPct = subtotal > 0 && igstAmount > 0
+      ? Math.round((igstAmount / subtotal) * 100)
+      : (rawItems.find((it) => Number(it.igstRate) > 0)?.igstRate ? Number(rawItems.find((it) => Number(it.igstRate) > 0).igstRate) : 18)
 
     return (
       <div className="pos-invoice-printable-sheet">
@@ -445,6 +764,11 @@ export default function Purchases() {
             <p>
               <strong>Purchase Date:</strong> {invDate}
             </p>
+            {bill?.vehicleNumber && (
+              <p>
+                <strong>Vehicle No:</strong> {bill.vehicleNumber}
+              </p>
+            )}
           </div>
         </div>
 
@@ -471,10 +795,10 @@ export default function Purchases() {
           <thead>
             <tr>
               <th style={{ width: '5%', textAlign: 'center' }}>#</th>
-              <th style={{ width: '42%', textAlign: 'left' }}>Item Description</th>
+              <th style={{ width: '40%', textAlign: 'left' }}>Item Description</th>
               <th style={{ width: '10%', textAlign: 'center' }}>Qty</th>
               <th style={{ width: '15%', textAlign: 'right' }}>Rate (₹)</th>
-              <th style={{ width: '12%', textAlign: 'center' }}>GST</th>
+              <th style={{ width: '14%', textAlign: 'center' }}>Tax (GST/IGST)</th>
               <th style={{ width: '16%', textAlign: 'right' }}>Total (₹)</th>
             </tr>
           </thead>
@@ -482,9 +806,13 @@ export default function Purchases() {
             {rawItems.map((it, idx) => {
               const qty = Number(it.quantity) || 1
               const rate = Number(it.rate || it.amount || 0)
-              const gstPct = Number(it.gstRate || it.gstPercent || 18)
-              const lineGst = Number(it.gstAmount || 0)
-              const lineTotal = Number(it.total || ((qty * rate) + lineGst))
+              const lineBase = qty * rate
+              const iRate = Number(it.igstRate || 0)
+              const gRate = Number(it.gstRate || (it.gstPercent || 0))
+              const lineTax = Number(it.gstAmount || 0) + Number(it.igstAmount || 0) || (lineBase * (iRate || gRate) / 100)
+              const lineTotal = Number(it.total || (lineBase + lineTax))
+              const taxDisplay = iRate > 0 ? `IGST ${iRate}%` : (gRate > 0 ? `GST ${gRate}%` : '0%')
+
               return (
                 <tr key={it.id || idx}>
                   <td style={{ textAlign: 'center', fontWeight: 600 }}>{idx + 1}</td>
@@ -493,7 +821,7 @@ export default function Purchases() {
                   </td>
                   <td style={{ textAlign: 'center', fontWeight: 600 }}>{qty}</td>
                   <td style={{ textAlign: 'right' }}>₹{rate.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                  <td style={{ textAlign: 'center' }}>{gstPct}%</td>
+                  <td style={{ textAlign: 'center' }}>{taxDisplay}</td>
                   <td style={{ textAlign: 'right', fontWeight: 700 }}>₹{lineTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
                 </tr>
               )
@@ -537,6 +865,12 @@ export default function Purchases() {
                   <span>+₹{sgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </div>
               </>
+            )}
+            {igstAmount > 0 && (
+              <div className="pos-print-line">
+                <span>IGST ({effectiveIgstPct}%):</span>
+                <span>+₹{igstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              </div>
             )}
             <div className="pos-print-line pos-print-grand">
               <strong>Grand Total:</strong>
@@ -658,6 +992,20 @@ export default function Purchases() {
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                   required
                 />
+                <span className="purchase-meta-hint">Invoice recording date</span>
+              </div>
+
+              <div className="purchase-meta-field">
+                <label className="purchase-meta-label">Vehicle / Lorry No</label>
+                <input
+                  type="text"
+                  className="purchases-input purchase-meta-vehicle"
+                  style={{ height: '36px', textTransform: 'uppercase' }}
+                  value={formData.vehicleNumber || ''}
+                  onChange={(e) => setFormData({ ...formData, vehicleNumber: e.target.value.toUpperCase() })}
+                  placeholder="e.g. TN-67-AB-1234"
+                />
+                <span className="purchase-meta-hint">Transport vehicle / dispatch lorry</span>
               </div>
             </div>
           </div>
@@ -828,89 +1176,76 @@ export default function Purchases() {
                 <thead>
                   <tr>
                     <th style={{ width: '45px', textAlign: 'center' }}>#</th>
-                    <th style={{ minWidth: '320px' }}>ITEM NAME / DESCRIPTION *</th>
-                    <th style={{ width: '120px', textAlign: 'right' }}>QUANTITY *</th>
+                    <th style={{ minWidth: '300px' }}>ITEM NAME / DESCRIPTION *</th>
+                    <th style={{ width: '130px', textAlign: 'right' }}>QUANTITY *</th>
                     <th style={{ width: '160px', textAlign: 'right' }}>AMOUNT / RATE (₹) *</th>
-                    <th style={{ width: '110px', textAlign: 'center' }}>GST (%)</th>
-                    <th style={{ width: '130px', textAlign: 'right' }}>GST (₹)</th>
-                    <th style={{ width: '160px', textAlign: 'right' }}>TOTAL (₹)</th>
-                    <th style={{ width: '50px', textAlign: 'center' }}></th>
+                    <th style={{ width: '160px', textAlign: 'right' }}>TOTAL AMOUNT (₹)</th>
+                    <th style={{ width: '45px', textAlign: 'center' }}></th>
                   </tr>
                 </thead>
                 <tbody>
-                  {formData.itemsList.map((row, idx) => (
-                    <tr key={row.id || idx}>
-                      <td style={{ textAlign: 'center', fontWeight: 700, color: '#8A7B72' }}>
-                        {idx + 1}
-                      </td>
-                      <td>
-                        <input
-                          type="text"
-                          className={`purchase-table-input ${formErrors[`item_${idx}_name`] ? 'kwf-input-error' : ''}`}
-                          value={row.name}
-                          onChange={(e) => handleItemChange(idx, 'name', e.target.value)}
-                          placeholder="e.g. Grade-A Nilambur Teak Planks (6x4)"
-                          required
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          min="1"
-                          step="1"
-                          className="purchase-table-input"
-                          style={{ textAlign: 'right' }}
-                          value={row.quantity}
-                          onChange={(e) => handleItemChange(idx, 'quantity', Math.max(1, Number(e.target.value) || 1))}
-                          required
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          min="0"
-                          step="any"
-                          className={`purchase-table-input ${formErrors[`item_${idx}_rate`] ? 'kwf-input-error' : ''}`}
-                          style={{ textAlign: 'right' }}
-                          value={row.rate}
-                          onChange={(e) => handleItemChange(idx, 'rate', e.target.value)}
-                          placeholder="0.00"
-                          required
-                        />
-                      </td>
-                      <td>
-                        <select
-                          className="purchase-table-select"
-                          style={{ textAlign: 'center' }}
-                          value={row.gstRate}
-                          onChange={(e) => handleItemChange(idx, 'gstRate', Number(e.target.value))}
-                        >
-                          <option value="0">0%</option>
-                          <option value="5">5%</option>
-                          <option value="12">12%</option>
-                          <option value="18">18%</option>
-                          <option value="28">28%</option>
-                        </select>
-                      </td>
-                      <td style={{ textAlign: 'right', fontWeight: 600, color: '#6A564A' }}>
-                        ₹{Number(row.gstAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </td>
-                      <td style={{ textAlign: 'right', fontWeight: 700, color: '#31190B' }}>
-                        ₹{Number(row.total || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                      </td>
-                      <td style={{ textAlign: 'center' }}>
-                        <button
-                          type="button"
-                          className="btn-remove-row"
-                          onClick={() => handleRemoveItemRow(idx)}
-                          title="Remove item row"
-                          disabled={formData.itemsList.length <= 1}
-                        >
-                          ✕
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                  {formData.itemsList.map((row, idx) => {
+                    const qty = Number(row.quantity) || 0
+                    const rate = Number(row.rate) || 0
+                    const lineAmount = Math.round(qty * rate * 100) / 100
+
+                    return (
+                      <tr key={row.id || idx}>
+                        <td style={{ textAlign: 'center', fontWeight: 700, color: '#8A7B72' }}>
+                          {idx + 1}
+                        </td>
+                        <td>
+                          <input
+                            type="text"
+                            className={`purchase-table-input ${formErrors[`item_${idx}_name`] ? 'kwf-input-error' : ''}`}
+                            value={row.name}
+                            onChange={(e) => handleItemChange(idx, 'name', e.target.value)}
+                            placeholder="e.g. Grade-A Nilambur Teak Planks (6x4)"
+                            required
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="number"
+                            min="1"
+                            step="1"
+                            className="purchase-table-input"
+                            style={{ textAlign: 'right' }}
+                            value={row.quantity}
+                            onChange={(e) => handleItemChange(idx, 'quantity', Math.max(1, Number(e.target.value) || 1))}
+                            required
+                          />
+                        </td>
+                        <td>
+                          <input
+                            type="number"
+                            min="0"
+                            step="any"
+                            className={`purchase-table-input ${formErrors[`item_${idx}_rate`] ? 'kwf-input-error' : ''}`}
+                            style={{ textAlign: 'right' }}
+                            value={row.rate}
+                            onChange={(e) => handleItemChange(idx, 'rate', e.target.value)}
+                            placeholder="0.00"
+                            required
+                          />
+                        </td>
+                        <td style={{ textAlign: 'right', fontWeight: 800, color: '#31190B', fontSize: '12px' }}>
+                          ₹{lineAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </td>
+                        <td style={{ textAlign: 'center' }}>
+                          <button
+                            type="button"
+                            className="btn-remove-row"
+                            onClick={() => handleRemoveItemRow(idx)}
+                            title="Remove item row"
+                            disabled={formData.itemsList.length <= 1}
+                          >
+                            ✕
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </div>
@@ -942,38 +1277,136 @@ export default function Purchases() {
               </span>
             </div>
 
-            <div className="purchase-financials-card">
-              <div className="purchase-summary-row">
-                <span className="purchase-summary-label">Subtotal (Taxable Amount):</span>
-                <span className="purchase-summary-val">
-                  ₹{formSubtotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </span>
-              </div>
+            {/* Amount Info Card matching the reference ERP image */}
+            <fieldset className="amount-info-fieldset">
+              <legend className="amount-info-legend">Amount Info</legend>
 
-              <div className="purchase-summary-row">
-                <span className="purchase-summary-label">GST Tax Outflow:</span>
-                <span className="purchase-summary-val" style={{ color: '#8C5325' }}>
-                  +₹{formGstTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </span>
-              </div>
+              <div className="amount-info-table">
+                {/* Sub Total (Rs.) */}
+                <div className="amount-info-row">
+                  <label className="amount-info-label">Sub Total (Rs.)</label>
+                  <div className="amount-info-field">
+                    <input
+                      type="text"
+                      readOnly
+                      className="amount-info-input amount-info-readonly"
+                      value={formSubtotal.toFixed(2)}
+                    />
+                  </div>
+                </div>
 
-              {formGstTotal > 0 && (
-                <div className="purchase-summary-tax-split">
-                  <span>CGST ({formHalfGstPct}%): ₹{(formGstTotal / 2).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                  <span>SGST ({formHalfGstPct}%): ₹{(formGstTotal / 2).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                {/* Tax Type */}
+                <div className="amount-info-row">
+                  <label className="amount-info-label">Tax Type</label>
+                  <div className="amount-info-radios">
+                    <label className="amount-info-radio-label">
+                      <input
+                        type="radio"
+                        name="purchaseTaxType"
+                        value="intra"
+                        checked={formData.taxType === 'intra'}
+                        onChange={() => handleTaxTypeChange('intra')}
+                      />
+                      <span>CGST/SGST</span>
+                    </label>
+                    <label className="amount-info-radio-label">
+                      <input
+                        type="radio"
+                        name="purchaseTaxType"
+                        value="inter"
+                        checked={formData.taxType === 'inter'}
+                        onChange={() => handleTaxTypeChange('inter')}
+                      />
+                      <span>IGST</span>
+                    </label>
+                  </div>
                 </div>
-              )}
 
-              <div className="purchase-summary-grand-total">
-                <div className="purchase-grand-label-wrap">
-                  <span className="purchase-grand-title">GRAND TOTAL</span>
-                  <span className="purchase-grand-sub">Total Purchase Outflow (INR)</span>
+                {/* Tax (%) */}
+                <div className="amount-info-row">
+                  <label className="amount-info-label">Tax (%)</label>
+                  <div className="amount-info-field">
+                    <input
+                      type="number"
+                      min="0"
+                      step="any"
+                      className="amount-info-input"
+                      value={formData.taxRate !== undefined ? formData.taxRate : 18}
+                      onChange={(e) => handleTaxRateChange(e.target.value)}
+                    />
+                  </div>
                 </div>
-                <div className="purchase-grand-amount">
-                  ₹{formGrandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+
+                {/* CGST (%) */}
+                <div className="amount-info-row">
+                  <label className="amount-info-label">CGST (%)</label>
+                  <div className="amount-info-field">
+                    <input
+                      type="number"
+                      min="0"
+                      step="any"
+                      className={`amount-info-input ${formData.taxType === 'inter' ? 'amount-info-input-disabled' : ''}`}
+                      value={formData.taxType === 'inter' ? 0 : (formData.cgstRate !== undefined ? formData.cgstRate : 0)}
+                      onChange={(e) => handleCgstRateChange(e.target.value)}
+                      disabled={formData.taxType === 'inter'}
+                    />
+                  </div>
+                </div>
+
+                {/* SGST (%) */}
+                <div className="amount-info-row">
+                  <label className="amount-info-label">SGST (%)</label>
+                  <div className="amount-info-field">
+                    <input
+                      type="number"
+                      min="0"
+                      step="any"
+                      className={`amount-info-input ${formData.taxType === 'inter' ? 'amount-info-input-disabled' : ''}`}
+                      value={formData.taxType === 'inter' ? 0 : (formData.sgstRate !== undefined ? formData.sgstRate : 0)}
+                      onChange={(e) => handleSgstRateChange(e.target.value)}
+                      disabled={formData.taxType === 'inter'}
+                    />
+                  </div>
+                </div>
+
+                {/* IGST (%) */}
+                <div className="amount-info-row">
+                  <label className="amount-info-label">IGST (%)</label>
+                  <div className="amount-info-field">
+                    <input
+                      type="number"
+                      min="0"
+                      step="any"
+                      className={`amount-info-input ${formData.taxType === 'intra' ? 'amount-info-input-disabled' : ''}`}
+                      value={formData.taxType === 'intra' ? 0 : (formData.igstRate !== undefined ? formData.igstRate : 0)}
+                      onChange={(e) => handleIgstRateChange(e.target.value)}
+                      disabled={formData.taxType === 'intra'}
+                    />
+                  </div>
+                </div>
+
+                {/* Net Amount (Rs.) */}
+                <div className="amount-info-row amount-info-net-row">
+                  <label className="amount-info-label amount-info-net-label">Net Amount (Rs.)</label>
+                  <div className="amount-info-field">
+                    <input
+                      type="text"
+                      readOnly
+                      className="amount-info-input amount-info-net-input"
+                      value={formGrandTotal.toFixed(2)}
+                    />
+                  </div>
+                </div>
+
+                {/* In Words */}
+                <div className="amount-info-words-section">
+                  <label className="amount-info-words-label">In Words</label>
+                  <div className="amount-info-words-box">
+                    {inWordsText}
+                  </div>
                 </div>
               </div>
-            </div>
+            </fieldset>
           </div>
 
           {/* Form Bottom Actions */}
@@ -1154,6 +1587,11 @@ export default function Purchases() {
                     <td>
                       <div className="purchases-invoice-no">#{p.invoiceNumber || p.id}</div>
                       <div className="purchases-invoice-date">{p.date}</div>
+                      {p.vehicleNumber && (
+                        <div style={{ fontSize: '11px', color: '#8C5325', fontWeight: 600, marginTop: '2px' }}>
+                          🚚 {p.vehicleNumber}
+                        </div>
+                      )}
                     </td>
                     <td>
                       <div className="purchases-supplier-name">{p.supplier}</div>
@@ -1164,13 +1602,17 @@ export default function Purchases() {
                     </td>
                     <td>
                       <div className="purchases-amt-val">
-                        ₹{Number(p.total || ((Number(p.amount) || 0) + (Number(p.gstAmount) || 0))).toLocaleString('en-IN')}
+                        ₹{Number(p.total || ((Number(p.amount) || 0) + (Number(p.gstAmount) || 0) + (Number(p.igstAmount) || 0))).toLocaleString('en-IN')}
                       </div>
-                      {p.gstAmount > 0 && (
+                      {p.igstAmount > 0 ? (
+                        <div style={{ fontSize: '10.5px', color: '#B45309', fontWeight: 600 }}>
+                          incl. ₹{Number(p.igstAmount).toLocaleString('en-IN')} IGST
+                        </div>
+                      ) : p.gstAmount > 0 ? (
                         <div style={{ fontSize: '10.5px', color: '#7D6C63' }}>
                           incl. ₹{Number(p.gstAmount).toLocaleString('en-IN')} GST
                         </div>
-                      )}
+                      ) : null}
                     </td>
                     <td>
                       <div className="purchases-actions-cell">

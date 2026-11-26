@@ -355,6 +355,7 @@ export function getInvoicePrintHtml(modalBillData, settings = {}, defaultLogo = 
           <div class="badge">TAX INVOICE</div>
           <p style="margin: 3px 0; font-size: 12px;"><strong>Invoice #:</strong> ${invNumber}</p>
           <p style="margin: 3px 0; font-size: 12px;"><strong>Invoice Date:</strong> ${invDate}</p>
+          ${modalBillData.vehicleNumber ? `<p style="margin: 3px 0; font-size: 12px;"><strong>Vehicle No:</strong> ${modalBillData.vehicleNumber}</p>` : ''}
         </td>
       </tr>
     </table>
@@ -761,6 +762,7 @@ export function formatWhatsAppInvoiceText(modalBillData, settings = {}) {
     `*Customer:* ${custName}`,
     ...(custPhone ? [`*Phone:* ${custPhone}`] : []),
     `*Date:* ${invDate}`,
+    ...(modalBillData.vehicleNumber ? [`*Vehicle No:* ${modalBillData.vehicleNumber}`] : []),
     `--------------------------------`,
     `*ITEMS:*`,
     itemsLines,
@@ -884,27 +886,36 @@ export function getPurchaseBillPrintHtml(purchase, settings = {}) {
 
   const subtotal = Number(purchase.subtotal || purchase.amount || 0)
   const gstAmount = Number(purchase.gstAmount || 0)
-  const grandTotal = Number(purchase.total || (subtotal + gstAmount))
+  const igstAmount = Number(purchase.igstAmount || 0)
+  const grandTotal = Number(purchase.total || (subtotal + gstAmount + igstAmount))
   const cgstAmount = gstAmount / 2
   const sgstAmount = gstAmount / 2
   const effectiveGstPct = subtotal > 0 && gstAmount > 0
     ? Number(((gstAmount / subtotal) * 100).toFixed(2))
-    : (rawItems[0]?.gstRate ? Number(rawItems[0].gstRate) : 18)
+    : (rawItems.find((it) => Number(it.gstRate) > 0)?.gstRate ? Number(rawItems.find((it) => Number(it.gstRate) > 0).gstRate) : 18)
   const halfPurchaseGstPct = Number((effectiveGstPct / 2).toFixed(2))
+
+  const effectiveIgstPct = subtotal > 0 && igstAmount > 0
+    ? Number(((igstAmount / subtotal) * 100).toFixed(2))
+    : (rawItems.find((it) => Number(it.igstRate) > 0)?.igstRate ? Number(rawItems.find((it) => Number(it.igstRate) > 0).igstRate) : 18)
 
   const itemsRows = rawItems.map((it, idx) => {
     const qty = Number(it.quantity) || 1
     const rate = Number(it.rate || it.amount || 0)
-    const gstPct = Number(it.gstRate || it.gstPercent || 18)
-    const lineGst = Number(it.gstAmount || 0)
-    const lineTotal = Number(it.total || ((qty * rate) + lineGst))
+    const lineBase = qty * rate
+    const iRate = Number(it.igstRate || 0)
+    const gRate = Number(it.gstRate || it.gstPercent || 0)
+    const lineTax = Number(it.gstAmount || 0) + Number(it.igstAmount || 0) || (lineBase * (iRate || gRate) / 100)
+    const lineTotal = Number(it.total || (lineBase + lineTax))
+    const taxLabel = iRate > 0 ? `IGST ${iRate}%` : (gRate > 0 ? `GST ${gRate}%` : '0%')
+
     return `
       <tr>
         <td style="text-align: center; font-weight: 600;">${idx + 1}</td>
         <td><strong>${it.name || it.item || 'Timber Material'}</strong></td>
         <td style="text-align: center; font-weight: 600;">${qty}</td>
         <td style="text-align: right;">₹${rate.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-        <td style="text-align: center;">${gstPct}%</td>
+        <td style="text-align: center;">${taxLabel}</td>
         <td style="text-align: right; font-weight: 700;">₹${lineTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
       </tr>
     `
@@ -930,6 +941,7 @@ export function getPurchaseBillPrintHtml(purchase, settings = {}) {
           <div class="badge">PURCHASE BILL</div>
           <p style="margin: 3px 0; font-size: 12px;"><strong>Purchase #:</strong> ${invNumber}</p>
           <p style="margin: 3px 0; font-size: 12px;"><strong>Purchase Date:</strong> ${invDate}</p>
+          ${purchase.vehicleNumber ? `<p style="margin: 3px 0; font-size: 12px;"><strong>Vehicle No:</strong> ${purchase.vehicleNumber}</p>` : ''}
         </td>
       </tr>
     </table>
@@ -957,10 +969,10 @@ export function getPurchaseBillPrintHtml(purchase, settings = {}) {
       <thead>
         <tr>
           <th style="width: 5%; text-align: center;">#</th>
-          <th style="width: 42%; text-align: left;">Item Description</th>
+          <th style="width: 40%; text-align: left;">Item Description</th>
           <th style="width: 10%; text-align: center;">Qty</th>
           <th style="width: 15%; text-align: right;">Rate (₹)</th>
-          <th style="width: 12%; text-align: center;">GST</th>
+          <th style="width: 14%; text-align: center;">Tax (GST/IGST)</th>
           <th style="width: 16%; text-align: right;">Total (₹)</th>
         </tr>
       </thead>
@@ -997,6 +1009,12 @@ export function getPurchaseBillPrintHtml(purchase, settings = {}) {
             <div class="summary-line">
               <span>SGST (${halfPurchaseGstPct}%):</span>
               <span>+₹${sgstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            </div>
+          ` : ''}
+          ${totalIgst > 0 || igstAmount > 0 ? `
+            <div class="summary-line">
+              <span>IGST (${effectiveIgstPct}%):</span>
+              <span>+₹${(igstAmount || totalIgst).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
           ` : ''}
           <div class="grand-line">
@@ -1067,16 +1085,20 @@ export function formatWhatsAppPurchaseBillText(purchase, settings = {}) {
     : Number(String(purchase.amount || 0).replace(/[^0-9.]/g, ''))
   const subtotal = Number(purchase.amount || purchase.subtotal || 0)
   const gstAmount = Number(purchase.gstAmount || 0)
+  const igstAmount = Number(purchase.igstAmount || 0)
 
   const itemsLines = rawItems.map((it, idx) => {
     const desc = (it.name || it.item || 'Timber Material').toUpperCase()
     const qty = Number(it.quantity) || 1
     const rate = Number(it.rate || it.amount || 0)
-    const gstPct = Number(it.gstRate || it.gstPercent || 18)
-    const lineGst = Number(it.gstAmount || 0)
-    const lineTotal = Number(it.total || ((qty * rate) + lineGst))
+    const lineBase = qty * rate
+    const iRate = Number(it.igstRate || 0)
+    const gRate = Number(it.gstRate || it.gstPercent || 0)
+    const lineTax = Number(it.gstAmount || 0) + Number(it.igstAmount || 0) || (lineBase * (iRate || gRate) / 100)
+    const lineTotal = Number(it.total || (lineBase + lineTax))
+    const taxLabel = iRate > 0 ? `IGST ${iRate}%` : `GST ${gRate}%`
 
-    return `${idx + 1}. *${desc}* - ${qty} Nos @ ₹${rate.toLocaleString('en-IN')} (GST ${gstPct}%) = *₹${lineTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}*`
+    return `${idx + 1}. *${desc}* - ${qty} Nos @ ₹${rate.toLocaleString('en-IN')} (${taxLabel}) = *₹${lineTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}*`
   }).join('\n')
 
   const depotTitle = companyName.toUpperCase()
@@ -1088,12 +1110,14 @@ export function formatWhatsAppPurchaseBillText(purchase, settings = {}) {
     `*Supplier:* ${supplierName}`,
     ...(supplierPhone ? [`*Phone:* ${supplierPhone}`] : []),
     `*Date:* ${invDate}`,
+    ...(purchase.vehicleNumber ? [`*Vehicle No:* ${purchase.vehicleNumber}`] : []),
     `--------------------------------`,
     `*ITEMS (PROCUREMENT):*`,
     itemsLines,
     `--------------------------------`,
     `*Subtotal (Taxable):* ₹${subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-    ...(gstAmount > 0 ? [`*GST / Tax:* ₹${gstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`] : []),
+    ...(gstAmount > 0 ? [`*CGST / SGST:* ₹${gstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`] : []),
+    ...(igstAmount > 0 ? [`*IGST (Inter-State):* ₹${igstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`] : []),
     `*NET TOTAL: ₹${grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}*`,
     `--------------------------------`,
     `_Official Purchase & Procurement Record_`,

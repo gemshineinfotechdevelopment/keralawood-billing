@@ -511,7 +511,7 @@
 }
 
 .purchases-label {
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 700;
   color: #4A3528;
 }
@@ -519,10 +519,10 @@
 .purchases-input,
 .purchases-select {
   width: 100%;
-  padding: 8px 12px;
+  padding: 6px 10px;
   border: 1.5px solid #D3C4B8;
   border-radius: 6px;
-  font-size: 13px;
+  font-size: 12px;
   color: #31190B;
   background-color: #FFFFFF;
   box-sizing: border-box;
@@ -663,12 +663,12 @@
 .purchase-bill-sheet {
   background-color: #FFFFFF;
   border: 1.5px solid #EAE0D8;
-  border-radius: 14px;
-  padding: 34px 40px;
-  box-shadow: 0 4px 20px rgba(49, 25, 11, 0.05);
+  border-radius: 12px;
+  padding: 22px 26px;
+  box-shadow: 0 4px 18px rgba(49, 25, 11, 0.04);
   display: flex;
   flex-direction: column;
-  gap: 30px;
+  gap: 18px;
 }
 
 /* Header Row: Title & Top Meta Box */
@@ -676,72 +676,72 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-bottom: 24px;
+  padding-bottom: 14px;
   border-bottom: 1.5px solid #F0E6DE;
-  gap: 24px;
+  gap: 16px;
   flex-wrap: wrap;
 }
 
 .purchase-bill-title-block {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 
 .purchase-bill-badge {
   display: inline-block;
   align-self: flex-start;
-  font-size: 11px;
+  font-size: 10.5px;
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: #8C5325;
   background-color: #FAF1EE;
   border: 1px solid #EFE4DC;
-  padding: 3px 10px;
-  border-radius: 5px;
+  padding: 2px 8px;
+  border-radius: 4px;
 }
 
 .purchase-bill-main-title {
-  font-size: 28px;
+  font-size: 20px;
   font-weight: 800;
   color: #31190B;
-  margin: 4px 0 0 0;
+  margin: 2px 0 0 0;
   letter-spacing: -0.02em;
 }
 
 .purchase-bill-subtitle {
-  font-size: 13.5px;
+  font-size: 12px;
   color: #7D6C63;
-  margin: 2px 0 0 0;
+  margin: 1px 0 0 0;
 }
 
-/* Meta Box: Purchase #, Date, Payment Mode */
+/* Meta Box: Purchase #, Date, Vehicle No (Single line next-next) */
 .purchase-bill-meta-box {
   display: grid;
-  grid-template-columns: 190px 190px 230px;
-  gap: 16px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
   background-color: #FAF4EF;
   border: 1.5px solid #EAE0D8;
-  border-radius: 10px;
-  padding: 16px 20px;
+  border-radius: 8px;
+  padding: 10px 14px;
 }
 
 @media (max-width: 900px) {
   .purchase-bill-meta-box {
     grid-template-columns: 1fr;
-    width: 100%;
+    gap: 10px;
   }
 }
 
 .purchase-meta-field {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 4px;
 }
 
 .purchase-meta-label {
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 800;
   color: #5C4537;
   text-transform: uppercase;
@@ -753,9 +753,9 @@
   align-items: center;
   background-color: #FFFFFF;
   border: 1.5px solid #D3C4B8;
-  border-radius: 7px;
+  border-radius: 6px;
   overflow: hidden;
-  height: 42px;
+  height: 36px;
   transition: all 0.15s ease;
 }
 
@@ -765,9 +765,9 @@
 }
 
 .purchase-num-prefix {
-  padding: 0 12px;
+  padding: 0 10px;
   font-weight: 800;
-  font-size: 15px;
+  font-size: 13.5px;
   color: #8C5325;
   background-color: #F8EFE9;
   align-self: stretch;
@@ -780,8 +780,8 @@
   width: 100%;
   border: none;
   outline: none;
-  padding: 8px 12px;
-  font-size: 15px;
+  padding: 6px 10px;
+  font-size: 13.5px;
   font-weight: 800;
   color: #31190B;
   background: transparent;
@@ -789,17 +789,17 @@
 
 .purchase-meta-date,
 .purchase-meta-select {
-  height: 42px;
-  padding: 8px 12px;
-  font-size: 13.5px;
+  height: 36px;
+  padding: 6px 10px;
+  font-size: 12px;
   background-color: #FFFFFF;
-  border-radius: 7px;
+  border-radius: 6px;
 }
 
 .purchase-meta-hint {
-  font-size: 10.5px;
+  font-size: 10px;
   color: #9C8B82;
-  margin-top: 2px;
+  margin-top: 1px;
 }
 
 /* ===================================================
@@ -808,7 +808,7 @@
 .purchase-parties-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 28px;
+  gap: 18px;
 }
 
 @media (max-width: 860px) {
@@ -820,20 +820,20 @@
 .purchase-party-card {
   background-color: #FFFFFF;
   border: 1.5px solid #EAE0D8;
-  border-radius: 12px;
-  padding: 22px 26px;
+  border-radius: 10px;
+  padding: 14px 18px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 10px;
   box-shadow: 0 1px 4px rgba(49, 25, 11, 0.02);
 }
 
 .purchase-party-from {
-  border-left: 5px solid #C88D58;
+  border-left: 4px solid #C88D58;
 }
 
 .purchase-party-to {
-  border-left: 5px solid #2563EB;
+  border-left: 4px solid #2563EB;
 }
 
 .purchase-party-header {
@@ -841,15 +841,15 @@
   justify-content: space-between;
   align-items: center;
   border-bottom: 1.5px solid #F0E6DE;
-  padding-bottom: 12px;
+  padding-bottom: 8px;
 }
 
 .purchase-party-tag {
-  font-size: 11.5px;
+  font-size: 10.5px;
   font-weight: 800;
   letter-spacing: 0.05em;
-  padding: 4px 10px;
-  border-radius: 5px;
+  padding: 3px 8px;
+  border-radius: 4px;
 }
 
 .from-tag {
@@ -865,28 +865,28 @@
 }
 
 .purchase-party-role-text {
-  font-size: 12px;
+  font-size: 11px;
   color: #8C7B72;
 }
 
 .purchase-party-body {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px;
 }
 
 .party-textarea {
-  min-height: 78px;
-  font-size: 13.5px;
-  line-height: 1.45;
-  padding: 10px 14px;
-  border-radius: 8px;
+  min-height: 56px;
+  font-size: 12px;
+  line-height: 1.4;
+  padding: 6px 10px;
+  border-radius: 6px;
 }
 
 .purchase-party-subgrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 12px;
 }
 
 @media (max-width: 520px) {
@@ -907,35 +907,35 @@
 .purchase-items-section {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px;
 }
 
 .purchase-items-section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-bottom: 4px;
+  padding-bottom: 2px;
 }
 
 .purchase-items-title-wrap {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .purchase-items-section-title {
-  font-size: 16px;
+  font-size: 14.5px;
   font-weight: 800;
   color: #31190B;
   margin: 0;
 }
 
 .purchase-items-count {
-  font-size: 11.5px;
+  font-size: 11px;
   background-color: #FAF4EF;
   color: #7D6C63;
-  padding: 3px 9px;
-  border-radius: 12px;
+  padding: 2px 8px;
+  border-radius: 10px;
   border: 1px solid #EFE4DC;
   font-weight: 700;
 }
@@ -944,16 +944,16 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 16px;
-  border-radius: 7px;
+  padding: 6px 12px;
+  border-radius: 6px;
   background-color: #FAF4EF;
   border: 1.5px solid #D3C4B8;
   color: #6A3A1A;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.15s ease;
-  height: 38px;
+  height: 32px;
 }
 
 .btn-add-item-row:hover {
@@ -966,16 +966,16 @@
   background-color: #FEF2F2;
   border: 1px solid #FECACA;
   color: #DC2626;
-  font-size: 13px;
-  padding: 8px 14px;
-  border-radius: 7px;
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 6px;
   font-weight: 600;
 }
 
 .purchase-items-table-wrapper {
   overflow-x: auto;
   border: 1.5px solid #EAE0D8;
-  border-radius: 10px;
+  border-radius: 8px;
   background-color: #FFFFFF;
   box-shadow: 0 1px 4px rgba(49, 25, 11, 0.03);
 }
@@ -983,23 +983,23 @@
 .purchase-items-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: 12px;
   text-align: left;
 }
 
 .purchase-items-table th {
   background-color: #FAF4EF;
   color: #6A564A;
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.05em;
-  padding: 13px 14px;
+  letter-spacing: 0.04em;
+  padding: 8px 10px;
   border-bottom: 1.5px solid #EAE0D8;
   white-space: nowrap;
 }
 
 .purchase-items-table td {
-  padding: 11px 13px;
+  padding: 6px 8px;
   border-bottom: 1px solid #F4E8DF;
   vertical-align: middle;
 }
@@ -1011,11 +1011,11 @@
 .purchase-table-input,
 .purchase-table-select {
   width: 100%;
-  height: 40px;
-  padding: 8px 12px;
+  height: 32px;
+  padding: 4px 8px;
   border: 1.5px solid #D3C4B8;
-  border-radius: 6px;
-  font-size: 13px;
+  border-radius: 5px;
+  font-size: 12px;
   color: #31190B;
   background-color: #FFFFFF;
   box-sizing: border-box;
@@ -1027,7 +1027,7 @@
 .purchase-table-select:focus {
   outline: none;
   border-color: #C88D58;
-  box-shadow: 0 0 0 3px rgba(200, 141, 88, 0.18);
+  box-shadow: 0 0 0 2px rgba(200, 141, 88, 0.18);
 }
 
 .btn-remove-row {
@@ -1107,6 +1107,179 @@
   gap: 8px;
 }
 
+/* ===================================================
+   Amount Info ERP Card (Theme: Kerala Wood Furniture)
+   =================================================== */
+.amount-info-fieldset {
+  border: 1.5px solid #EAE0D8;
+  border-left: 4px solid #C88D58;
+  border-radius: 9px;
+  background-color: #FAF4EF;
+  padding: 8px 14px 10px;
+  box-shadow: 0 1px 4px rgba(49, 25, 11, 0.03);
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.amount-info-legend {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #31190B;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background-color: #FAF4EF;
+  padding: 0 6px;
+  margin-left: 8px;
+  border-radius: 4px;
+}
+
+.amount-info-table {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.amount-info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.amount-info-label {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #4A3528;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.amount-info-field {
+  width: 150px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.amount-info-input {
+  width: 100%;
+  max-width: 150px;
+  height: 25px;
+  padding: 2px 7px;
+  border: 1.5px solid #D3C4B8;
+  border-radius: 4px;
+  background-color: #FFFFFF;
+  color: #31190B;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-align: right;
+  font-family: inherit;
+  box-sizing: border-box;
+  transition: all 0.15s ease;
+}
+
+.amount-info-input:focus {
+  outline: none;
+  border-color: #C88D58;
+  box-shadow: 0 0 0 2px rgba(200, 141, 88, 0.18);
+}
+
+.amount-info-readonly {
+  background-color: #F5EBE1;
+  color: #5C4537;
+  cursor: default;
+  border-color: #E2D5CC;
+}
+
+.amount-info-input-disabled {
+  background-color: #F8F3EE;
+  color: #A6978F;
+  border-color: #EAE0D8;
+  cursor: not-allowed;
+}
+
+.amount-info-radios {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  width: 150px;
+}
+
+.amount-info-radio-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #31190B;
+  cursor: pointer;
+  user-select: none;
+}
+
+.amount-info-radio-label input[type="radio"] {
+  accent-color: #8C5325;
+  width: 13px;
+  height: 13px;
+  margin: 0;
+  cursor: pointer;
+}
+
+.amount-info-net-row {
+  margin-top: 2px;
+  padding-top: 4px;
+  border-top: 1px dashed #D3C4B8;
+}
+
+.amount-info-net-label {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: #31190B;
+}
+
+.amount-info-net-input {
+  background-color: #FAF4EF;
+  border: 1.5px solid #C88D58;
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #31190B;
+  cursor: default;
+  height: 27px;
+}
+
+.amount-info-words-section {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 4px;
+}
+
+.amount-info-words-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #5C4537;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.amount-info-words-box {
+  background-color: #FFFFFF;
+  border: 1.5px solid #D3C4B8;
+  border-radius: 4px;
+  padding: 4px 8px;
+  min-height: 28px;
+  font-size: 10.5px;
+  font-style: italic;
+  font-family: 'Courier New', Courier, monospace;
+  color: #4A3528;
+  font-weight: 600;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
 .purchase-financials-card {
   background-color: #FAF4EF;
   border: 1.5px solid #EAE0D8;
@@ -1144,6 +1317,50 @@
   color: #7D6C63;
   margin-top: -4px;
   padding-bottom: 6px;
+}
+
+.purchase-financials-tax-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: #FFFFFF;
+  border: 1.5px solid #E2D5CC;
+  border-radius: 9px;
+  padding: 12px 14px;
+  margin-top: 4px;
+  margin-bottom: 2px;
+}
+
+.purchase-financials-tax-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.purchase-financials-tax-select {
+  height: 40px;
+  font-weight: 700;
+  color: #31190B;
+  background-color: #FAF6F3;
+  border: 1.5px solid #D3C4B8;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.purchase-financials-tax-select:focus {
+  border-color: #C88D58;
+  background-color: #FFFFFF;
+}
+
+.purchase-tax-badge-pill {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: #FEF3C7;
+  color: #92400E;
+  border: 1px solid #FDE68A;
 }
 
 .purchase-summary-grand-total {
@@ -1419,6 +1636,26 @@
   .purchase-bottom-grid {
     grid-template-columns: 1fr !important;
     gap: 16px !important;
+  }
+
+  .amount-info-fieldset {
+    padding: 10px 12px 12px !important;
+  }
+
+  .amount-info-row {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .amount-info-field,
+  .amount-info-radios {
+    width: 100% !important;
+    max-width: 100% !important;
+    justify-content: flex-start !important;
+  }
+
+  .amount-info-input {
+    max-width: 100% !important;
   }
 
   .purchase-financials-card {

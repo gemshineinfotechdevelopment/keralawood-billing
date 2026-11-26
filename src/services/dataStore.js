@@ -268,8 +268,13 @@ export const DataStore = {
             subtotal: Number(p.subtotal) || Number(p.amount) || 0,
             amount: Number(p.amount) || 0,
             gstAmount: Number(p.gstAmount) || 0,
-            total: Number(p.total) || ((Number(p.amount) || 0) + (Number(p.gstAmount) || 0)),
+            taxType: p.taxType || (Number(p.igstAmount) > 0 ? 'inter' : 'intra'),
+            igstAmount: Number(p.igstAmount) || 0,
+            cgstAmount: Number(p.cgstAmount) || 0,
+            sgstAmount: Number(p.sgstAmount) || 0,
+            total: Number(p.total) || ((Number(p.amount) || 0) + (Number(p.gstAmount) || 0) + (Number(p.igstAmount) || 0)),
             paymentMode: p.paymentMode,
+            vehicleNumber: p.vehicleNumber || '',
             notes: p.notes,
           }))
           saveToStorage(STORAGE_KEYS.PURCHASES, formatted)
@@ -1190,6 +1195,7 @@ export const DataStore = {
       amountPaid: 0,
       discount: 0,
       deliveryCharge: 0,
+      vehicleNumber: '',
       notes: '',
     }
 
@@ -1275,6 +1281,11 @@ export const DataStore = {
     notifyStoreUpdate()
   },
   deleteTransaction(invoiceOrId) {
+    const role = (typeof window !== 'undefined' && sessionStorage.getItem('kwf_role')) || 'super_admin'
+    if (role === 'admin') {
+      console.warn('[dataStore] Restricted: Admin is not authorized to delete bills.')
+      return this.getTransactions()
+    }
     const txs = this.getTransactions()
     const targetTx = txs.find((t) => t.invoice === invoiceOrId || t.id === invoiceOrId)
     const filtered = txs.filter((t) => t.invoice !== invoiceOrId && t.id !== invoiceOrId)
@@ -1371,6 +1382,10 @@ export const DataStore = {
     // Sync deletion to MongoDB backend
     fetch(`${API_BASE}/api/sales/${encodeURIComponent(invoiceOrId)}`, {
       method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-user-role': role,
+      },
     }).catch(() => {})
 
     notifyStoreUpdate()
@@ -1457,6 +1472,7 @@ export const DataStore = {
       paymentMode: bill.paymentMode || 'UPI',
       billedBy: bill.billedBy || bill.salesPerson || '',
       salesPerson: bill.salesPerson || bill.billedBy || '',
+      vehicleNumber: bill.vehicleNumber || '',
     }
 
     const existingIdx = txs.findIndex(
@@ -1540,9 +1556,13 @@ export const DataStore = {
     }
 
     // Sync sale to MongoDB Backend
+    const currentRole = (typeof window !== 'undefined' && sessionStorage.getItem('kwf_role')) || 'super_admin'
     fetch(`${API_BASE}/api/sales`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-user-role': currentRole,
+      },
       body: JSON.stringify({
         invoice: newTx.invoice,
         customer: newTx.customer,
@@ -1560,6 +1580,7 @@ export const DataStore = {
         amount: grandTotal,
         paymentStatus: bill.paymentStatus || 'Paid',
         paymentMode: bill.paymentMode || 'UPI',
+        vehicleNumber: newTx.vehicleNumber || '',
         billedBy: newTx.billedBy,
         salesPerson: newTx.salesPerson,
         invoiceDate: bill.invoiceDate,

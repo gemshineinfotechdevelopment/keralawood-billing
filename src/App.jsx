@@ -217,6 +217,7 @@ function App() {
               <BillingPOS
                 initialViewMode={billingInitialMode}
                 onNavigateToProducts={() => setActiveNav('Products')}
+                userRole={userRole}
               />
             ) : activeNav === 'Customers' ? (
               <Customers onNavigateToBilling={() => {
