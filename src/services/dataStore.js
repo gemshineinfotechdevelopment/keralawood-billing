@@ -18,12 +18,12 @@ const STORAGE_KEYS = {
 // Dedicated Role Authentication Credentials (User ID & Password)
 const INITIAL_CREDENTIALS = {
   superAdmin: {
-    userId: 'superadmin',
-    password: 'superadmin@2026',
+    userId: 'superadmin@kwf.com',
+    password: 'superadmin123',
   },
   admin: {
-    userId: 'admin',
-    password: 'admin@wood2026',
+    userId: 'adminsvks@kwf.com',
+    password: 'admin123',
   },
 }
 
@@ -109,31 +109,80 @@ function notifyStoreUpdate() {
   }
 }
 
-// Helpers for localStorage
-function loadFromStorage(key, fallback) {
+// Helpers for localStorage with strict branch isolation
+function getCurrentBranch() {
+  if (typeof window === 'undefined') return 'sivakasi'
+  return sessionStorage.getItem('kwf_branch') || 'sivakasi'
+}
+
+function getBranchStorageKey(baseKey) {
+  // Global keys that are shared across branches
+  if (baseKey === STORAGE_KEYS.AUTH_CREDENTIALS || baseKey === STORAGE_KEYS.CATEGORIES) {
+    return baseKey
+  }
+  const branch = getCurrentBranch()
+  return `${branch}_${baseKey}`
+}
+
+function loadFromStorage(baseKey, fallback) {
   try {
-    const raw = localStorage.getItem(key)
+    const branchKey = getBranchStorageKey(baseKey)
+    let raw = localStorage.getItem(branchKey)
+    // Seamless migration: If current branch is sivakasi and branchKey is not in storage yet, check legacy un-prefixed baseKey
+    if (!raw && branchKey.startsWith('sivakasi_')) {
+      raw = localStorage.getItem(baseKey)
+      if (raw) {
+        localStorage.setItem(branchKey, raw)
+      }
+    }
     return raw ? JSON.parse(raw) : fallback
   } catch (err) {
-    console.warn(`[dataStore] load ${key} error:`, err)
+    console.warn(`[dataStore] load ${baseKey} error:`, err)
     return fallback
   }
 }
 
-function saveToStorage(key, value) {
+function saveToStorage(baseKey, value) {
   try {
-    localStorage.setItem(key, JSON.stringify(value))
+    const branchKey = getBranchStorageKey(baseKey)
+    localStorage.setItem(branchKey, JSON.stringify(value))
   } catch (err) {
-    console.warn(`[dataStore] save ${key} error:`, err)
+    console.warn(`[dataStore] save ${baseKey} error:`, err)
   }
 }
 
 export const DataStore = {
+  // BRANCH MANAGEMENT
+  getBranch() {
+    return getCurrentBranch()
+  },
+  getBranchLabel() {
+    const b = this.getBranch()
+    if (b === 'karur') return 'Karur'
+    if (b === 'all') return 'All Branches'
+    return 'Sivakasi'
+  },
+  setBranch(branch) {
+    if (typeof window === 'undefined') return
+    const cleanBranch = String(branch || 'sivakasi').toLowerCase().trim()
+    sessionStorage.setItem('kwf_branch', cleanBranch)
+    sessionStorage.setItem('kwf_branch_label', cleanBranch === 'karur' ? 'Karur' : cleanBranch === 'all' ? 'All Branches' : 'Sivakasi')
+    // Trigger background sync for the new branch
+    this.syncFromBackend()
+    notifyStoreUpdate()
+  },
+
   // SYNC WITH BACKEND
   async syncFromBackend() {
     try {
+      const branch = this.getBranch()
+      const branchHeaders = {
+        'x-branch': branch,
+        'x-user-role': (typeof window !== 'undefined' && sessionStorage.getItem('kwf_role')) || 'super_admin',
+      }
+
       // 1. Sync Settings
-      const resSettings = await fetch(`${API_BASE}/api/settings`).catch(() => null)
+      const resSettings = await fetch(`${API_BASE}/api/settings`, { headers: branchHeaders }).catch(() => null)
       if (resSettings && resSettings.ok) {
         const data = await resSettings.json()
         if (data.settings) {
@@ -144,31 +193,20 @@ export const DataStore = {
         }
       }
 
-      // 2. Sync Products
-      const localProducts = loadFromStorage(STORAGE_KEYS.PRODUCTS, [])
-      const resProducts = await fetch(`${API_BASE}/api/products`).catch(() => null)
+      // 2. Sync Products from Backend MongoDB
+      const resProducts = await fetch(`${API_BASE}/api/products`, { headers: branchHeaders }).catch(() => null)
       if (resProducts && resProducts.ok) {
         const data = await resProducts.json()
-        if (data && Array.isArray(data.products) && data.products.length > 0) {
+        if (data && Array.isArray(data.products)) {
           saveToStorage(STORAGE_KEYS.PRODUCTS, data.products)
-        } else if (localProducts.length > 0) {
-          // Upload local products to backend MongoDB if backend is empty
-          for (const prod of localProducts) {
-            fetch(`${API_BASE}/api/products`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(prod),
-            }).catch(() => {})
-          }
         }
       }
 
-      // 3. Sync Customers
-      const localCustomers = loadFromStorage(STORAGE_KEYS.CUSTOMERS, [])
-      const resCustomers = await fetch(`${API_BASE}/api/customers`).catch(() => null)
+      // 3. Sync Customers from Backend MongoDB
+      const resCustomers = await fetch(`${API_BASE}/api/customers`, { headers: branchHeaders }).catch(() => null)
       if (resCustomers && resCustomers.ok) {
         const data = await resCustomers.json()
-        if (data && Array.isArray(data.customers) && data.customers.length > 0) {
+        if (data && Array.isArray(data.customers)) {
           const formatted = data.customers.map((c) => ({
             id: c._id || c.id || Date.now(),
             name: c.name,
@@ -188,24 +226,14 @@ export const DataStore = {
             recentTx: c.recentTx || [],
           }))
           saveToStorage(STORAGE_KEYS.CUSTOMERS, formatted)
-        } else if (localCustomers.length > 0) {
-          // Upload local customers to backend MongoDB if backend is empty
-          for (const cust of localCustomers) {
-            fetch(`${API_BASE}/api/customers`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(cust),
-            }).catch(() => {})
-          }
         }
       }
 
-      // 4. Sync Sales / Transactions
-      const localSales = loadFromStorage(STORAGE_KEYS.TRANSACTIONS, [])
-      const resSales = await fetch(`${API_BASE}/api/sales`).catch(() => null)
+      // 4. Sync Sales / Transactions from Backend MongoDB
+      const resSales = await fetch(`${API_BASE}/api/sales`, { headers: branchHeaders }).catch(() => null)
       if (resSales && resSales.ok) {
         const data = await resSales.json()
-        if (data && Array.isArray(data.sales) && data.sales.length > 0) {
+        if (data && Array.isArray(data.sales)) {
           const formatted = data.sales.map((s) => ({
             id: s.invoice || s._id,
             invoice: s.invoice,
@@ -218,8 +246,8 @@ export const DataStore = {
             customerPhone: s.customerPhone || '',
             billedBy: s.billedBy || s.salesPerson || '',
             salesPerson: s.salesPerson || s.billedBy || '',
-            location: s.location || s.project || 'Sivakasi Yard Sale',
-            project: s.location || s.project || 'Sivakasi Yard Sale',
+            location: s.location || s.project || (branch === 'karur' ? 'Karur Sub-Branch' : 'Sivakasi Yard Sale'),
+            project: s.location || s.project || (branch === 'karur' ? 'Karur Sub-Branch' : 'Sivakasi Yard Sale'),
             wood: (() => {
               if (Array.isArray(s.itemDetails) && s.itemDetails.length > 0) {
                 const list = s.itemDetails.map((it) => it.woodSpecies || it.wood).filter(Boolean)
@@ -238,64 +266,29 @@ export const DataStore = {
             itemDetails: s.itemDetails || [],
             amount: Number(s.amount || 0).toLocaleString('en-IN'),
             rawAmount: Number(s.amount || 0),
+            subtotal: Number(s.subtotal || 0),
+            taxAmount: Number(s.taxAmount || 0),
+            discount: Number(s.discount || 0),
+            discountPercent: Number(s.discountPercent || 0),
+            deliveryCharge: Number(s.deliveryCharge || 0),
             status: s.paymentStatus || s.status || 'Paid',
             paymentStatus: s.paymentStatus || s.status || 'Paid',
             paymentMode: s.paymentMode || 'UPI',
             vehicleNumber: s.vehicleNumber || '',
             dispatchDate: s.dispatchDate || '',
             referenceNumber: s.referenceNumber || s.referenceNo || '',
+            branch: s.branch || branch,
           }))
 
-          // Merge: remote sales take priority, but keep any local sales that haven't synced yet!
-          const remoteInvSet = new Set(formatted.map((s) => String(s.invoice || s.id).trim()))
-          const unpushedLocal = localSales.filter((t) => !remoteInvSet.has(String(t.invoice || t.id).trim()))
-          const merged = [...formatted, ...unpushedLocal]
-
-          saveToStorage(STORAGE_KEYS.TRANSACTIONS, merged)
-
-          // Push any unsynced local sales to MongoDB in the background
-          for (const localTx of unpushedLocal) {
-            fetch(`${API_BASE}/api/sales`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'x-user-role': 'super_admin',
-              },
-              body: JSON.stringify({
-                invoice: localTx.invoice || localTx.id,
-                customer: localTx.customer,
-                customerPhone: localTx.customerPhone,
-                customerAddress: localTx.customerAddress,
-                customerGstin: localTx.customerGstin,
-                location: localTx.location || localTx.project,
-                wood: localTx.wood,
-                items: localTx.items || localTx.item,
-                itemsList: localTx.itemDetails || [],
-                subtotal: localTx.subtotal,
-                taxAmount: localTx.taxAmount || localTx.totalGst,
-                discount: localTx.discount,
-                deliveryCharge: localTx.deliveryCharge,
-                amount: localTx.rawAmount || localTx.amount,
-                paymentStatus: localTx.paymentStatus || localTx.status || 'Paid',
-                paymentMode: localTx.paymentMode || 'UPI',
-                vehicleNumber: localTx.vehicleNumber || '',
-                dispatchDate: localTx.dispatchDate || '',
-                referenceNumber: localTx.referenceNumber || localTx.referenceNo || '',
-                billedBy: localTx.billedBy,
-                salesPerson: localTx.salesPerson,
-                date: localTx.createdAt || localTx.rawDate || new Date().toISOString(),
-              }),
-            }).catch(() => {})
-          }
+          saveToStorage(STORAGE_KEYS.TRANSACTIONS, formatted)
         }
       }
 
       // 5. Sync Purchases from Backend MongoDB
-      const localPurchases = loadFromStorage(STORAGE_KEYS.PURCHASES, [])
-      const resPurchases = await fetch(`${API_BASE}/api/purchases`).catch(() => null)
+      const resPurchases = await fetch(`${API_BASE}/api/purchases`, { headers: branchHeaders }).catch(() => null)
       if (resPurchases && resPurchases.ok) {
         const data = await resPurchases.json()
-        if (data && Array.isArray(data.purchases) && data.purchases.length > 0) {
+        if (data && Array.isArray(data.purchases)) {
           const formatted = data.purchases.map((p) => ({
             id: p._id || p.invoiceNumber,
             invoiceNumber: p.invoiceNumber,
@@ -322,25 +315,17 @@ export const DataStore = {
             paymentMode: p.paymentMode,
             vehicleNumber: p.vehicleNumber || '',
             notes: p.notes,
+            branch: p.branch || branch,
           }))
           saveToStorage(STORAGE_KEYS.PURCHASES, formatted)
-        } else if (localPurchases.length > 0) {
-          for (const p of localPurchases) {
-            fetch(`${API_BASE}/api/purchases`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(p),
-            }).catch(() => {})
-          }
         }
       }
 
       // 6. Sync Sales Persons from Backend MongoDB
-      const localSalesPersons = loadFromStorage(STORAGE_KEYS.SALES_PERSONS, [])
-      const resSalesPersons = await fetch(`${API_BASE}/api/sales-persons`).catch(() => null)
+      const resSalesPersons = await fetch(`${API_BASE}/api/sales-persons`, { headers: branchHeaders }).catch(() => null)
       if (resSalesPersons && resSalesPersons.ok) {
         const data = await resSalesPersons.json()
-        if (data && Array.isArray(data.salesPersons) && data.salesPersons.length > 0) {
+        if (data && Array.isArray(data.salesPersons)) {
           const formatted = data.salesPersons.map((sp) => ({
             id: sp._id || sp.code,
             code: sp.code,
@@ -356,16 +341,18 @@ export const DataStore = {
             ordersClosed: sp.ordersClosed,
             joiningDate: sp.joiningDate,
             notes: sp.notes,
+            branch: sp.branch || branch,
           }))
           saveToStorage(STORAGE_KEYS.SALES_PERSONS, formatted)
-        } else if (localSalesPersons.length > 0) {
-          for (const sp of localSalesPersons) {
-            fetch(`${API_BASE}/api/sales-persons`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(sp),
-            }).catch(() => {})
-          }
+        }
+      }
+
+      // 7. Sync Categories from Backend MongoDB
+      const resCategories = await fetch(`${API_BASE}/api/categories`).catch(() => null)
+      if (resCategories && resCategories.ok) {
+        const data = await resCategories.json()
+        if (data && Array.isArray(data.categories) && data.categories.length > 0) {
+          saveToStorage(STORAGE_KEYS.CATEGORIES, data.categories)
         }
       }
 
@@ -442,25 +429,28 @@ export const DataStore = {
         superAdmin: { ...INITIAL_CREDENTIALS.superAdmin, ...(creds?.superAdmin || {}) },
         admin: { ...INITIAL_CREDENTIALS.admin, ...(creds?.admin || {}) },
       }
-      if (!merged.superAdmin.userId) merged.superAdmin.userId = 'superadmin'
+      if (!merged.superAdmin.userId || merged.superAdmin.userId === 'superadmin') merged.superAdmin.userId = 'superadmin@kwf.com'
+      if (!merged.superAdmin.password || merged.superAdmin.password === 'superadmin@2026') merged.superAdmin.password = 'superadmin123'
+      if (!merged.admin.userId || merged.admin.userId === 'admin') merged.admin.userId = 'adminsvks@kwf.com'
+      if (!merged.admin.password || merged.admin.password === 'admin@wood2026') merged.admin.password = 'admin123'
       saveToStorage(STORAGE_KEYS.AUTH_CREDENTIALS, merged)
       return merged
     }
-    // Ensure Super Admin has userId & password defaults only if empty
-    if (!creds.superAdmin.userId) {
-      creds.superAdmin.userId = 'superadmin'
+    // Ensure Super Admin & Admin have latest credentials
+    if (!creds.superAdmin.userId || creds.superAdmin.userId === 'superadmin') {
+      creds.superAdmin.userId = 'superadmin@kwf.com'
       needsSave = true
     }
-    if (!creds.superAdmin.password) {
-      creds.superAdmin.password = 'superadmin@2026'
+    if (!creds.superAdmin.password || creds.superAdmin.password === 'superadmin@2026') {
+      creds.superAdmin.password = 'superadmin123'
       needsSave = true
     }
-    if (!creds.admin.userId) {
-      creds.admin.userId = 'admin'
+    if (!creds.admin.userId || creds.admin.userId === 'admin') {
+      creds.admin.userId = 'adminsvks@kwf.com'
       needsSave = true
     }
-    if (!creds.admin.password) {
-      creds.admin.password = 'admin@wood2026'
+    if (!creds.admin.password || creds.admin.password === 'admin@wood2026') {
+      creds.admin.password = 'admin123'
       needsSave = true
     }
     if (needsSave) {
@@ -479,50 +469,105 @@ export const DataStore = {
       body: JSON.stringify({ authCredentials: creds }),
     }).catch(() => {})
   },
-  validateLogin(identifier, password, selectedRole) {
-    const creds = this.getAuthCredentials()
+  async validateLoginAsync(identifier, password, selectedRole) {
     const cleanId = String(identifier || '').trim().toLowerCase()
     const cleanPass = String(password || '').trim()
 
-    // STRICT: Only the currently saved credentials in Settings are valid!
-    const currentSuperId = String(creds.superAdmin?.userId || 'superadmin').trim().toLowerCase()
-    const currentSuperPass = String(creds.superAdmin?.password || 'superadmin@2026').trim()
-
-    const currentAdminId = String(creds.admin?.userId || 'admin').trim().toLowerCase()
-    const currentAdminPass = String(creds.admin?.password || 'admin@wood2026').trim()
-
-    const isSuperAdminValid = cleanId === currentSuperId && cleanPass === currentSuperPass
-    const isAdminValid = cleanId === currentAdminId && cleanPass === currentAdminPass
-
-    if (selectedRole === 'super_admin') {
-      if (isSuperAdminValid) {
-        return { success: true, role: 'super_admin' }
+    // 1. Try server backend login API
+    try {
+      const res = await fetch(`${API_BASE}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: cleanId, password: cleanPass }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        if (data.success && data.user) {
+          const u = data.user
+          const effectiveBranch = u.branch === 'all'
+            ? (sessionStorage.getItem('kwf_branch') || 'sivakasi')
+            : u.branch
+          return {
+            success: true,
+            role: u.role,
+            branch: effectiveBranch,
+            userBranch: u.branch,
+            branchLabel: u.branchLabel || (effectiveBranch === 'karur' ? 'Karur' : 'Sivakasi'),
+            name: u.name,
+            email: u.email,
+          }
+        }
       }
-      if (cleanId === currentSuperId && cleanPass !== currentSuperPass) {
-        return { success: false, message: 'Incorrect Super Admin password. Please check and try again.' }
-      }
-      if (isAdminValid) {
-        // Valid Admin credentials entered
-        return { success: true, role: 'admin' }
-      }
-      return { success: false, message: 'Invalid Super Admin User ID or Password.' }
-    } else if (selectedRole === 'admin') {
-      if (isAdminValid) {
-        return { success: true, role: 'admin' }
-      }
-      if (cleanId === currentAdminId && cleanPass !== currentAdminPass) {
-        return { success: false, message: 'Incorrect Admin password. Please check and try again.' }
-      }
-      if (isSuperAdminValid) {
-        // Valid Super Admin credentials entered
-        return { success: true, role: 'super_admin' }
-      }
-      return { success: false, message: 'Invalid Admin User ID or Password.' }
-    } else {
-      if (isSuperAdminValid) return { success: true, role: 'super_admin' }
-      if (isAdminValid) return { success: true, role: 'admin' }
-      return { success: false, message: 'Invalid User ID or Password.' }
+    } catch (err) {
+      console.warn('[dataStore] Server auth offline, using local verification:', err.message)
     }
+
+    // 2. Offline / local credential validation
+    return this.validateLoginOffline(cleanId, cleanPass, selectedRole)
+  },
+
+  validateLoginOffline(cleanId, cleanPass, selectedRole) {
+    // 1. Super Admin: superadmin@kwf.com / superadmin123
+    const isSuper1 = cleanId === 'superadmin@kwf.com' && cleanPass === 'superadmin123'
+    const isSuper2 = cleanId === 'superadmin' && cleanPass === 'superadmin@2026'
+    if (isSuper1 || isSuper2) {
+      const lastBranch = sessionStorage.getItem('kwf_branch') || 'sivakasi'
+      return {
+        success: true,
+        role: 'super_admin',
+        branch: lastBranch,
+        userBranch: 'all',
+        branchLabel: lastBranch === 'karur' ? 'Karur' : 'Sivakasi',
+        name: 'Super Admin',
+      }
+    }
+
+    // 2. Sivakasi Admin: adminsvks@kwf.com / admin123
+    const isSvkAdmin1 = cleanId === 'adminsvks@kwf.com' && cleanPass === 'admin123'
+    const isSvkAdmin2 = cleanId === 'admin' && cleanPass === 'admin@wood2026'
+    if (isSvkAdmin1 || isSvkAdmin2) {
+      return {
+        success: true,
+        role: 'admin',
+        branch: 'sivakasi',
+        userBranch: 'sivakasi',
+        branchLabel: 'Sivakasi',
+        name: 'Sivakasi Admin',
+      }
+    }
+
+    // 3. Karur Admin: adminkarur@kwf.com / admin123
+    if (cleanId === 'adminkarur@kwf.com' && cleanPass === 'admin123') {
+      return {
+        success: true,
+        role: 'admin',
+        branch: 'karur',
+        userBranch: 'karur',
+        branchLabel: 'Karur',
+        name: 'Karur Admin',
+      }
+    }
+
+    // Check credentials saved in Settings
+    const creds = this.getAuthCredentials()
+    if (creds.superAdmin?.userId?.toLowerCase() === cleanId && creds.superAdmin?.password === cleanPass) {
+      const lastBranch = sessionStorage.getItem('kwf_branch') || 'sivakasi'
+      return { success: true, role: 'super_admin', branch: lastBranch, userBranch: 'all', branchLabel: 'All Branches' }
+    }
+    if (creds.admin?.userId?.toLowerCase() === cleanId && creds.admin?.password === cleanPass) {
+      return { success: true, role: 'admin', branch: 'sivakasi', userBranch: 'sivakasi', branchLabel: 'Sivakasi' }
+    }
+
+    return {
+      success: false,
+      message: 'Invalid email or password. Please check and try again.',
+    }
+  },
+
+  validateLogin(identifier, password, selectedRole) {
+    const cleanId = String(identifier || '').trim().toLowerCase()
+    const cleanPass = String(password || '').trim()
+    return this.validateLoginOffline(cleanId, cleanPass, selectedRole)
   },
 
   // CATEGORIES
@@ -589,14 +634,15 @@ export const DataStore = {
   addPurchase(purchase) {
     const list = this.getPurchases()
     const id = purchase.id || this.getNextPurchaseNumber()
-    const item = { ...purchase, id, invoiceNumber: purchase.invoiceNumber || id }
+    const branch = this.getBranch()
+    const item = { ...purchase, id, invoiceNumber: purchase.invoiceNumber || id, branch }
     const updated = [item, ...list]
     this.savePurchases(updated)
 
     // Sync to backend MongoDB
     fetch(`${API_BASE}/api/purchases`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-branch': branch },
       body: JSON.stringify(item),
     }).catch((err) => {
       console.warn('[dataStore] Offline purchase saved locally:', err.message)
@@ -684,14 +730,15 @@ export const DataStore = {
   addSalesPerson(sp) {
     const list = this.getSalesPersons()
     const id = sp.id || this.getNextSalesPersonCode()
-    const item = { ...sp, id, code: sp.code || id }
+    const branch = this.getBranch()
+    const item = { ...sp, id, code: sp.code || id, branch }
     const updated = [item, ...list]
     this.saveSalesPersons(updated)
 
     // Sync to backend MongoDB
     fetch(`${API_BASE}/api/sales-persons`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-branch': branch },
       body: JSON.stringify(item),
     }).catch((err) => {
       console.warn('[dataStore] Offline sales person saved locally:', err.message)
@@ -885,6 +932,7 @@ export const DataStore = {
       costPrice: Number(item.costPrice) || 0,
       imageUrl: item.imageUrl || '',
       imagePublicId: item.imagePublicId || '',
+      branch: this.getBranch(),
     }
     list.unshift(newProduct)
     this.saveProducts(list)
@@ -892,7 +940,7 @@ export const DataStore = {
     // Sync create to MongoDB
     fetch(`${API_BASE}/api/products`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-branch': this.getBranch() },
       body: JSON.stringify(newProduct),
     }).catch(() => {})
 
@@ -1026,15 +1074,7 @@ export const DataStore = {
   // CUSTOMERS
   getCustomers() {
     const raw = loadFromStorage(STORAGE_KEYS.CUSTOMERS, [])
-    const DUMMY_NAMES = new Set([
-      'Mathew Philip', 'Deepak Kurian & Architects', 'Anoop Menon', 'Dr. Thomas Varghese',
-      'Lakshmi Nair', 'Suresh Kumar & Sons', 'Rajesh Packaging Ind.', 'Dr. K. Radhakrishnan',
-      'Murugan Modern Furnishings', 'Senthil Nathan', 'Anandha Bhavan Residency',
-      'Vignesh Construction Co.', 'Karthik Raja', 'Selvi Thirumalai', 'Vijayalakshmi Sweets',
-      'Jayaram Brothers', 'Dr. N. Soundararajan', 'Malarvizhi Interiors', 'Balaji Agency',
-      'Manickam & Sons Traders', 'Sree Saravana Match Works', 'K. Vasanth Kumar', 'Gowri Shankar Mills', 'Shanmuga Priya'
-    ])
-    const list = (Array.isArray(raw) ? raw : []).filter(c => !DUMMY_NAMES.has(c.name))
+    const list = Array.isArray(raw) ? raw : []
     const txs = this.getTransactions()
 
     return list.map((c) => {
@@ -1106,6 +1146,7 @@ export const DataStore = {
       creditTotal: '2,00,000',
       creditProgress: 0,
       recentTx: [],
+      branch: this.getBranch(),
     }
     list.unshift(newCustomer)
     this.saveCustomers(list)
@@ -1113,7 +1154,7 @@ export const DataStore = {
     // Sync to backend MongoDB
     fetch(`${API_BASE}/api/customers`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'x-branch': this.getBranch() },
       body: JSON.stringify(newCustomer),
     }).catch(() => {})
 
@@ -1154,14 +1195,35 @@ export const DataStore = {
 
   // BILLS & DRAFTS
   getBills() {
-    return loadFromStorage(STORAGE_KEYS.BILLS, INITIAL_BILLS)
+    const branch = this.getBranch()
+    const defaultBills = [
+      {
+        id: `bill-${branch}-1`,
+        invoiceNumber: '',
+        invoiceDate: new Date().toISOString().split('T')[0],
+        dueDate: new Date(Date.now() + 15 * 86400000).toISOString().split('T')[0],
+        name: 'Bill #1',
+        status: 'active',
+        customer: EMPTY_INITIAL_CUSTOMER,
+        items: [],
+        paymentStatus: 'Paid',
+        paymentMode: 'UPI',
+        packagingNote: '',
+        deliveryApplied: true,
+        dispatchDate: '',
+        referenceNumber: '',
+        branch,
+      },
+    ]
+    return loadFromStorage(STORAGE_KEYS.BILLS, defaultBills)
   },
   saveBills(bills) {
     saveToStorage(STORAGE_KEYS.BILLS, bills)
     notifyStoreUpdate()
   },
   getActiveBillId() {
-    return loadFromStorage(STORAGE_KEYS.ACTIVE_BILL_ID, 'bill-1')
+    const branch = this.getBranch()
+    return loadFromStorage(STORAGE_KEYS.ACTIVE_BILL_ID, `bill-${branch}-1`)
   },
   setActiveBillId(id) {
     saveToStorage(STORAGE_KEYS.ACTIVE_BILL_ID, id)
@@ -1642,6 +1704,7 @@ export const DataStore = {
       headers: {
         'Content-Type': 'application/json',
         'x-user-role': currentRole,
+        'x-branch': this.getBranch(),
       },
       body: JSON.stringify({
         invoice: newTx.invoice,
@@ -1669,6 +1732,7 @@ export const DataStore = {
         dueDate: bill.dueDate,
         notes: bill.notes,
         date: new Date().toISOString(),
+        branch: this.getBranch(),
       }),
     }).catch((err) => {
       console.warn('[dataStore] Offline sale saved locally:', err.message)

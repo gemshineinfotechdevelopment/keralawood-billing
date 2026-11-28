@@ -17,8 +17,15 @@ import './App.css'
 function App() {
   const [view, setView] = useState(() => (sessionStorage.getItem('kwf_auth') === 'true' ? 'billing' : 'login'))
   const [userRole, setUserRole] = useState(() => sessionStorage.getItem('kwf_role') || 'super_admin') // 'super_admin' | 'admin'
+  const [currentBranch, setCurrentBranch] = useState(() => DataStore.getBranch())
   const [loginRole, setLoginRole] = useState(() => sessionStorage.getItem('kwf_role') || 'super_admin')
-  const [activeNav, setActiveNav] = useState('Billing & POS')
+  const [activeNav, setActiveNav] = useState(() => {
+    try {
+      return sessionStorage.getItem('kwf_active_nav') || 'Billing & POS'
+    } catch (_) {
+      return 'Billing & POS'
+    }
+  })
   const [billingInitialMode, setBillingInitialMode] = useState(() => {
     try {
       return sessionStorage.getItem('kwf_billing_view_mode') || 'list'
@@ -41,10 +48,26 @@ function App() {
     const handleUpdate = () => {
       setSettings(DataStore.getSettings())
       setAuthCreds(DataStore.getAuthCredentials())
+      setCurrentBranch(DataStore.getBranch())
     }
     window.addEventListener('timber_store_updated', handleUpdate)
     return () => window.removeEventListener('timber_store_updated', handleUpdate)
   }, [])
+
+  // Persist current active page across page refreshes
+  useEffect(() => {
+    try {
+      if (activeNav) {
+        sessionStorage.setItem('kwf_active_nav', activeNav)
+      }
+    } catch (_) {}
+  }, [activeNav])
+
+  const handleBranchSwitch = (newBranch) => {
+    DataStore.setBranch(newBranch)
+    setCurrentBranch(newBranch)
+    setSettings(DataStore.getSettings())
+  }
 
   const handleSelectLoginRole = (role) => {
     setLoginRole(role)
@@ -65,25 +88,40 @@ function App() {
     }
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setLoginError('')
 
-    const authResult = DataStore.validateLogin(email, password, loginRole)
+    const authResult = await DataStore.validateLoginAsync(email, password, loginRole)
     if (!authResult.success) {
       setLoginError(authResult.message)
       return
     }
 
     const effectiveRole = authResult.role
+    const effectiveBranch = authResult.branch || 'sivakasi'
     sessionStorage.setItem('kwf_auth', 'true')
     sessionStorage.setItem('kwf_role', effectiveRole)
+    sessionStorage.setItem('kwf_branch', effectiveBranch)
+    sessionStorage.setItem('kwf_branch_label', authResult.branchLabel || (effectiveBranch === 'karur' ? 'Karur' : 'Sivakasi'))
+    if (authResult.email) sessionStorage.setItem('kwf_user_email', authResult.email)
+
     setUserRole(effectiveRole)
+    setCurrentBranch(effectiveBranch)
+    DataStore.setBranch(effectiveBranch)
     setView('billing')
-    if (effectiveRole === 'admin' && ['Purchases', 'Settings'].includes(activeNav)) {
+    const targetNav = (() => {
+      try {
+        return sessionStorage.getItem('kwf_active_nav') || 'Billing & POS'
+      } catch (_) {
+        return 'Billing & POS'
+      }
+    })()
+
+    if (effectiveRole === 'admin' && ['Purchases', 'Settings'].includes(targetNav)) {
       setActiveNav('Billing & POS')
     } else {
-      setActiveNav('Billing & POS')
+      setActiveNav(targetNav)
     }
   }
 
@@ -103,6 +141,8 @@ function App() {
           activeItem={activeNav}
           userRole={userRole}
           onToggleRole={handleToggleRole}
+          currentBranch={currentBranch}
+          onSelectBranch={handleBranchSwitch}
           onItemSelect={(name) => {
             if (name === 'Billing & POS') {
               setBillingInitialMode('list')
@@ -121,12 +161,70 @@ function App() {
           onClose={() => setMobileSidebarOpen(false)}
           onLogout={() => {
             sessionStorage.removeItem('kwf_auth')
+            sessionStorage.removeItem('kwf_active_nav')
             setView('login')
             setMobileSidebarOpen(false)
           }}
         />
 
         <main className="billing-main-area">
+          {/* Top Application Bar with Prominent Branch Controls */}
+          <header className="app-top-branch-bar">
+            <div className="top-branch-info">
+              <div className="top-branch-logo-wrap">
+                <img src={settings.logoUrl || kwfLogo} alt="KWF Logo" className="top-branch-logo" />
+              </div>
+              <div className="top-branch-text">
+                <div className="top-branch-company-name">Kerala Wood Furniture</div>
+                <div className="top-branch-depot-tag">
+                  <span className="branch-depot-badge">
+                    {currentBranch === 'karur' ? '🌿 Karur Sub-Branch' : '🏢 Sivakasi Head Branch'}
+                  </span>
+                  <span className="branch-status-live">● Active Branch View</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="top-branch-actions">
+              {userRole === 'super_admin' ? (
+                <div className="top-branch-switcher">
+                  <span className="top-switcher-label">VIEW BRANCH DATA:</span>
+                  <div className="top-switcher-btns">
+                    <button
+                      type="button"
+                      className={`btn-branch-pill ${currentBranch === 'sivakasi' ? 'active' : ''}`}
+                      onClick={() => handleBranchSwitch('sivakasi')}
+                      title="Switch to Sivakasi Head Branch (Bills, Products, Stock, Reports)"
+                    >
+                      <span className="pill-icon">🏢</span>
+                      <span className="pill-title">Sivakasi</span>
+                      <span className="pill-badge">Head</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`btn-branch-pill ${currentBranch === 'karur' ? 'active' : ''}`}
+                      onClick={() => handleBranchSwitch('karur')}
+                      title="Switch to Karur Sub-Branch (Bills, Products, Stock, Reports)"
+                    >
+                      <span className="pill-icon">🌿</span>
+                      <span className="pill-title">Karur</span>
+                      <span className="pill-badge">Sub</span>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="top-branch-admin-badge">
+                  <span className="admin-branch-icon">{currentBranch === 'karur' ? '🌿' : '🏢'}</span>
+                  <div className="admin-branch-details">
+                    <span className="admin-branch-name">{currentBranch === 'karur' ? 'Karur Sub-Branch' : 'Sivakasi Head Branch'}</span>
+                    <span className="admin-branch-sub">Admin Assigned</span>
+                  </div>
+                  <span className="admin-lock-pill" title="Locked to branch">🔒 Restricted</span>
+                </div>
+              )}
+            </div>
+          </header>
+
           {/* Mobile Navigation Header Bar with Hamburger Menu */}
           <div className="mobile-app-header">
             <button
@@ -144,6 +242,16 @@ function App() {
             <div className="mobile-header-brand">
               <span className="mobile-header-title">{settings.depotName || 'Kerala Wood Furniture'}</span>
             </div>
+            {userRole === 'super_admin' && (
+              <button
+                type="button"
+                className="mobile-branch-pill-btn"
+                onClick={() => handleBranchSwitch(currentBranch === 'sivakasi' ? 'karur' : 'sivakasi')}
+                title="Tap to toggle branch"
+              >
+                {currentBranch === 'karur' ? '🌿 Karur' : '🏢 Sivakasi'}
+              </button>
+            )}
             <div
               className="mobile-header-tag"
               onClick={userRole === 'super_admin' ? handleToggleRole : undefined}
@@ -151,7 +259,7 @@ function App() {
               title={userRole === 'super_admin' ? 'Click to switch to Admin' : 'Signed in as Admin'}
             >
               <span className="mobile-header-tag-icon">{userRole === 'super_admin' ? '👑' : '👤'}</span>
-              <span className="mobile-header-tag-text">{userRole === 'super_admin' ? 'Super Admin' : 'Admin'}</span>
+              <span className="mobile-header-tag-text">{userRole === 'super_admin' ? 'Super' : 'Admin'}</span>
             </div>
           </div>
 
@@ -335,8 +443,8 @@ function App() {
               </div>
               <p className="login-role-hint">
                 {loginRole === 'super_admin'
-                  ? '✓ Super Admin: Full unrestricted access to all modules and system settings'
-                  : '⚠️ Admin: Operational store access (Purchases, Reports & Settings are restricted)'}
+                  ? '👑 Super Admin (superadmin@kwf.com): Dual-branch management for Sivakasi & Karur'
+                  : '📍 Branch Admin: Sivakasi (adminsvks@kwf.com) or Karur (adminkarur@kwf.com)'}
               </p>
             </div>
 
@@ -382,7 +490,7 @@ function App() {
                     setEmail(e.target.value)
                     if (loginError) setLoginError('')
                   }}
-                  placeholder={loginRole === 'super_admin' ? 'superadmin@2026' : 'admin'}
+                  placeholder={loginRole === 'super_admin' ? 'superadmin@kwf.com' : 'adminsvks@kwf.com or adminkarur@kwf.com'}
                   autoComplete="username"
                   required
                 />

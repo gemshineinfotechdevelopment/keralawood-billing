@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 const productSchema = new mongoose.Schema(
   {
     name: { type: String, required: true },
-    sku: { type: String, required: true, unique: true },
+    sku: { type: String, required: true, index: true },
     category: { type: String, default: '' },
     woodSpecies: { type: String, default: '' },
     description: { type: String, default: '' },
@@ -36,6 +36,7 @@ const productSchema = new mongoose.Schema(
     transitPass: { type: Boolean, default: false },
     imageUrl: { type: String, default: '' },
     imagePublicId: { type: String, default: '' },
+    branch: { type: String, enum: ['sivakasi', 'karur'], default: 'sivakasi', index: true },
   },
   { timestamps: true }
 );

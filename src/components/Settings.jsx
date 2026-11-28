@@ -35,10 +35,10 @@ export default function Settings() {
   const [systemDate, setSystemDate] = useState(initial.systemDate || '')
 
   // Access Roles & Login Credentials
-  const [superAdminUserId, setSuperAdminUserId] = useState(() => DataStore.getAuthCredentials().superAdmin?.userId || 'superadmin')
-  const [superAdminPassword, setSuperAdminPassword] = useState(() => DataStore.getAuthCredentials().superAdmin?.password || 'superadmin@2026')
-  const [adminUserId, setAdminUserId] = useState(() => DataStore.getAuthCredentials().admin?.userId || 'admin')
-  const [adminPassword, setAdminPassword] = useState(() => DataStore.getAuthCredentials().admin?.password || 'admin@wood2026')
+  const [superAdminUserId, setSuperAdminUserId] = useState(() => DataStore.getAuthCredentials().superAdmin?.userId || 'superadmin@kwf.com')
+  const [superAdminPassword, setSuperAdminPassword] = useState(() => DataStore.getAuthCredentials().superAdmin?.password || 'superadmin123')
+  const [adminUserId, setAdminUserId] = useState(() => DataStore.getAuthCredentials().admin?.userId || 'adminsvks@kwf.com')
+  const [adminPassword, setAdminPassword] = useState(() => DataStore.getAuthCredentials().admin?.password || 'admin123')
 
   const [savedSuccess, setSavedSuccess] = useState(false)
   const [logoUploadMsg, setLogoUploadMsg] = useState('')
@@ -160,12 +160,12 @@ export default function Settings() {
     }
     const updatedCreds = {
       superAdmin: {
-        userId: superAdminUserId.trim() || 'superadmin',
-        password: superAdminPassword.trim() || 'superadmin@2026',
+        userId: superAdminUserId.trim() || 'superadmin@kwf.com',
+        password: superAdminPassword.trim() || 'superadmin123',
       },
       admin: {
-        userId: adminUserId.trim() || 'admin',
-        password: adminPassword.trim() || 'admin@wood2026',
+        userId: adminUserId.trim() || 'adminsvks@kwf.com',
+        password: adminPassword.trim() || 'admin123',
       },
     }
     DataStore.saveAuthCredentials(updatedCreds)

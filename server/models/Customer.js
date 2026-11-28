@@ -19,6 +19,7 @@ const customerSchema = new mongoose.Schema(
     creditTotal: { type: String, default: '2,00,000' },
     creditProgress: { type: Number, default: 0 },
     recentTx: { type: Array, default: [] },
+    branch: { type: String, enum: ['sivakasi', 'karur'], default: 'sivakasi', index: true },
   },
   { timestamps: true }
 );

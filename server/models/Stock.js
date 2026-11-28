@@ -14,6 +14,7 @@ const stockSchema = new mongoose.Schema(
     customer: { type: String, default: '' },
     notes: { type: String, default: '' },
     date: { type: Date, default: Date.now },
+    branch: { type: String, enum: ['sivakasi', 'karur'], default: 'sivakasi', index: true },
   },
   { timestamps: true }
 );

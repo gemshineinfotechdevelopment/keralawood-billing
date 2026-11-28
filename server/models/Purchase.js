@@ -26,6 +26,7 @@ const purchaseSchema = new mongoose.Schema(
     total: { type: Number, default: 0 },
     paymentMode: { type: String, default: 'Bank Wire' },
     notes: { type: String, default: '' },
+    branch: { type: String, enum: ['sivakasi', 'karur'], default: 'sivakasi', index: true },
   },
   { timestamps: true }
 );

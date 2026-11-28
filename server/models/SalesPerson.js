@@ -15,6 +15,7 @@ const salesPersonSchema = new mongoose.Schema(
     ordersClosed: { type: Number, default: 0 },
     joiningDate: { type: String, default: () => new Date().toISOString().split('T')[0] },
     notes: { type: String, default: '' },
+    branch: { type: String, enum: ['sivakasi', 'karur'], default: 'sivakasi', index: true },
   },
   { timestamps: true }
 );

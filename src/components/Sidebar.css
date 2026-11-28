@@ -525,3 +525,135 @@
     display: none;
   }
 }
+
+/* Sidebar Branch Console Widget */
+.sidebar-branch-box {
+  margin: 14px 14px 4px 14px;
+  padding: 10px 12px;
+  background: #1F1B18;
+  border: 1px solid #362D26;
+  border-radius: 9px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+}
+
+.sidebar-branch-box-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.sidebar-branch-box-title {
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #A6978F;
+  text-transform: uppercase;
+}
+
+.sidebar-branch-box-role-badge {
+  font-size: 7.5px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.08em;
+}
+
+.sidebar-branch-box-role-badge.super {
+  background: rgba(200, 141, 88, 0.2);
+  color: #E2A36B;
+  border: 1px solid rgba(200, 141, 88, 0.45);
+}
+
+.sidebar-branch-box-role-badge.admin {
+  background: rgba(140, 150, 160, 0.15);
+  color: #D6D3D1;
+  border: 1px solid rgba(140, 150, 160, 0.35);
+}
+
+.sidebar-branch-toggle-group {
+  display: flex;
+  gap: 6px;
+}
+
+.sidebar-branch-toggle-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 7px 4px;
+  background: #171412;
+  border: 1px solid #382F28;
+  border-radius: 6px;
+  color: #A6978F;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.sidebar-branch-toggle-btn:hover {
+  background: #25201C;
+  color: #FFFFFF;
+  border-color: #55483E;
+}
+
+.sidebar-branch-toggle-btn.active {
+  background: linear-gradient(135deg, #8B4513 0%, #C88D58 100%);
+  color: #FFFFFF;
+  border-color: #E2A36B;
+  box-shadow: 0 2px 8px rgba(200, 141, 88, 0.35);
+}
+
+.branch-toggle-icon {
+  font-size: 12px;
+  line-height: 1;
+}
+
+.branch-toggle-text {
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.branch-toggle-indicator {
+  font-size: 7px;
+  font-weight: 800;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 1px 3px;
+  border-radius: 3px;
+  letter-spacing: 0.04em;
+}
+
+.sidebar-branch-fixed-badge {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 9px;
+  background: #171412;
+  border: 1px solid #362D26;
+  border-radius: 6px;
+  color: #E2A36B;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.branch-fixed-lock {
+  margin-left: auto;
+  font-size: 10px;
+  opacity: 0.7;
+}
+
+.sidebar-branch-mini-pill {
+  margin: 10px auto;
+  width: 32px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #C88D58;
+  color: #171412;
+  font-size: 8.5px;
+  font-weight: 800;
+  border-radius: 4px;
+}

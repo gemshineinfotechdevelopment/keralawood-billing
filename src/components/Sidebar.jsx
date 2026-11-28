@@ -14,6 +14,8 @@ export default function Sidebar({
   onLogout,
   userRole = 'super_admin',
   onToggleRole,
+  currentBranch = 'sivakasi',
+  onSelectBranch,
 }) {
   const [localActive, setLocalActive] = useState(activeItem)
   const [settings, setSettings] = useState(() => DataStore.getSettings())
@@ -210,7 +212,7 @@ export default function Sidebar({
             <img src={settings.logoUrl || kwfLogo} alt="Kerala Wood Furniture Logo" className="sidebar-custom-logo" />
             <div className="sidebar-brand-text-col">
               <span className="sidebar-brand-title">{settings.depotName ? settings.depotName.split('-')[0].trim() : 'Kerala Wood Furniture'}</span>
-              <span className="sidebar-brand-subtitle">Sivakasi</span>
+              <span className="sidebar-brand-subtitle">{currentBranch === 'karur' ? 'Karur Sub-Branch' : 'Sivakasi Head Branch'}</span>
             </div>
           </div>
         ) : (
@@ -268,6 +270,58 @@ export default function Sidebar({
           </button>
         </div>
       </div>
+
+      {/* Branch Selector ERP Console Widget */}
+      {!isCollapsed ? (
+        <div className="sidebar-branch-box">
+          <div className="sidebar-branch-box-header">
+            <span className="sidebar-branch-box-title">BRANCH CONSOLE</span>
+            {userRole === 'super_admin' ? (
+              <span className="sidebar-branch-box-role-badge super">SUPER ADMIN</span>
+            ) : (
+              <span className="sidebar-branch-box-role-badge admin">ADMIN</span>
+            )}
+          </div>
+
+          {userRole === 'super_admin' ? (
+            <div className="sidebar-branch-toggle-group">
+              <button
+                type="button"
+                className={`sidebar-branch-toggle-btn ${currentBranch === 'sivakasi' ? 'active' : ''}`}
+                onClick={() => onSelectBranch && onSelectBranch('sivakasi')}
+                title="Switch to Sivakasi Head Branch"
+              >
+                <span className="branch-toggle-icon">🏢</span>
+                <span className="branch-toggle-text">Sivakasi</span>
+                {currentBranch === 'sivakasi' && <span className="branch-toggle-indicator">HEAD</span>}
+              </button>
+              <button
+                type="button"
+                className={`sidebar-branch-toggle-btn ${currentBranch === 'karur' ? 'active' : ''}`}
+                onClick={() => onSelectBranch && onSelectBranch('karur')}
+                title="Switch to Karur Sub-Branch"
+              >
+                <span className="branch-toggle-icon">🌿</span>
+                <span className="branch-toggle-text">Karur</span>
+                {currentBranch === 'karur' && <span className="branch-toggle-indicator">SUB</span>}
+              </button>
+            </div>
+          ) : (
+            <div className="sidebar-branch-fixed-badge">
+              <span className="branch-toggle-icon">{currentBranch === 'karur' ? '🌿' : '🏢'}</span>
+              <span className="branch-toggle-text">{currentBranch === 'karur' ? 'Karur Sub-Branch' : 'Sivakasi Head Branch'}</span>
+              <span className="branch-fixed-lock" title="Account locked to this branch">🔒</span>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div
+          className="sidebar-branch-mini-pill"
+          title={`Active Branch: ${currentBranch === 'karur' ? 'Karur Sub-Branch' : 'Sivakasi Head Branch'}`}
+        >
+          <span>{currentBranch === 'karur' ? 'KRR' : 'SVK'}</span>
+        </div>
+      )}
 
       {/* Navigation Items & Scrollable Section */}
       <div className="sidebar-nav-section">

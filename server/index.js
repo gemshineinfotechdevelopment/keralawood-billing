@@ -14,6 +14,7 @@ import { Dashboard } from './models/Dashboard.js';
 import { Stock } from './models/Stock.js';
 import { Purchase } from './models/Purchase.js';
 import { SalesPerson } from './models/SalesPerson.js';
+import { User } from './models/User.js';
 import { seedInitialData } from './seed.js';
 
 // Resolve __dirname for ES modules
@@ -27,13 +28,22 @@ try {
   // Ignore if not supported in environment
 }
 
+// Disable Mongoose query buffering so API calls never hang or timeout when database is connecting or offline
+mongoose.set('bufferCommands', false);
+
 // Explicitly load server/.env regardless of where node was started from
 dotenv.config({ path: path.resolve(__dirname, '.env'), override: true });
 
 const app = express();
 const PORT = process.env.PORT || 5031;
 const FRONTEND_URL = process.env.FRONTEND_URL || 'https://keralawoods-billing.gemshine.tech,http://localhost:5173';
-const MONGODB_URI = process.env.MONGODB_URI;
+let MONGODB_URI = (process.env.MONGODB_URI || '').trim();
+
+// Fallback to root .env if server/.env has empty MONGODB_URI
+if (!MONGODB_URI) {
+  dotenv.config({ path: path.resolve(__dirname, '../.env') });
+  MONGODB_URI = (process.env.MONGODB_URI || '').trim();
+}
 
 // Global process error handlers to prevent silent crashes
 process.on('unhandledRejection', (reason) => {
@@ -56,7 +66,7 @@ app.use((req, res, next) => {
   }
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
-  res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, x-user-role, x-branch');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -83,23 +93,53 @@ app.use(
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-    allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'],
+    allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization', 'x-user-role', 'x-branch'],
   })
 );
 
 app.use(express.json({ limit: '25mb' }));
 app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 
-// MongoDB connection
-if (MONGODB_URI) {
-  mongoose
-    .connect(MONGODB_URI, { dbName: 'kerala_wood_billing' })
-    .then(async () => {
-      console.log('[MongoDB] Connected successfully to database: kerala_wood_billing');
-      await seedInitialData();
-    })
-    .catch((err) => console.warn('[MongoDB] Connection warning (Verify service is running):', err.message));
+// MongoDB connection with automatic retry
+let isConnectingMongo = false;
+async function connectToMongo() {
+  if (mongoose.connection.readyState === 1 || isConnectingMongo) return;
+  if (!MONGODB_URI) {
+    dotenv.config({ path: path.resolve(__dirname, '.env'), override: true });
+    MONGODB_URI = (process.env.MONGODB_URI || '').trim();
+    if (!MONGODB_URI) {
+      dotenv.config({ path: path.resolve(__dirname, '../.env') });
+      MONGODB_URI = (process.env.MONGODB_URI || '').trim();
+    }
+  }
+  if (!MONGODB_URI) {
+    console.log('[Server] Note: MONGODB_URI is not set in server/.env. Running with graceful offline cache support.');
+    return;
+  }
+
+  isConnectingMongo = true;
+  try {
+    console.log('[Server] Connecting to MongoDB database...');
+    await mongoose.connect(MONGODB_URI, {
+      dbName: 'kerala_wood_billing',
+      serverSelectionTimeoutMS: 5000,
+      connectTimeoutMS: 5000,
+    });
+    console.log('[MongoDB] Connected successfully to database: kerala_wood_billing');
+    await seedInitialData();
+  } catch (err) {
+    console.warn('[MongoDB] Connection warning (Verify service is running):', err.message);
+  } finally {
+    isConnectingMongo = false;
+  }
 }
+
+connectToMongo();
+setInterval(() => {
+  if (mongoose.connection.readyState !== 1 && mongoose.connection.readyState !== 2) {
+    connectToMongo();
+  }
+}, 5000);
 
 // -------------------------------------------------------------
 // Health Check
@@ -114,6 +154,139 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// -------------------------------------------------------------
+// Connection Guard Middleware: Prevent buffering timeouts when DB is offline
+// -------------------------------------------------------------
+app.use('/api', (req, res, next) => {
+  if (req.path === '/health') return next();
+
+  // If MongoDB is connected, proceed to normal MongoDB route handlers
+  if (mongoose.connection.readyState === 1) {
+    return next();
+  }
+
+  // Handle Auth login instantly even if MongoDB is offline
+  if (req.path === '/auth/login' && req.method === 'POST') {
+    const { email, password } = req.body || {};
+    const cleanEmail = String(email || '').trim().toLowerCase();
+    const cleanPass = String(password || '').trim();
+
+    if (cleanEmail === 'superadmin@kwf.com' && cleanPass === 'superadmin123') {
+      return res.json({
+        success: true,
+        user: { email: cleanEmail, name: 'Super Admin', role: 'super_admin', branch: 'all', branchLabel: 'All Branches' },
+        offline: true,
+      });
+    }
+    if (cleanEmail === 'adminsvks@kwf.com' && cleanPass === 'admin123') {
+      return res.json({
+        success: true,
+        user: { email: cleanEmail, name: 'Sivakasi Admin', role: 'admin', branch: 'sivakasi', branchLabel: 'Sivakasi' },
+        offline: true,
+      });
+    }
+    if (cleanEmail === 'adminkarur@kwf.com' && cleanPass === 'admin123') {
+      return res.json({
+        success: true,
+        user: { email: cleanEmail, name: 'Karur Admin', role: 'admin', branch: 'karur', branchLabel: 'Karur' },
+        offline: true,
+      });
+    }
+    return res.status(401).json({ success: false, message: 'Invalid email or password.' });
+  }
+
+  // If MongoDB is offline, return graceful fallback responses immediately without buffering
+  if (req.method === 'GET') {
+    if (req.path === '/settings') return res.json({ success: true, settings: null, offline: true });
+    if (req.path === '/products') return res.json({ success: true, count: 0, products: [], metrics: { totalStock: '0', totalValuationFormatted: '₹0', lowStockCount: '0 SKUs' }, offline: true });
+    if (req.path === '/customers') return res.json({ success: true, count: 0, customers: [], offline: true });
+    if (req.path === '/sales') return res.json({ success: true, count: 0, sales: [], offline: true });
+    if (req.path === '/purchases') return res.json({ success: true, count: 0, purchases: [], offline: true });
+    if (req.path === '/sales-persons') return res.json({ success: true, count: 0, salesPersons: [], offline: true });
+    if (req.path === '/stocks') return res.json({ success: true, count: 0, stocks: [], offline: true });
+    if (req.path === '/categories') return res.json({ success: true, count: 0, categories: [], offline: true });
+    if (req.path === '/dashboard') return res.json({ success: true, stats: { todaySales: '₹0', ordersToday: '0 orders processed today', totalStock: '0', lowStockCount: '0 items' }, recentSales: [], lowStockItems: [], offline: true });
+  }
+
+  // Write requests when MongoDB is offline
+  return res.status(503).json({
+    success: false,
+    offline: true,
+    message: 'MongoDB is currently disconnected. Please verify MONGODB_URI in server/.env',
+  });
+});
+
+
+// -------------------------------------------------------------
+// BRANCH AUTH API
+// -------------------------------------------------------------
+
+// POST /api/auth/login — Authenticate user and return branch info
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ success: false, message: 'Email and password are required.' });
+    }
+
+    const cleanEmail = String(email).trim().toLowerCase();
+    const cleanPass = String(password).trim();
+
+    const user = await User.findOne({ email: cleanEmail, isActive: true });
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'Invalid email or password.' });
+    }
+
+    if (user.password !== cleanPass) {
+      return res.status(401).json({ success: false, message: 'Incorrect password. Please try again.' });
+    }
+
+    console.log(`[Auth] Login success: ${user.email} (${user.role} / branch: ${user.branch})`);
+    res.json({
+      success: true,
+      user: {
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        branch: user.branch,
+        branchLabel: user.branchLabel,
+      },
+    });
+  } catch (err) {
+    console.error('[API] /api/auth/login error:', err);
+    res.status(500).json({ success: false, message: 'Server error during login.', error: err.message });
+  }
+});
+
+// GET /api/auth/users — Get all users (super admin only)
+app.get('/api/auth/users', async (req, res) => {
+  try {
+    const users = await User.find({}, { password: 0 }).sort({ role: 1, branch: 1 });
+    res.json({ success: true, users });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// -------------------------------------------------------------
+// HELPER: Extract branch from request (header x-branch)
+// Branch-aware query builder
+// -------------------------------------------------------------
+function getBranchFilter(req) {
+  const branch = req.headers['x-branch'];
+  // 'all' means super admin viewing combined → no branch filter
+  if (!branch || branch === 'all') return {};
+  if (branch === 'sivakasi') {
+    return {
+      $or: [
+        { branch: 'sivakasi' },
+        { branch: { $exists: false } },
+        { branch: null },
+      ],
+    };
+  }
+  return { branch };
+}
 
 // -------------------------------------------------------------
 // CATEGORIES API
@@ -182,7 +355,8 @@ const escapeRegex = (str) => String(str || '').replace(/[.*+?^${}()|[\]\\]/g, '\
 app.get('/api/products', async (req, res) => {
   try {
     const { category, search } = req.query;
-    const query = {};
+    const branchFilter = getBranchFilter(req);
+    const query = { ...branchFilter };
 
     if (category && category !== 'All') {
       query.category = new RegExp(`^${escapeRegex(category)}$`, 'i');
@@ -194,7 +368,7 @@ app.get('/api/products', async (req, res) => {
     }
 
     const products = await Product.find(query).sort({ createdAt: -1 });
-    const allProducts = await Product.find();
+    const allProducts = await Product.find(branchFilter);
 
     let totalStock = 0;
     let totalValuation = 0;
@@ -429,6 +603,7 @@ app.post('/api/products', async (req, res) => {
       transitPass: data.transitPass !== undefined ? Boolean(data.transitPass) : false,
       imageUrl: data.imageUrl || (existing ? existing.imageUrl : ''),
       imagePublicId: data.imagePublicId || (existing ? existing.imagePublicId : ''),
+      branch: data.branch || req.headers['x-branch'] || 'sivakasi',
     };
 
     if (existing) {
@@ -467,10 +642,11 @@ app.post('/api/products', async (req, res) => {
 app.get('/api/customers', async (req, res) => {
   try {
     const { search } = req.query;
-    let query = {};
+    const branchFilter = getBranchFilter(req);
+    let query = { ...branchFilter };
     if (search && search.trim()) {
       const reg = new RegExp(search.trim(), 'i');
-      query = { $or: [{ name: reg }, { personName: reg }, { phone: reg }, { location: reg }, { gstin: reg }] };
+      query = { ...branchFilter, $or: [{ name: reg }, { personName: reg }, { phone: reg }, { location: reg }, { gstin: reg }] };
     }
     const customers = await Customer.find(query).sort({ createdAt: -1 });
     res.json({ success: true, count: customers.length, customers });
@@ -517,6 +693,7 @@ app.post('/api/customers', async (req, res) => {
       type: data.type || 'Residential',
       totalOrders: data.totalOrders || 0,
       lifetimeValue: data.lifetimeValue || '0',
+      branch: data.branch || req.headers['x-branch'] || 'sivakasi',
     });
 
     const saved = await newCustomer.save();
@@ -621,7 +798,8 @@ app.put('/api/settings', async (req, res) => {
 app.get('/api/sales', async (req, res) => {
   try {
     const { year, search } = req.query;
-    const query = {};
+    const branchFilter = getBranchFilter(req);
+    const query = { ...branchFilter };
     if (year && year !== 'All') {
       query.year = year;
     }
@@ -702,7 +880,8 @@ app.delete('/api/sales/:invoice', async (req, res) => {
 app.post('/api/sales', async (req, res) => {
   try {
     const data = req.body;
-    const totalSalesCount = await Sale.countDocuments();
+    const branch = data.branch || req.headers['x-branch'] || 'sivakasi';
+    const totalSalesCount = await Sale.countDocuments({ branch });
     const invNo = data.invoice || data.invoiceNumber || data.id || String(100 + totalSalesCount);
     const rawAmt =
       typeof data.amount === 'number'
@@ -760,12 +939,13 @@ app.post('/api/sales', async (req, res) => {
           invoice: invNo,
           customer: data.customer || 'Walk-in Patron',
           notes: `POS Bill allocation for ${qtyToDeduct} unit(s)`,
+          branch,
         });
       }
     }
 
     // Upsert or create new sale record
-    const existing = await Sale.findOne({ invoice: invNo });
+    const existing = await Sale.findOne({ invoice: invNo, branch });
     if (existing) {
       const userRole = req.headers['x-user-role'];
       if (userRole === 'admin') {
@@ -858,15 +1038,17 @@ app.post('/api/sales', async (req, res) => {
       year: data.year || currentYear,
       monthYear: data.monthYear || new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
       volume: Number(data.volume) || 36,
+      branch,
     });
 
     const saved = await newSale.save();
-    console.log('[MongoDB] Stored new sale record in MongoDB:', saved.invoice, 'Amount: ₹' + saved.amount);
+    console.log('[MongoDB] Stored new sale record in MongoDB:', saved.invoice, 'Branch:', branch, 'Amount: ₹' + saved.amount);
 
     // If customer name is provided, update or auto-create customer in MongoDB
     if (data.customer && typeof data.customer === 'string' && !data.customer.toLowerCase().includes('walk-in')) {
       const custName = data.customer.trim();
       let cust = await Customer.findOne({
+        branch,
         $or: [
           { name: new RegExp(`^${custName}$`, 'i') },
           ...(data.customerPhone ? [{ phone: data.customerPhone }] : [])
@@ -883,15 +1065,16 @@ app.post('/api/sales', async (req, res) => {
           name: custName,
           personName: custName,
           phone: data.customerPhone || '',
-          address: data.deliveryAddress || data.address || 'Sivakasi, Tamil Nadu',
-          deliveryAddress: data.deliveryAddress || data.address || 'Sivakasi, Tamil Nadu',
-          location: data.location || (data.address ? data.address.split(',')[0] : 'Sivakasi'),
+          address: data.deliveryAddress || data.address || (branch === 'karur' ? 'Karur, Tamil Nadu' : 'Sivakasi, Tamil Nadu'),
+          deliveryAddress: data.deliveryAddress || data.address || (branch === 'karur' ? 'Karur, Tamil Nadu' : 'Sivakasi, Tamil Nadu'),
+          location: data.location || (data.address ? data.address.split(',')[0] : (branch === 'karur' ? 'Karur' : 'Sivakasi')),
           gstin: data.customerGstin || 'Unregistered / Personal',
           type: 'Residential',
           totalOrders: 1,
           lifetimeValue: rawAmt.toLocaleString('en-IN'),
+          branch,
         });
-        console.log('[MongoDB] Auto-registered customer in MongoDB from sale:', custName);
+        console.log(`[MongoDB] Auto-registered customer in MongoDB from sale (${branch}):`, custName);
       }
     }
 
@@ -925,7 +1108,8 @@ app.post('/api/sales', async (req, res) => {
 app.get('/api/stocks', async (req, res) => {
   try {
     const { type, search } = req.query;
-    const query = {};
+    const branchFilter = getBranchFilter(req);
+    const query = { ...branchFilter };
     if (type && type !== 'All') {
       query.type = type.toUpperCase();
     }
@@ -944,6 +1128,7 @@ app.get('/api/stocks', async (req, res) => {
 app.post('/api/stocks', async (req, res) => {
   try {
     const { productId, productSku, productName, type, quantity, reason, invoice, customer, notes } = req.body;
+    const branch = req.body.branch || req.headers['x-branch'] || 'sivakasi';
     const qty = Math.max(1, Number(quantity) || 1);
     const movType = (type || 'IN').toUpperCase();
 
@@ -953,7 +1138,10 @@ app.post('/api/stocks', async (req, res) => {
       product = await Product.findById(productId);
     }
     if (!product && (productSku || productName)) {
-      product = await Product.findOne({ $or: [{ sku: productSku }, { name: productName }] });
+      product = await Product.findOne({
+        branch,
+        $or: [{ sku: productSku }, { name: productName }]
+      });
     }
 
     let prevStock = 0;
@@ -985,6 +1173,7 @@ app.post('/api/stocks', async (req, res) => {
       invoice: invoice || '',
       customer: customer || '',
       notes: notes || '',
+      branch,
     });
 
     res.status(201).json({ success: true, stock: stockRecord, product });
@@ -1000,7 +1189,8 @@ app.post('/api/stocks', async (req, res) => {
 app.get('/api/purchases', async (req, res) => {
   try {
     const { search, paymentMode } = req.query;
-    const query = {};
+    const branchFilter = getBranchFilter(req);
+    const query = { ...branchFilter };
 
     if (paymentMode && paymentMode !== 'all') {
       query.paymentMode = new RegExp(`^${paymentMode.trim()}$`, 'i');
@@ -1033,6 +1223,7 @@ app.post('/api/purchases', async (req, res) => {
 
     const totalCount = await Purchase.countDocuments();
     const invoiceNumber = data.invoiceNumber?.trim() || String(100 + totalCount);
+    const branch = data.branch || req.headers['x-branch'] || 'sivakasi';
 
     const newPurchase = new Purchase({
       invoiceNumber,
@@ -1061,6 +1252,7 @@ app.post('/api/purchases', async (req, res) => {
       dispatchDate: data.dispatchDate || '',
       referenceNumber: data.referenceNumber || data.referenceNo || '',
       notes: data.notes || '',
+      branch,
     });
 
     const saved = await newPurchase.save();
@@ -1129,7 +1321,8 @@ app.delete('/api/purchases/:id', async (req, res) => {
 app.get('/api/sales-persons', async (req, res) => {
   try {
     const { search, paymentMode } = req.query;
-    const query = {};
+    const branchFilter = getBranchFilter(req);
+    const query = { ...branchFilter };
 
     if (paymentMode && paymentMode !== 'all') {
       query.paymentMode = new RegExp(`^${paymentMode.trim()}$`, 'i');
@@ -1148,7 +1341,7 @@ app.get('/api/sales-persons', async (req, res) => {
     }
 
     const salesPersons = await SalesPerson.find(query).sort({ createdAt: -1 });
-    const allSales = await Sale.find({}, 'billedBy salesPerson');
+    const allSales = await Sale.find(branchFilter, 'billedBy salesPerson');
     const dynamicSalesPersons = salesPersons.map((sp) => {
       const spObj = sp.toObject ? sp.toObject() : sp;
       const spName = (spObj.name || '').trim().toLowerCase();
@@ -1179,6 +1372,7 @@ app.post('/api/sales-persons', async (req, res) => {
 
     const totalCount = await SalesPerson.countDocuments();
     const code = data.code?.trim() || String(100 + totalCount);
+    const branch = data.branch || req.headers['x-branch'] || 'sivakasi';
 
     const newPerson = new SalesPerson({
       code,
@@ -1186,7 +1380,7 @@ app.post('/api/sales-persons', async (req, res) => {
       phone: data.phone || '',
       email: data.email || '',
       role: data.role || 'Sales Executive',
-      territory: data.territory || 'Sivakasi & Virudhunagar',
+      territory: data.territory || (branch === 'karur' ? 'Karur & Central TN' : 'Sivakasi & Virudhunagar'),
       target: Number(data.target) || 0,
       achievedSales: Number(data.achievedSales) || 0,
       commissionRate: Number(data.commissionRate) || 3.0,
@@ -1194,6 +1388,7 @@ app.post('/api/sales-persons', async (req, res) => {
       ordersClosed: Number(data.ordersClosed) || 0,
       joiningDate: data.joiningDate || new Date().toISOString().split('T')[0],
       notes: data.notes || '',
+      branch,
     });
 
     const saved = await newPerson.save();
@@ -1250,9 +1445,18 @@ app.delete('/api/sales-persons/:id', async (req, res) => {
 // -------------------------------------------------------------
 app.get('/api/dashboard', async (req, res) => {
   try {
+    const branchFilter = getBranchFilter(req);
+    const branchHeader = req.headers['x-branch'] || 'sivakasi';
+    const stockLocationNote =
+      branchHeader === 'karur'
+        ? 'Across Karur timber yard'
+        : branchHeader === 'all'
+        ? 'Across all branches (Sivakasi & Karur)'
+        : 'Across Sivakasi master timber yards';
+
     const [sales, products] = await Promise.all([
-      Sale.find().sort({ createdAt: -1 }),
-      Product.find(),
+      Sale.find(branchFilter).sort({ createdAt: -1 }),
+      Product.find(branchFilter),
     ]);
 
     // Exact Today's boundaries
@@ -1303,8 +1507,9 @@ app.get('/api/dashboard', async (req, res) => {
     }));
 
     // Persist live state to MongoDB Dashboard collection
+    const dashboardKey = `main_dashboard_${branchHeader}`;
     const dashboardDoc = await Dashboard.findOneAndUpdate(
-      { key: 'main_dashboard' },
+      { key: dashboardKey },
       {
         $set: {
           todaySales: todaySalesAmt,
@@ -1312,7 +1517,7 @@ app.get('/api/dashboard', async (req, res) => {
           ordersToday: todaySales.length,
           ordersTodayText: `${todaySales.length} orders processed today`,
           totalStock,
-          stockLocationNote: 'Across Sivakasi master timber yards',
+          stockLocationNote,
           lowStockCount: lowStockItems.length,
           lowStockAlerts: lowStockItems,
           recentSales: formattedTodaySales,
@@ -1328,7 +1533,7 @@ app.get('/api/dashboard', async (req, res) => {
         todaySales: '₹' + todaySalesAmt.toLocaleString('en-IN'),
         ordersToday: `${todaySales.length} orders processed today`,
         totalStock: totalStock.toLocaleString('en-IN'),
-        stockLocationNote: 'Across Sivakasi master timber yards',
+        stockLocationNote,
         lowStockCount: `${lowStockItems.length} items`,
       },
       lowStockItems: lowStockItems,

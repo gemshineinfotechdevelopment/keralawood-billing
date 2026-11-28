@@ -9,6 +9,7 @@
     "dev:backend": "node --watch --watch-path=server server/index.js",
     "dev:all": "concurrently -n \"frontend,backend\" -c \"cyan,magenta\" \"npm run dev:frontend\" \"npm run dev:backend\"",
     "server": "node server/index.js",
+    "seed": "node server/seed-runner.js",
     "view-db": "node server/view-data.js",
     "start": "node server/index.js",
     "build": "vite build",

@@ -1,6 +1,7 @@
 import { Category } from './models/Category.js';
 import { Settings } from './models/Settings.js';
 import { Dashboard } from './models/Dashboard.js';
+import { User } from './models/User.js';
 
 export async function seedInitialData() {
   try {
@@ -74,6 +75,48 @@ export async function seedInitialData() {
       });
       console.log('[Seed] Dashboard collection initialized successfully.');
     }
+
+    // 4. Seed Users (Branch Auth)
+    const BRANCH_USERS = [
+      {
+        email: 'superadmin@kwf.com',
+        password: 'superadmin123',
+        role: 'super_admin',
+        branch: 'all',
+        branchLabel: 'All Branches',
+        name: 'Super Admin',
+      },
+      {
+        email: 'adminsvks@kwf.com',
+        password: 'admin123',
+        role: 'admin',
+        branch: 'sivakasi',
+        branchLabel: 'Sivakasi',
+        name: 'Sivakasi Admin',
+      },
+      {
+        email: 'adminkarur@kwf.com',
+        password: 'admin123',
+        role: 'admin',
+        branch: 'karur',
+        branchLabel: 'Karur',
+        name: 'Karur Admin',
+      },
+    ];
+
+    for (const userData of BRANCH_USERS) {
+      const existing = await User.findOne({ email: userData.email });
+      if (!existing) {
+        await User.create(userData);
+        console.log(`[Seed] Created user: ${userData.email} (${userData.role} / branch: ${userData.branch})`);
+      } else {
+        // Update password and branch info in case they changed
+        await User.updateOne({ email: userData.email }, { $set: { password: userData.password, role: userData.role, branch: userData.branch, branchLabel: userData.branchLabel, name: userData.name } });
+        console.log(`[Seed] Updated user: ${userData.email}`);
+      }
+    }
+    console.log('[Seed] Branch users seeded successfully.');
+
   } catch (error) {
     console.error('[Seed] Error seeding initial data:', error.message);
   }

@@ -943,3 +943,212 @@
 .btn-back-dash:hover {
   background-color: #B98B5E;
 }
+
+/* ==============================================================================
+   Top Application Bar with Prominent Super Admin Branch Switch Controls
+   ============================================================================== */
+.app-top-branch-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #171412;
+  border: 1px solid #2B2520;
+  border-radius: 12px;
+  padding: 12px 20px;
+  margin-bottom: 22px;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.2);
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.top-branch-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.top-branch-logo-wrap {
+  width: 40px;
+  height: 40px;
+  background: #FFFFFF;
+  border-radius: 8px;
+  padding: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.top-branch-logo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.top-branch-company-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #FFFFFF;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+}
+
+.top-branch-depot-tag {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 3px;
+}
+
+.branch-depot-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: #E2A36B;
+  background: rgba(200, 141, 88, 0.16);
+  border: 1px solid rgba(200, 141, 88, 0.35);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.branch-status-live {
+  font-size: 10px;
+  font-weight: 600;
+  color: #38A169;
+}
+
+.top-branch-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.top-branch-switcher {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #231E1B;
+  padding: 6px 10px 6px 14px;
+  border: 1px solid #382F28;
+  border-radius: 10px;
+}
+
+.top-switcher-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #A6978F;
+  letter-spacing: 0.1em;
+}
+
+.top-switcher-btns {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-branch-pill {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 14px;
+  background: #171412;
+  border: 1px solid #433830;
+  border-radius: 8px;
+  color: #D6D3D1;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-branch-pill:hover {
+  background: #2B241F;
+  color: #FFFFFF;
+  border-color: #6B5544;
+}
+
+.btn-branch-pill.active {
+  background: linear-gradient(135deg, #8B4513 0%, #C88D58 100%);
+  color: #FFFFFF;
+  border-color: #E2A36B;
+  box-shadow: 0 4px 14px rgba(200, 141, 88, 0.4);
+}
+
+.pill-icon {
+  font-size: 14px;
+}
+
+.pill-title {
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.pill-badge {
+  font-size: 8px;
+  font-weight: 800;
+  background: rgba(0, 0, 0, 0.35);
+  padding: 1px 5px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.top-branch-admin-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 14px;
+  background: #231E1B;
+  border: 1px solid #382F28;
+  border-radius: 8px;
+  color: #E2A36B;
+}
+
+.admin-branch-icon {
+  font-size: 15px;
+}
+
+.admin-branch-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-branch-name {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #FFFFFF;
+}
+
+.admin-branch-sub {
+  font-size: 9px;
+  color: #A6978F;
+}
+
+.admin-lock-pill {
+  font-size: 9.5px;
+  font-weight: 600;
+  color: #C88D58;
+  background: rgba(200, 141, 88, 0.15);
+  border: 1px solid rgba(200, 141, 88, 0.35);
+  padding: 2px 7px;
+  border-radius: 4px;
+  margin-left: 6px;
+}
+
+.mobile-branch-pill-btn {
+  background: #231E1B;
+  border: 1px solid rgba(200, 141, 88, 0.45);
+  border-radius: 6px;
+  padding: 4px 9px;
+  color: #E2A36B;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .app-top-branch-bar {
+    display: none;
+  }
+}

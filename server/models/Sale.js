@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 const saleSchema = new mongoose.Schema(
   {
-    invoice: { type: String, required: true, unique: true },
+    invoice: { type: String, required: true, index: true },
     customer: { type: String, required: true },
     customerPhone: { type: String, default: '' },
     customerAddress: { type: String, default: '' },
@@ -39,6 +39,7 @@ const saleSchema = new mongoose.Schema(
     year: { type: String, default: '2026' },
     monthYear: { type: String, default: 'November 2026' },
     volume: { type: Number, default: 36 },
+    branch: { type: String, enum: ['sivakasi', 'karur'], default: 'sivakasi', index: true },
   },
   { timestamps: true }
 );
