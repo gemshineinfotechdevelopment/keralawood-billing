@@ -33,87 +33,14 @@ export default function Customers({ onNavigateToBilling }) {
   const [newAddress, setNewAddress] = useState('')
   const [formErrors, setFormErrors] = useState({})
 
-  // Listen to store updates
+  // Listen to store updates and sync with MongoDB backend
   useEffect(() => {
     const handleUpdate = () => {
       setPatronsList(DataStore.getCustomers())
       setTransactions(DataStore.getTransactions())
     }
     window.addEventListener('timber_store_updated', handleUpdate)
-
-    // Pull live sales from MongoDB
-    fetch('/api/sales')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data?.success && Array.isArray(data.sales)) {
-          setTransactions(data.sales)
-          DataStore.saveTransactions(data.sales)
-        }
-      })
-      .catch(() => {})
-
-    // Fetch live customers from MongoDB
-    fetch('/api/customers')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data?.success && Array.isArray(data.customers)) {
-          const currentTxs = DataStore.getTransactions()
-          const formatted = data.customers.map((c) => {
-            const cName = String(c.name || '').trim().toLowerCase()
-            const cPhone = String(c.phone || '').trim()
-
-            const custTxs = currentTxs.filter((t) => {
-              const tCust = typeof t.customer === 'object' && t.customer !== null ? t.customer.name : t.customer
-              const nameMatch = cName && tCust && String(tCust).trim().toLowerCase() === cName
-              const phoneMatch = cPhone && t.customerPhone && String(t.customerPhone).trim() === cPhone
-              return nameMatch || (cPhone && phoneMatch)
-            })
-
-            const totalOrders = custTxs.length > 0 ? custTxs.length : (Number(c.totalOrders) || 0)
-            const rawTotalBilled = custTxs.reduce((sum, t) => {
-              const amt = t.rawAmount !== undefined
-                ? Number(t.rawAmount)
-                : Number(String(t.amount || 0).replace(/[^0-9.]/g, '')) || 0
-              return sum + amt
-            }, 0)
-
-            const lifetimeValue = rawTotalBilled > 0
-              ? rawTotalBilled.toLocaleString('en-IN')
-              : (c.lifetimeValue && c.lifetimeValue !== '0' ? c.lifetimeValue : '0')
-
-            const recentTx = custTxs.length > 0
-              ? custTxs.slice(0, 5).map((t) => ({
-                  id: t.invoice || t.id,
-                  dateItem: `${t.date || t.rawDate || ''} • ₹${(t.rawAmount || t.amount || 0).toLocaleString('en-IN')}`,
-                  status: t.paymentStatus || t.status || 'Paid',
-                }))
-              : (c.recentTx || [])
-
-            return {
-              id: c._id || c.id,
-              initials: c.initials || getInitials(c),
-              name: c.name,
-              personName: c.personName || c.name,
-              phone: c.phone || '',
-              email: c.email || '',
-              location: c.location || '',
-              address: c.address || '',
-              deliveryAddress: c.deliveryAddress || c.address || '',
-              gstin: c.gstin || 'Unregistered / Personal',
-              type: c.type || 'Residential',
-              totalOrders,
-              lifetimeValue,
-              outstandingBalance: c.outstandingBalance || '0',
-              creditUsed: c.creditUsed || '0',
-              creditTotal: c.creditTotal || '2,00,000',
-              recentTx,
-            }
-          })
-          setPatronsList(formatted)
-          DataStore.saveCustomers(formatted)
-        }
-      })
-      .catch(() => {})
+    DataStore.syncFromBackend()
 
     return () => window.removeEventListener('timber_store_updated', handleUpdate)
   }, [])

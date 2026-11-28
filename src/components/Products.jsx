@@ -42,17 +42,7 @@ export default function Products({ initialViewMode = 'list' }) {
       setProducts(DataStore.getProducts())
     }
     window.addEventListener('timber_store_updated', handleUpdate)
-
-    const apiUrl = import.meta.env.VITE_API_URL || ''
-    fetch(`${apiUrl}/api/products`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data?.success && Array.isArray(data.products) && data.products.length > 0) {
-          setProducts(data.products)
-          DataStore.saveProducts(data.products)
-        }
-      })
-      .catch(() => {})
+    DataStore.syncFromBackend()
 
     return () => window.removeEventListener('timber_store_updated', handleUpdate)
   }, [])

@@ -134,44 +134,14 @@ export default function Dashboard({ onNavigateToNewBill, onNavigateToNewInvoice,
   const displayLowStock = dynamicLowStock
 
   useEffect(() => {
-    // 1. Fetch dashboard aggregated stats and recent sales from MongoDB
-    fetch('/api/sales')
-      .then((res) => {
-        if (!res.ok) throw new Error('Sales network response not ok')
-        return res.json()
-      })
-      .then((data) => {
-        if (data?.success && Array.isArray(data.sales)) {
-          setRecentSales(data.sales)
-          DataStore.saveTransactions(data.sales)
-        } else {
-          // If /api/sales is empty, try /api/dashboard
-          return fetch('/api/dashboard')
-            .then((r) => r.json())
-            .then((d) => {
-              if (d?.success && Array.isArray(d.recentSales)) {
-                setRecentSales(d.recentSales)
-                DataStore.saveTransactions(d.recentSales)
-              }
-            })
-        }
-      })
-      .catch((err) => {
-        console.warn('[Dashboard] Backend API offline or unreachable, using local dataStore:', err.message)
-        const local = DataStore.getTransactions()
-        setRecentSales(Array.isArray(local) ? local : [])
-      })
+    const handleUpdate = () => {
+      setProducts(DataStore.getProducts())
+      setRecentSales(DataStore.getTransactions())
+    }
+    window.addEventListener('timber_store_updated', handleUpdate)
+    DataStore.syncFromBackend()
 
-    // 2. Fetch live products from MongoDB
-    fetch('/api/products')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data?.success && Array.isArray(data.products) && data.products.length > 0) {
-          setProducts(data.products)
-          DataStore.saveProducts(data.products)
-        }
-      })
-      .catch(() => {})
+    return () => window.removeEventListener('timber_store_updated', handleUpdate)
   }, [])
 
   const filteredSales = useMemo(() => {

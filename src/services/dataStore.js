@@ -27,7 +27,14 @@ const INITIAL_CREDENTIALS = {
   },
 }
 
-const API_BASE = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) || ''
+const API_BASE = (() => {
+  const envUrl = typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL
+  if (envUrl && !envUrl.includes(':5000')) return envUrl
+  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+    return 'http://localhost:5031'
+  }
+  return ''
+})()
 
 // System Settings (Company: Kerala Wood Furniture, Location: Sivakasi)
 const INITIAL_SETTINGS = {
@@ -124,17 +131,26 @@ function getBranchStorageKey(baseKey) {
   return `${branch}_${baseKey}`
 }
 
+// One-time client purge of old mock/legacy keys to ensure 100% pure database retrieval
+if (typeof window !== 'undefined') {
+  try {
+    const cleanFlag = 'kwf_purge_mock_data_v5'
+    if (!localStorage.getItem(cleanFlag)) {
+      Object.values(STORAGE_KEYS).forEach((k) => {
+        localStorage.removeItem(k)
+        localStorage.removeItem(`sivakasi_${k}`)
+        localStorage.removeItem(`karur_${k}`)
+        localStorage.removeItem(`all_${k}`)
+      })
+      localStorage.setItem(cleanFlag, 'true')
+    }
+  } catch (_) {}
+}
+
 function loadFromStorage(baseKey, fallback) {
   try {
     const branchKey = getBranchStorageKey(baseKey)
-    let raw = localStorage.getItem(branchKey)
-    // Seamless migration: If current branch is sivakasi and branchKey is not in storage yet, check legacy un-prefixed baseKey
-    if (!raw && branchKey.startsWith('sivakasi_')) {
-      raw = localStorage.getItem(baseKey)
-      if (raw) {
-        localStorage.setItem(branchKey, raw)
-      }
-    }
+    const raw = localStorage.getItem(branchKey)
     return raw ? JSON.parse(raw) : fallback
   } catch (err) {
     console.warn(`[dataStore] load ${baseKey} error:`, err)
@@ -783,8 +799,7 @@ export const DataStore = {
       const stockQuantity = Number(p.stockQuantity) || 0
       const stockOut = Number(p.stockOut) || 0
       const stockIn = p.stockIn !== undefined ? Number(p.stockIn) : (stockQuantity + stockOut)
-      let sku = p.sku
-      if (sku === '676939') sku = '100'
+      const sku = p.sku || ''
       return {
         ...p,
         sku,
