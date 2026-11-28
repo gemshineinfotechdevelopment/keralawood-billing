@@ -19,7 +19,13 @@ function App() {
   const [userRole, setUserRole] = useState(() => sessionStorage.getItem('kwf_role') || 'super_admin') // 'super_admin' | 'admin'
   const [loginRole, setLoginRole] = useState(() => sessionStorage.getItem('kwf_role') || 'super_admin')
   const [activeNav, setActiveNav] = useState('Billing & POS')
-  const [billingInitialMode, setBillingInitialMode] = useState('list')
+  const [billingInitialMode, setBillingInitialMode] = useState(() => {
+    try {
+      return sessionStorage.getItem('kwf_billing_view_mode') || 'list'
+    } catch (_) {
+      return 'list'
+    }
+  })
   const [productsInitialMode, setProductsInitialMode] = useState('list')
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
@@ -53,7 +59,7 @@ function App() {
       setUserRole('admin')
       setLoginRole('admin')
       sessionStorage.setItem('kwf_role', 'admin')
-      if (['Purchases', 'Reports & Analytics', 'Settings'].includes(activeNav)) {
+      if (['Purchases', 'Settings'].includes(activeNav)) {
         setActiveNav('Billing & POS')
       }
     }
@@ -74,7 +80,7 @@ function App() {
     sessionStorage.setItem('kwf_role', effectiveRole)
     setUserRole(effectiveRole)
     setView('billing')
-    if (effectiveRole === 'admin' && ['Purchases', 'Reports & Analytics', 'Settings'].includes(activeNav)) {
+    if (effectiveRole === 'admin' && ['Purchases', 'Settings'].includes(activeNav)) {
       setActiveNav('Billing & POS')
     } else {
       setActiveNav('Billing & POS')
@@ -100,6 +106,7 @@ function App() {
           onItemSelect={(name) => {
             if (name === 'Billing & POS') {
               setBillingInitialMode('list')
+              try { sessionStorage.setItem('kwf_billing_view_mode', 'list') } catch (_) {}
             }
             if (name === 'Products') {
               setProductsInitialMode('list')
@@ -149,7 +156,7 @@ function App() {
           </div>
 
           <ErrorBoundary>
-            {userRole === 'admin' && ['Purchases', 'Reports & Analytics', 'Settings'].includes(activeNav) ? (
+            {userRole === 'admin' && ['Purchases', 'Settings'].includes(activeNav) ? (
               <div className="module-placeholder access-denied-wrapper">
                 <div className="placeholder-card access-denied-card">
                   <div style={{ fontSize: '38px', marginBottom: '10px' }}>🔒</div>
@@ -197,22 +204,27 @@ function App() {
                 onNavigateToNewBill={() => {
                   DataStore.createNewDraft()
                   setBillingInitialMode('editor')
+                  try { sessionStorage.setItem('kwf_billing_view_mode', 'editor') } catch (_) {}
                   setActiveNav('Billing & POS')
                 }}
                 onNavigateToNewInvoice={() => {
                   DataStore.createNewDraft()
                   setBillingInitialMode('editor')
+                  try { sessionStorage.setItem('kwf_billing_view_mode', 'editor') } catch (_) {}
                   setActiveNav('Billing & POS')
                 }}
                 onNavigate={(nav) => {
-                  if (nav === 'Billing & POS') setBillingInitialMode('list')
+                  if (nav === 'Billing & POS') {
+                    setBillingInitialMode('list')
+                    try { sessionStorage.setItem('kwf_billing_view_mode', 'list') } catch (_) {}
+                  }
                   setActiveNav(nav)
                 }}
               />
             ) : activeNav === 'Settings' ? (
               <Settings />
             ) : activeNav === 'Reports & Analytics' ? (
-              <ReportsAnalytics />
+              <ReportsAnalytics userRole={userRole} />
             ) : activeNav === 'Billing & POS' ? (
               <BillingPOS
                 initialViewMode={billingInitialMode}
@@ -222,6 +234,7 @@ function App() {
             ) : activeNav === 'Customers' ? (
               <Customers onNavigateToBilling={() => {
                 setBillingInitialMode('editor')
+                try { sessionStorage.setItem('kwf_billing_view_mode', 'editor') } catch (_) {}
                 setActiveNav('Billing & POS')
               }} />
             ) : activeNav === 'Purchases' ? (

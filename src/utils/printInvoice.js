@@ -307,6 +307,9 @@ export function getInvoicePrintHtml(modalBillData, settings = {}, defaultLogo = 
   const cgstAmount = Number((totalGst / 2).toFixed(2))
   const sgstAmount = Number((totalGst - cgstAmount).toFixed(2))
   const igstAmount = modalBillData.igstAmount !== undefined ? Number(modalBillData.igstAmount) : totalIgst
+  const grossTotal = modalBillData.grossTotal !== undefined
+    ? Number(modalBillData.grossTotal)
+    : Math.round(subtotal + (totalGst || 0) + (totalIgst || 0))
   const paymentStatus = modalBillData.paymentStatus || modalBillData.status || 'Paid'
   const balanceDue = Number(modalBillData.balanceDue) || 0
   const notes = modalBillData.notes || ''
@@ -355,6 +358,8 @@ export function getInvoicePrintHtml(modalBillData, settings = {}, defaultLogo = 
           <div class="badge">TAX INVOICE</div>
           <p style="margin: 3px 0; font-size: 12px;"><strong>Invoice #:</strong> ${invNumber}</p>
           <p style="margin: 3px 0; font-size: 12px;"><strong>Invoice Date:</strong> ${invDate}</p>
+          ${modalBillData.dispatchDate ? `<p style="margin: 3px 0; font-size: 12px; color: #8C5325;"><strong>Dispatch Date:</strong> ${modalBillData.dispatchDate}</p>` : ''}
+          ${(modalBillData.referenceNumber || modalBillData.referenceNo) ? `<p style="margin: 3px 0; font-size: 12px; color: #1E40AF;"><strong>Reference #:</strong> ${modalBillData.referenceNumber || modalBillData.referenceNo}</p>` : ''}
           ${modalBillData.vehicleNumber ? `<p style="margin: 3px 0; font-size: 12px;"><strong>Vehicle No:</strong> ${modalBillData.vehicleNumber}</p>` : ''}
         </td>
       </tr>
@@ -412,14 +417,8 @@ export function getInvoicePrintHtml(modalBillData, settings = {}, defaultLogo = 
         <td class="footer-right">
           <div class="summary-line">
             <span>Items Subtotal:</span>
-            <span>₹${subtotal.toLocaleString('en-IN')}</span>
+            <span>₹${subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
-          ${discount > 0 ? `
-            <div class="summary-line">
-              <span>Trade Discount:</span>
-              <span>-₹${discount.toLocaleString('en-IN')}</span>
-            </div>
-          ` : ''}
           ${totalGst > 0 ? `
             <div class="summary-line">
               <span>CGST (${halfGstPct}%):</span>
@@ -436,10 +435,25 @@ export function getInvoicePrintHtml(modalBillData, settings = {}, defaultLogo = 
               <span>+₹${igstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
           ` : ''}
-          <div class="grand-line">
-            <span>Grand Total:</span>
-            <span>₹${grandTotal.toLocaleString('en-IN')}</span>
-          </div>
+          ${discount > 0 ? `
+            <div class="summary-line" style="border-top: 1px solid #EFE4DC; padding-top: 4px; font-weight: 600; color: #31190B;">
+              <span>Total Amount (Before Discount):</span>
+              <span>₹${grossTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            </div>
+            <div class="summary-line" style="color: #C62828; font-weight: 600;">
+              <span>Trade Discount (Reduced Amount):</span>
+              <span>-₹${discount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            </div>
+            <div class="grand-line">
+              <span>Grand Total (After Discount):</span>
+              <span>₹${grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            </div>
+          ` : `
+            <div class="grand-line">
+              <span>Grand Total:</span>
+              <span>₹${grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            </div>
+          `}
           ${paymentStatus === 'Partial' && balanceDue > 0 ? `
             <div class="summary-line" style="color: #A34814; font-weight: 600;">
               <span>Balance Due:</span>
@@ -734,6 +748,9 @@ export function formatWhatsAppInvoiceText(modalBillData, settings = {}) {
     totalGst = Number(modalBillData.taxAmount)
   }
   const taxAmount = totalGst + totalIgst
+  const grossTotal = modalBillData.grossTotal !== undefined
+    ? Number(modalBillData.grossTotal)
+    : Math.round(subtotal + taxAmount)
 
   const itemsLines = rawItems.map((it, idx) => {
     const desc = (it.description || it.name || it.item || 'Timber Item').toUpperCase()
@@ -762,16 +779,23 @@ export function formatWhatsAppInvoiceText(modalBillData, settings = {}) {
     `*Customer:* ${custName}`,
     ...(custPhone ? [`*Phone:* ${custPhone}`] : []),
     `*Date:* ${invDate}`,
+    ...(modalBillData.dispatchDate ? [`*Dispatch Date:* ${modalBillData.dispatchDate}`] : []),
+    ...(modalBillData.referenceNumber || modalBillData.referenceNo ? [`*Reference #:* ${modalBillData.referenceNumber || modalBillData.referenceNo}`] : []),
     ...(modalBillData.vehicleNumber ? [`*Vehicle No:* ${modalBillData.vehicleNumber}`] : []),
     `--------------------------------`,
     `*ITEMS:*`,
     itemsLines,
     `--------------------------------`,
     `*Subtotal:* ₹${subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-    ...(discount > 0 ? [`*Discount:* ₹${discount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`] : []),
     ...(deliveryCharge > 0 ? [`*Transport / Delivery:* ₹${deliveryCharge.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`] : []),
     ...(taxAmount > 0 ? [`*Tax / GST:* ₹${taxAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`] : []),
-    `*NET TOTAL: ₹${grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}*`,
+    ...(discount > 0 ? [
+      `*Total (Before Discount):* ₹${grossTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      `*Trade Discount:* -₹${discount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+      `*NET TOTAL (After Discount): ₹${grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}*`
+    ] : [
+      `*NET TOTAL: ₹${grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}*`
+    ]),
     `--------------------------------`,
     `_Thank you for your business!_`,
     `*${settings.depotName || 'Kerala Wood Furniture - Sivakasi'}*`,
@@ -865,11 +889,14 @@ export function getPurchaseBillPrintHtml(purchase, settings = {}) {
   const supplierGstin = purchase.supplierGstin || 'Unregistered'
 
   const depotName = (settings.depotName || 'Kerala Wood Furniture').replace(/[-–—]\s*sivakasi\s*(depot|branch)/gi, '').trim() || 'Kerala Wood Furniture'
-  const companyName = purchase.companyName || depotName
-  const address = (settings.address || 'Sivakasi Central Mill Yard, Sivakasi').replace(/Depot & /gi, '').replace(/Central Depot/gi, 'Central Yard')
-  const companyAddress = purchase.companyAddress || address
-  const companyGstin = purchase.companyGstin || settings.gstin || ''
-  const companyPhone = purchase.companyPhone || settings.contactPhone || ''
+  const depotAddress = (settings.address || 'Sivakasi Central Mill Yard, Sivakasi').replace(/Depot & /gi, '').replace(/Central Depot/gi, 'Central Yard')
+  const depotGstin = settings.gstin || ''
+  const depotPhone = settings.contactPhone || ''
+
+  const companyName = purchase.companyName || ''
+  const companyAddress = purchase.companyAddress || ''
+  const companyGstin = purchase.companyGstin || ''
+  const companyPhone = purchase.companyPhone || ''
 
   const rawItems = Array.isArray(purchase.itemsList) && purchase.itemsList.length > 0
     ? purchase.itemsList
@@ -934,8 +961,8 @@ export function getPurchaseBillPrintHtml(purchase, settings = {}) {
       <tr>
         <td style="vertical-align: top;">
           <h1 class="brand-title" style="margin-bottom: 4px;">${depotName}</h1>
-          <p class="brand-sub">${companyAddress}</p>
-          <p class="brand-sub">Phone: ${companyPhone} • GSTIN: ${companyGstin} • HSN: ${settings.hsnCode || '9403'}</p>
+          <p class="brand-sub">${depotAddress}</p>
+          <p class="brand-sub">Phone: ${depotPhone} • GSTIN: ${depotGstin} • HSN: ${settings.hsnCode || '9403'}</p>
         </td>
         <td style="vertical-align: top; text-align: right; width: 220px;">
           <div class="badge">PURCHASE BILL</div>
@@ -957,10 +984,10 @@ export function getPurchaseBillPrintHtml(purchase, settings = {}) {
         </td>
         <td class="cust-col">
           <div class="cust-label">TO (BUYER / RECIPIENT):</div>
-          <div class="cust-name">${companyName}</div>
-          <div class="cust-sub">${companyAddress}</div>
-          <div class="cust-sub">Phone: ${companyPhone}</div>
-          <div class="cust-sub">GSTIN: ${companyGstin}</div>
+          ${companyName ? `<div class="cust-name">${companyName}</div>` : ''}
+          ${companyAddress ? `<div class="cust-sub">${companyAddress}</div>` : ''}
+          ${companyPhone ? `<div class="cust-sub">Phone: ${companyPhone}</div>` : ''}
+          ${companyGstin ? `<div class="cust-sub">GSTIN: ${companyGstin}</div>` : ''}
         </td>
       </tr>
     </table>
@@ -1022,7 +1049,7 @@ export function getPurchaseBillPrintHtml(purchase, settings = {}) {
             <span>₹${grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
           <div class="sign-box">
-            <p style="margin: 0; font-size: 11px; font-weight: 600;">For ${companyName}</p>
+            <p style="margin: 0; font-size: 11px; font-weight: 600;">For ${companyName || depotName}</p>
             <div class="sign-space"></div>
             <p style="margin: 0; font-size: 11px; color: #7D6C63;">Authorized Receiver / Signatory</p>
           </div>
@@ -1064,7 +1091,8 @@ export function formatWhatsAppPurchaseBillText(purchase, settings = {}) {
 
   const supplierName = purchase.supplier || 'Forest Timber Mill'
   const supplierPhone = purchase.supplierPhone || ''
-  const companyName = purchase.companyName || settings.depotName || 'Kerala Wood Furniture - Sivakasi'
+  const depotName = settings.depotName || 'Kerala Wood Furniture - Sivakasi'
+  const companyName = purchase.companyName || ''
 
   const rawItems = Array.isArray(purchase.itemsList) && purchase.itemsList.length > 0
     ? purchase.itemsList
@@ -1121,7 +1149,7 @@ export function formatWhatsAppPurchaseBillText(purchase, settings = {}) {
     `*NET TOTAL: ₹${grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}*`,
     `--------------------------------`,
     `_Official Purchase & Procurement Record_`,
-    `*${companyName}*`,
+    ...(companyName ? [`*${companyName}*`] : [`*${depotName}*`]),
   ]
 
   return lines.join('\n')

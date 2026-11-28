@@ -280,7 +280,7 @@ export default function Sidebar({
           {navItems
             .filter((item) => {
               if (userRole === 'admin') {
-                return !['Purchases', 'Reports & Analytics', 'Settings'].includes(item.name)
+                return !['Purchases', 'Settings'].includes(item.name)
               }
               return true
             })

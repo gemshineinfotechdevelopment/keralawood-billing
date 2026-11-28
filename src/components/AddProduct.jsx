@@ -482,7 +482,7 @@ export default function AddProduct({ onProductSaved, onCancel, editProduct = nul
           </div>
 
           <div className="form-field-group">
-            <label className="field-label">Wood Species *</label>
+            <label className="field-label">Wood Species</label>
             <input
               type="text"
               className="input-styled"

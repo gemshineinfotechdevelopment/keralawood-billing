@@ -86,7 +86,7 @@ const EMPTY_INITIAL_CUSTOMER = {
 const INITIAL_BILLS = [
   {
     id: 'bill-1',
-    invoiceNumber: '100',
+    invoiceNumber: '',
     invoiceDate: new Date().toISOString().split('T')[0],
     dueDate: new Date(Date.now() + 15 * 86400000).toISOString().split('T')[0],
     name: 'Bill #1',
@@ -97,6 +97,8 @@ const INITIAL_BILLS = [
     paymentMode: 'UPI',
     packagingNote: '',
     deliveryApplied: true,
+    dispatchDate: '',
+    referenceNumber: '',
   },
 ]
 
@@ -239,8 +241,52 @@ export const DataStore = {
             status: s.paymentStatus || s.status || 'Paid',
             paymentStatus: s.paymentStatus || s.status || 'Paid',
             paymentMode: s.paymentMode || 'UPI',
+            vehicleNumber: s.vehicleNumber || '',
+            dispatchDate: s.dispatchDate || '',
+            referenceNumber: s.referenceNumber || s.referenceNo || '',
           }))
-          saveToStorage(STORAGE_KEYS.TRANSACTIONS, formatted)
+
+          // Merge: remote sales take priority, but keep any local sales that haven't synced yet!
+          const remoteInvSet = new Set(formatted.map((s) => String(s.invoice || s.id).trim()))
+          const unpushedLocal = localSales.filter((t) => !remoteInvSet.has(String(t.invoice || t.id).trim()))
+          const merged = [...formatted, ...unpushedLocal]
+
+          saveToStorage(STORAGE_KEYS.TRANSACTIONS, merged)
+
+          // Push any unsynced local sales to MongoDB in the background
+          for (const localTx of unpushedLocal) {
+            fetch(`${API_BASE}/api/sales`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'x-user-role': 'super_admin',
+              },
+              body: JSON.stringify({
+                invoice: localTx.invoice || localTx.id,
+                customer: localTx.customer,
+                customerPhone: localTx.customerPhone,
+                customerAddress: localTx.customerAddress,
+                customerGstin: localTx.customerGstin,
+                location: localTx.location || localTx.project,
+                wood: localTx.wood,
+                items: localTx.items || localTx.item,
+                itemsList: localTx.itemDetails || [],
+                subtotal: localTx.subtotal,
+                taxAmount: localTx.taxAmount || localTx.totalGst,
+                discount: localTx.discount,
+                deliveryCharge: localTx.deliveryCharge,
+                amount: localTx.rawAmount || localTx.amount,
+                paymentStatus: localTx.paymentStatus || localTx.status || 'Paid',
+                paymentMode: localTx.paymentMode || 'UPI',
+                vehicleNumber: localTx.vehicleNumber || '',
+                dispatchDate: localTx.dispatchDate || '',
+                referenceNumber: localTx.referenceNumber || localTx.referenceNo || '',
+                billedBy: localTx.billedBy,
+                salesPerson: localTx.salesPerson,
+                date: localTx.createdAt || localTx.rawDate || new Date().toISOString(),
+              }),
+            }).catch(() => {})
+          }
         }
       }
 
@@ -825,7 +871,7 @@ export const DataStore = {
       stock: stockLabel,
       stockType,
       lowStockThreshold: threshold,
-      woodSpecies: item.woodSpecies || 'Teak',
+      woodSpecies: item.woodSpecies || '',
       description: item.description || '',
       dimensions: item.dimensions || { length: 0, width: 0, height: 0, weight: 0 },
       woodGrade: item.woodGrade || '',
@@ -1196,6 +1242,13 @@ export const DataStore = {
       discount: 0,
       deliveryCharge: 0,
       vehicleNumber: '',
+      dispatchDate: '',
+      referenceNumber: '',
+      taxType: 'inter',
+      taxRate: 18,
+      cgstRate: 0,
+      sgstRate: 0,
+      igstRate: 18,
       notes: '',
     }
 
@@ -1268,9 +1321,22 @@ export const DataStore = {
             else woodSpecies = 'Teak'
           }
         }
+        const netAmt = Number(t.rawAmount || Number(String(t.amount || 0).replace(/[^0-9.]/g, '')) || 0)
+        const disc = Number(t.discount || 0)
+        const sub = Number(t.subtotal || 0)
+        const gross = Number(t.grossTotal || (sub > 0 ? sub : netAmt + disc))
+        const actualPrice = gross > 0 ? gross : (netAmt + disc)
+        const discMargin = actualPrice > 0 ? Number(((disc / actualPrice) * 100).toFixed(2)) : 0
+        const salesMargin = actualPrice > 0 ? Number(((netAmt / actualPrice) * 100).toFixed(2)) : 100
+
         unique.push({
           ...t,
           wood: woodSpecies,
+          actualSellingPrice: actualPrice,
+          discount: disc,
+          discountMarginPct: discMargin,
+          salesMarginPct: salesMargin,
+          rawAmount: netAmt,
         })
       }
     }
@@ -1394,15 +1460,26 @@ export const DataStore = {
   recordSaleFromBill(bill) {
     const txs = this.getTransactions()
     const items = bill.items || []
-    const subtotal = items.reduce((sum, item) => sum + (Number(item.price || item.unitPrice || 0) * Number(item.quantity || 1)), 0)
-    const totalGst = items.reduce((sum, item) => {
-      const lineCost = Number(item.price || item.unitPrice || 0) * Number(item.quantity || 1)
-      const gstRate = item.gstRate !== undefined ? Number(item.gstRate) : 18
-      return sum + (lineCost * gstRate) / 100
-    }, 0)
+    const subtotal = bill.subtotal !== undefined
+      ? Number(bill.subtotal)
+      : items.reduce((sum, item) => sum + (Number(item.price || item.unitPrice || 0) * Number(item.quantity || 1)), 0)
+    const taxType = bill.taxType || 'inter'
+    const taxRate = bill.taxRate !== undefined ? Number(bill.taxRate) : 18
+    const isInter = taxType === 'inter'
+    const totalGst = bill.totalGst !== undefined
+      ? Number(bill.totalGst)
+      : (!isInter ? Math.round(subtotal * (taxRate / 100) * 100) / 100 : 0)
+    const totalIgst = bill.totalIgst !== undefined
+      ? Number(bill.totalIgst)
+      : (isInter ? Math.round(subtotal * (taxRate / 100) * 100) / 100 : 0)
+    const cgstAmount = bill.cgstAmount !== undefined ? Number(bill.cgstAmount) : Math.round((totalGst / 2) * 100) / 100
+    const sgstAmount = bill.sgstAmount !== undefined ? Number(bill.sgstAmount) : Math.round((totalGst / 2) * 100) / 100
+    const igstAmount = bill.igstAmount !== undefined ? Number(bill.igstAmount) : totalIgst
     const discount = Number(bill.discount) || 0
     const delivery = Number(bill.deliveryCharge) || 0
-    const grandTotal = Math.max(0, Math.round(subtotal + totalGst + delivery - discount))
+    const grandTotal = bill.amount !== undefined && !isNaN(Number(bill.amount))
+      ? Number(bill.amount)
+      : Math.max(0, Math.round(subtotal + totalGst + totalIgst + delivery - discount))
     const totalVolume = items.reduce((sum, item) => sum + (Number(item.quantity || 1) * 12), 0)
 
     const settings = this.getSettings()
@@ -1423,10 +1500,6 @@ export const DataStore = {
     const txTimeStr = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
 
     const itemNames = items.map((i) => `${i.quantity || 1}x ${i.description || i.name || 'Furniture'}`).join(', ')
-    const taxType = bill.taxType || 'intra'
-    const cgstAmount = taxType === 'intra' ? totalGst / 2 : 0
-    const sgstAmount = taxType === 'intra' ? totalGst / 2 : 0
-    const igstAmount = taxType === 'inter' ? totalGst : 0
     const invDate = bill.invoiceDate || new Date().toISOString().split('T')[0]
 
     const txInvNumber = bill.invoiceNumber || this.getNextInvoiceNumber()
@@ -1458,13 +1531,17 @@ export const DataStore = {
       items: itemNames || 'Artisan Furniture Order',
       itemDetails: items,
       taxType,
+      taxRate,
       cgstAmount,
       sgstAmount,
       igstAmount,
+      totalGst,
+      totalIgst,
       amount: grandTotal.toLocaleString('en-IN'),
       rawAmount: grandTotal,
       subtotal,
-      taxAmount: totalGst,
+      grossTotal: bill.grossTotal || Math.round(subtotal + totalGst + totalIgst + delivery),
+      taxAmount: totalGst + totalIgst,
       discount,
       deliveryCharge: delivery,
       status: bill.paymentStatus || 'Paid',
@@ -1473,6 +1550,9 @@ export const DataStore = {
       billedBy: bill.billedBy || bill.salesPerson || '',
       salesPerson: bill.salesPerson || bill.billedBy || '',
       vehicleNumber: bill.vehicleNumber || '',
+      dispatchDate: bill.dispatchDate || '',
+      referenceNumber: bill.referenceNumber || bill.referenceNo || '',
+      notes: bill.notes || '',
     }
 
     const existingIdx = txs.findIndex(
@@ -1581,6 +1661,8 @@ export const DataStore = {
         paymentStatus: bill.paymentStatus || 'Paid',
         paymentMode: bill.paymentMode || 'UPI',
         vehicleNumber: newTx.vehicleNumber || '',
+        dispatchDate: newTx.dispatchDate || '',
+        referenceNumber: newTx.referenceNumber || '',
         billedBy: newTx.billedBy,
         salesPerson: newTx.salesPerson,
         invoiceDate: bill.invoiceDate,

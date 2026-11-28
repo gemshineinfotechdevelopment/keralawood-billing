@@ -793,6 +793,14 @@ app.post('/api/sales', async (req, res) => {
       existing.amountPaid = Number(data.amountPaid) || existing.amountPaid;
       existing.balanceDue = Number(data.balanceDue) || existing.balanceDue;
       existing.vehicleNumber = data.vehicleNumber || existing.vehicleNumber || '';
+      if (data.dispatchDate !== undefined) existing.dispatchDate = data.dispatchDate;
+      if (data.referenceNumber !== undefined) existing.referenceNumber = data.referenceNumber;
+      if (data.referenceNo !== undefined) existing.referenceNumber = data.referenceNo;
+      if (data.taxType !== undefined) existing.taxType = data.taxType;
+      if (data.taxRate !== undefined) existing.taxRate = Number(data.taxRate) || 18;
+      if (data.cgstAmount !== undefined) existing.cgstAmount = Number(data.cgstAmount) || 0;
+      if (data.sgstAmount !== undefined) existing.sgstAmount = Number(data.sgstAmount) || 0;
+      if (data.igstAmount !== undefined) existing.igstAmount = Number(data.igstAmount) || 0;
       existing.notes = data.notes || existing.notes;
       const updated = await existing.save();
       console.log('[MongoDB] Updated existing invoice in MongoDB:', invNo);
@@ -825,6 +833,11 @@ app.post('/api/sales', async (req, res) => {
       itemDetails: lineItems,
       subtotal: Number(data.subtotal) || rawAmt,
       taxAmount: Number(data.taxAmount) || 0,
+      taxType: data.taxType || 'inter',
+      taxRate: data.taxRate !== undefined ? Number(data.taxRate) : 18,
+      cgstAmount: Number(data.cgstAmount) || 0,
+      sgstAmount: Number(data.sgstAmount) || 0,
+      igstAmount: Number(data.igstAmount) || 0,
       discount: Number(data.discount) || 0,
       deliveryCharge: Number(data.deliveryCharge) || 0,
       amount: rawAmt,
@@ -839,6 +852,8 @@ app.post('/api/sales', async (req, res) => {
       invoiceDate: data.invoiceDate || new Date().toLocaleDateString('en-GB'),
       dueDate: data.dueDate || '',
       vehicleNumber: data.vehicleNumber || '',
+      dispatchDate: data.dispatchDate || '',
+      referenceNumber: data.referenceNumber || data.referenceNo || '',
       notes: data.notes || '',
       year: data.year || currentYear,
       monthYear: data.monthYear || new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
@@ -1043,6 +1058,8 @@ app.post('/api/purchases', async (req, res) => {
       total: Number(data.total) || (Number(data.amount) || 0) + (Number(data.gstAmount) || 0) + (Number(data.igstAmount) || 0),
       paymentMode: data.paymentMode || 'Bank Wire',
       vehicleNumber: data.vehicleNumber || '',
+      dispatchDate: data.dispatchDate || '',
+      referenceNumber: data.referenceNumber || data.referenceNo || '',
       notes: data.notes || '',
     });
 

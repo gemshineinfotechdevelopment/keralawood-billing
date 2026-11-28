@@ -163,10 +163,10 @@ export default function Purchases() {
       supplierGstin: '',
       supplierPhone: '',
       // Right TO (Buyer)
-      companyName: settings.depotName || 'Kerala Wood Furniture',
-      companyAddress: settings.address || 'Sivakasi Central Mill Yard, Sivakasi',
-      companyGstin: settings.gstin || '',
-      companyPhone: settings.contactPhone || '',
+      companyName: '',
+      companyAddress: '',
+      companyGstin: '',
+      companyPhone: '',
       // Items
       itemsList: [createEmptyItem('inter')],
       vehicleNumber: '',
@@ -254,10 +254,10 @@ export default function Purchases() {
       supplierGstin: p.supplierGstin || '',
       supplierPhone: p.supplierPhone || '',
       // TO (Company)
-      companyName: p.companyName || settings.depotName || 'Kerala Wood Furniture',
-      companyAddress: p.companyAddress || settings.address || 'Sivakasi Central Mill Yard, Sivakasi',
-      companyGstin: p.companyGstin || settings.gstin || '',
-      companyPhone: p.companyPhone || settings.contactPhone || '',
+      companyName: p.companyName || '',
+      companyAddress: p.companyAddress || '',
+      companyGstin: p.companyGstin || '',
+      companyPhone: p.companyPhone || '',
       // Items
       itemsList: loadedItems,
       vehicleNumber: p.vehicleNumber || '',
@@ -710,23 +710,23 @@ export default function Purchases() {
     const supplierPhone = bill.supplierPhone || ''
     const supplierAddress = bill.supplierAddress || 'Mill Yard Depot'
     const supplierGstin = bill.supplierGstin || 'Unregistered'
-    const companyName = bill.companyName || settings.depotName || 'Kerala Wood Furniture'
-    const companyAddress = bill.companyAddress || settings.address || 'Sivakasi Central Mill Yard, Sivakasi'
-    const companyGstin = bill.companyGstin || settings.gstin || ''
-    const companyPhone = bill.companyPhone || settings.contactPhone || ''
+    const companyName = bill.companyName || ''
+    const companyAddress = bill.companyAddress || ''
+    const companyGstin = bill.companyGstin || ''
+    const companyPhone = bill.companyPhone || ''
 
     const rawItems = Array.isArray(bill.itemsList) && bill.itemsList.length > 0
       ? bill.itemsList
       : [
-          {
-            name: bill.item || 'Timber Material',
-            quantity: bill.quantity || 1,
-            rate: Number(bill.amount || 0),
-            gstRate: bill.amount > 0 ? Math.round(((Number(bill.gstAmount || 0)) / Number(bill.amount)) * 100) : 18,
-            gstAmount: Number(bill.gstAmount || 0),
-            total: Number(bill.total || ((Number(bill.amount) || 0) + (Number(bill.gstAmount) || 0))),
-          },
-        ]
+        {
+          name: bill.item || 'Timber Material',
+          quantity: bill.quantity || 1,
+          rate: Number(bill.amount || 0),
+          gstRate: bill.amount > 0 ? Math.round(((Number(bill.gstAmount || 0)) / Number(bill.amount)) * 100) : 18,
+          gstAmount: Number(bill.gstAmount || 0),
+          total: Number(bill.total || ((Number(bill.amount) || 0) + (Number(bill.gstAmount) || 0))),
+        },
+      ]
 
     const subtotal = Number(bill.subtotal || bill.amount || 0)
     const gstAmount = Number(bill.gstAmount || 0)
@@ -783,10 +783,10 @@ export default function Purchases() {
           </div>
           <div className="pos-print-col">
             <h4>TO (BUYER / INWARD DEPOT):</h4>
-            <p className="pos-print-cust-name">{companyName}</p>
-            <p>{companyAddress}</p>
-            <p>Phone: {companyPhone}</p>
-            <p>GSTIN: {companyGstin}</p>
+            {companyName ? <p className="pos-print-cust-name">{companyName}</p> : null}
+            {companyAddress ? <p>{companyAddress}</p> : null}
+            {companyPhone ? <p>Phone: {companyPhone}</p> : null}
+            {companyGstin ? <p>GSTIN: {companyGstin}</p> : null}
           </div>
         </div>
 
@@ -1093,14 +1093,13 @@ export default function Purchases() {
 
               <div className="purchase-party-body">
                 <div className="purchases-input-group">
-                  <label className="purchases-label">Company Name *</label>
+                  <label className="purchases-label">Company Name</label>
                   <input
                     type="text"
                     className="purchases-input"
                     value={formData.companyName}
                     onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-                    placeholder="Kerala Wood Furniture - Sivakasi"
-                    required
+                    placeholder="Buyer / Company Name"
                   />
                 </div>
 
@@ -1111,7 +1110,7 @@ export default function Purchases() {
                     className="purchases-textarea party-textarea"
                     value={formData.companyAddress}
                     onChange={(e) => setFormData({ ...formData, companyAddress: e.target.value })}
-                    placeholder="Sivakasi Central Mill Yard, Sivakasi"
+                    placeholder="Delivery Address"
                   />
                 </div>
 
@@ -1126,7 +1125,7 @@ export default function Purchases() {
                       onChange={(e) =>
                         setFormData({ ...formData, companyGstin: e.target.value.toUpperCase().trim() })
                       }
-                      placeholder="32AABCP9821K1ZK"
+                      placeholder="e.g. 33AABCP9821K1ZK"
                     />
                   </div>
 
@@ -1137,7 +1136,7 @@ export default function Purchases() {
                       className="purchases-input"
                       value={formData.companyPhone}
                       onChange={(e) => setFormData({ ...formData, companyPhone: e.target.value })}
-                      placeholder="+91 484 289 1204"
+                      placeholder="Phone number"
                     />
                   </div>
                 </div>
@@ -1272,9 +1271,6 @@ export default function Purchases() {
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 placeholder="Add lorry receipt (LR) #, delivery vehicle number, saw mill lot code, timber grading notes..."
               />
-              <span className="purchases-helper-text">
-                Recorded on purchase ledger for inward stock auditing and GST input tax credit (ITC).
-              </span>
             </div>
 
             {/* Amount Info Card matching the reference ERP image */}
@@ -1654,8 +1650,8 @@ export default function Purchases() {
                           aria-label="Share on WhatsApp"
                         >
                           <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766 0-3.18-2.586-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.312.045-.698.073-1.107-.061-.252-.082-.578-.198-1.002-.382-1.782-.77-2.939-2.583-3.028-2.702-.089-.12-0.72-0.96-0.72-1.83 0-.87.458-1.299.621-1.474.163-.175.356-.219.474-.219.12 0 .239.002.344.007.11.005.258-.042.404.308.15.358.513 1.25.558 1.341.045.091.075.197.015.317-.06.12-.09.196-.179.3-.09.105-.189.233-.27.313-.09.088-.184.184-.079.364.105.18.468.772 1.004 1.25 0.69 0.614 1.272 0.804 1.452 0.894.18.09.285.075.39-.045.105-.12.45-0.525.57-.705.12-.18.24-.15.405-.09.165.06 1.05.495 1.23.585.18.09.3.135.345.21.045.075.045.435-.099.84z"/>
-                            <path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.18L2 22l4.982-1.39A9.957 9.957 0 0 0 12 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18.05c-1.68 0-3.24-.48-4.56-1.31l-.33-.21-2.96.83.84-2.88-.23-.37A8.04 8.04 0 1 1 12 20.05z"/>
+                            <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766 0-3.18-2.586-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.312.045-.698.073-1.107-.061-.252-.082-.578-.198-1.002-.382-1.782-.77-2.939-2.583-3.028-2.702-.089-.12-0.72-0.96-0.72-1.83 0-.87.458-1.299.621-1.474.163-.175.356-.219.474-.219.12 0 .239.002.344.007.11.005.258-.042.404.308.15.358.513 1.25.558 1.341.045.091.075.197.015.317-.06.12-.09.196-.179.3-.09.105-.189.233-.27.313-.09.088-.184.184-.079.364.105.18.468.772 1.004 1.25 0.69 0.614 1.272 0.804 1.452 0.894.18.09.285.075.39-.045.105-.12.45-0.525.57-.705.12-.18.24-.15.405-.09.165.06 1.05.495 1.23.585.18.09.3.135.345.21.045.075.045.435-.099.84z" />
+                            <path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.18L2 22l4.982-1.39A9.957 9.957 0 0 0 12 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18.05c-1.68 0-3.24-.48-4.56-1.31l-.33-.21-2.96.83.84-2.88-.23-.37A8.04 8.04 0 1 1 12 20.05z" />
                           </svg>
                         </button>
 
@@ -1769,8 +1765,8 @@ export default function Purchases() {
                   title="Share Purchase Bill & PDF on WhatsApp"
                 >
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766 0-3.18-2.586-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.312.045-.698.073-1.107-.061-.252-.082-.578-.198-1.002-.382-1.782-.77-2.939-2.583-3.028-2.702-.089-.12-0.72-0.96-0.72-1.83 0-.87.458-1.299.621-1.474.163-.175.356-.219.474-.219.12 0 .239.002.344.007.11.005.258-.042.404.308.15.358.513 1.25.558 1.341.045.091.075.197.015.317-.06.12-.09.196-.179.3-.09.105-.189.233-.27.313-.09.088-.184.184-.079.364.105.18.468.772 1.004 1.25 0.69 0.614 1.272 0.804 1.452 0.894.18.09.285.075.39-.045.105-.12.45-0.525.57-.705.12-.18.24-.15.405-.09.165.06 1.05.495 1.23.585.18.09.3.135.345.21.045.075.045.435-.099.84z"/>
-                    <path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.18L2 22l4.982-1.39A9.957 9.957 0 0 0 12 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18.05c-1.68 0-3.24-.48-4.56-1.31l-.33-.21-2.96.83.84-2.88-.23-.37A8.04 8.04 0 1 1 12 20.05z"/>
+                    <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766 0-3.18-2.586-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.312.045-.698.073-1.107-.061-.252-.082-.578-.198-1.002-.382-1.782-.77-2.939-2.583-3.028-2.702-.089-.12-0.72-0.96-0.72-1.83 0-.87.458-1.299.621-1.474.163-.175.356-.219.474-.219.12 0 .239.002.344.007.11.005.258-.042.404.308.15.358.513 1.25.558 1.341.045.091.075.197.015.317-.06.12-.09.196-.179.3-.09.105-.189.233-.27.313-.09.088-.184.184-.079.364.105.18.468.772 1.004 1.25 0.69 0.614 1.272 0.804 1.452 0.894.18.09.285.075.39-.045.105-.12.45-0.525.57-.705.12-.18.24-.15.405-.09.165.06 1.05.495 1.23.585.18.09.3.135.345.21.045.075.045.435-.099.84z" />
+                    <path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.18L2 22l4.982-1.39A9.957 9.957 0 0 0 12 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18.05c-1.68 0-3.24-.48-4.56-1.31l-.33-.21-2.96.83.84-2.88-.23-.37A8.04 8.04 0 1 1 12 20.05z" />
                   </svg>
                   <span>Share on WhatsApp</span>
                 </button>
